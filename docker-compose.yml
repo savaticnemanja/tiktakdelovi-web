@@ -1,8 +1,18 @@
 services:
-  app:
-    build: .
-    env_file:
-      - .env
+  autoparts:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: autoparts-app
     ports:
-      - "4000:4000"
+      - "127.0.0.1:8084:80"
+    environment:
+      - PROVIDER=${PROVIDER}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_WHATSAPP_FROM=${TWILIO_WHATSAPP_FROM}
+      - META_WHATSAPP_TOKEN=${META_WHATSAPP_TOKEN}
+      - META_PHONE_NUMBER_ID=${META_PHONE_NUMBER_ID}
+      - SELLER_NUMBERS=${SELLER_NUMBERS}
+      - PORT=80
     restart: unless-stopped
