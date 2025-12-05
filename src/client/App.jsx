@@ -1,5 +1,7 @@
 import React, { useState } from "react";
 
+const offerKey = (offer) => `${offer.seller}|${offer.text}`;
+
 export default function App() {
   const [name, setName] = useState("");
   const [customerNumber, setCustomerNumber] = useState(""); // e.g. +1234567890
@@ -10,12 +12,16 @@ export default function App() {
   const [offers, setOffers] = useState([]);
   const [loadingOffers, setLoadingOffers] = useState(false);
   const [offerStatus, setOfferStatus] = useState(null);
+  const [selectedOfferKey, setSelectedOfferKey] = useState(null);
+  const [confirming, setConfirming] = useState(false);
+  const [confirmStatus, setConfirmStatus] = useState(null);
 
   const send = async (e) => {
     e.preventDefault();
     setSending(true);
     setStatus(null);
     setOfferStatus(null);
+    setConfirmStatus(null);
 
     try {
       const res = await fetch("/api/request", {
@@ -32,6 +38,7 @@ export default function App() {
       if (!res.ok) throw new Error(data?.error || "Unknown error");
       setRequestId(data.requestId);
       setOffers([]);
+      setSelectedOfferKey(null);
       setStatus({ ok: true, text: `Sent to sellers. Request ID: ${data.requestId}` });
     } catch (err) {
       setStatus({ ok: false, text: err.message });
@@ -49,11 +56,39 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Unable to fetch offers");
       setOffers(data.bids || []);
+      if (data.selection) {
+        setSelectedOfferKey(offerKey({ seller: data.selection.seller, text: data.selection.offerText }));
+      }
       setOfferStatus({ ok: true, text: `Offers: ${data.bids?.length || 0}` });
     } catch (err) {
       setOfferStatus({ ok: false, text: err.message });
     } finally {
       setLoadingOffers(false);
+    }
+  };
+
+  const confirmOffer = async (offer) => {
+    if (!requestId) return;
+    setConfirming(true);
+    setConfirmStatus(null);
+    try {
+      const res = await fetch("/api/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId,
+          seller: offer.seller,
+          offerText: offer.text
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Unable to confirm offer");
+      setSelectedOfferKey(offerKey(offer));
+      setConfirmStatus({ ok: true, text: "Order sent to owner." });
+    } catch (err) {
+      setConfirmStatus({ ok: false, text: err.message });
+    } finally {
+      setConfirming(false);
     }
   };
 
@@ -89,7 +124,7 @@ export default function App() {
               rows="4"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Hello team — new submission..."
+              placeholder="Hello team - new submission..."
               required
             />
           </label>
@@ -109,31 +144,57 @@ export default function App() {
             </div>
             {offerStatus && (
               <div className={`status ${offerStatus.ok ? "ok" : "err"}`}>
-                {offerStatus.ok ? "✅ " : "❌ "} {offerStatus.text}
+                {offerStatus.ok ? "OK" : "ERR"} {offerStatus.text}
               </div>
             )}
             <ul className="offers">
               {offers.length === 0 && <li className="muted">No offers yet.</li>}
               {offers.map((offer, idx) => (
-                <li key={`${offer.seller}-${idx}`}>
+                <li
+                  key={`${offer.seller}-${idx}`}
+                  className={selectedOfferKey === offerKey(offer) ? "selected" : ""}
+                >
                   <div className="offer-meta">
                     <span className="pill">Seller: {offer.seller}</span>
                     <span className="pill">At: {new Date(offer.createdAt).toLocaleString()}</span>
                   </div>
                   <div className="offer-text">{offer.text}</div>
+                  <div className="offer-actions">
+                    <button
+                      type="button"
+                      onClick={() => confirmOffer(offer)}
+                      disabled={confirming}
+                    >
+                      {selectedOfferKey === offerKey(offer)
+                        ? "Selected"
+                        : confirming
+                        ? "Selecting..."
+                        : "Select this offer"}
+                    </button>
+                  </div>
                 </li>
               ))}
             </ul>
+
+            {confirmStatus && (
+              <div className={`status ${confirmStatus.ok ? "ok" : "err"}`}>
+                {confirmStatus.ok ? "OK" : "ERR"} {confirmStatus.text}
+              </div>
+            )}
           </div>
         )}
 
         {status && (
           <div className={`status ${status.ok ? "ok" : "err"}`}>
-            {status.ok ? "✅ " : "❌ "} {status.text}
+            {status.ok ? "OK" : "ERR"} {status.text}
           </div>
         )}
 
-        <p className="note">Sellers receive REQ:<i>ID</i> via WhatsApp; replies tagged with REQ will be forwarded to the customer.</p>
+        <p className="note">
+          Sellers receive REQ:<i>ID</i> via WhatsApp; replies tagged with REQ will be forwarded to the
+          customer. Configure your Twilio WhatsApp sandbox "When a message comes in" URL to
+          /api/webhook/whatsapp so bids are captured here.
+        </p>
       </div>
     </div>
   );

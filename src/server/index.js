@@ -25,6 +25,7 @@ const PROVIDER = (process.env.PROVIDER || "meta").toLowerCase();
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || "";
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || "";
 const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM || ""; // e.g. "whatsapp:+1415xxxxxxx"
+const OWNER_NUMBER = process.env.OWNER_NUMBER || ""; // who receives confirmed orders
 
 // Meta (WhatsApp Cloud API) vars (if using Meta)
 const META_WHATSAPP_TOKEN = process.env.META_WHATSAPP_TOKEN || "";
@@ -122,7 +123,8 @@ app.post("/api/request", async (req, res) => {
       customerNumber,
       message,
       createdAt,
-      bids: []
+      bids: [],
+      selection: null
     });
 
     const results = [];
@@ -150,6 +152,46 @@ app.get("/api/offers/:id", (req, res) => {
   return res.json(requests.get(id));
 });
 
+app.post("/api/confirm", async (req, res) => {
+  try {
+    const { requestId, seller, offerText } = req.body || {};
+    if (!requestId || !seller || !offerText) {
+      return res.status(400).json({ error: "requestId, seller and offerText are required" });
+    }
+    if (!OWNER_NUMBER) {
+      return res.status(500).json({ error: "Owner number not configured (set OWNER_NUMBER)." });
+    }
+    const stored = requests.get(requestId);
+    if (!stored) {
+      return res.status(404).json({ error: "Request not found" });
+    }
+
+    const ownerMessage = [
+      "CONFIRMED ORDER",
+      `REQ:${requestId}`,
+      `Seller: ${seller}`,
+      `Offer: ${offerText}`,
+      `Customer: ${stored.customerName} (${stored.customerNumber})`,
+      "Original request:",
+      stored.message
+    ].join("\n");
+
+    await sendMessage({ to: OWNER_NUMBER, body: ownerMessage });
+    stored.selection = {
+      seller,
+      offerText,
+      confirmedAt: new Date().toISOString()
+    };
+    requests.set(requestId, stored);
+
+    return res.json({ ok: true, forwardedTo: OWNER_NUMBER });
+  } catch (err) {
+    console.error("Confirm error:", err?.response?.data || err.message || err);
+    const messageErr = err?.response?.data?.error?.message || err.message || "Unknown error";
+    return res.status(500).json({ error: messageErr });
+  }
+});
+
 app.post("/api/webhook/whatsapp", async (req, res) => {
   try {
     let text = null;
@@ -172,15 +214,28 @@ app.post("/api/webhook/whatsapp", async (req, res) => {
     }
 
     if (!text || !from) {
+      if (PROVIDER === "twilio") {
+        return res.status(200).type("text/xml").send("<Response></Response>");
+      }
       return res.status(200).json({ ignored: true });
     }
 
     const match = String(text).match(/REQ:([a-zA-Z0-9\-]+)/i);
-    if (!match) return res.status(200).json({ ignored: true, reason: "no request id" });
+    if (!match) {
+      if (PROVIDER === "twilio") {
+        return res.status(200).type("text/xml").send("<Response></Response>");
+      }
+      return res.status(200).json({ ignored: true, reason: "no request id" });
+    }
 
     const reqId = match[1];
     const stored = requests.get(reqId);
-    if (!stored) return res.status(200).json({ ignored: true, reason: "unknown request" });
+    if (!stored) {
+      if (PROVIDER === "twilio") {
+        return res.status(200).type("text/xml").send("<Response></Response>");
+      }
+      return res.status(200).json({ ignored: true, reason: "unknown request" });
+    }
 
     const bid = { seller: from, text, createdAt: new Date().toISOString() };
     stored.bids.push(bid);
@@ -194,6 +249,10 @@ app.post("/api/webhook/whatsapp", async (req, res) => {
       console.error("Failed to notify customer:", err.message);
     }
 
+    if (PROVIDER === "twilio") {
+      const ack = `<Response><Message>Thanks! Bid recorded for REQ:${reqId}</Message></Response>`;
+      return res.type("text/xml").send(ack);
+    }
     return res.json({ ok: true });
   } catch (err) {
     console.error("Webhook error:", err?.response?.data || err.message || err);
