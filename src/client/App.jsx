@@ -191,9 +191,10 @@ export default function App() {
         )}
 
         <p className="note">
-          Sellers receive REQ:<i>ID</i> via WhatsApp; replies tagged with REQ will be forwarded to the
-          customer. Configure your Twilio WhatsApp sandbox "When a message comes in" URL to
-          /api/webhook/whatsapp so bids are captured here.
+          Prodavci dobijaju ID zahteva i šalju ponudu kao <code>/ponuda {'{id} {cena u EUR i opis}'}</code>.
+          Kupac dobija šablon sa svim ponudama u WhatsApp-u i odgovara <code>POTVRDI # za ID</code> ili
+          <code>ODBIJ # za ID</code> direktno u WhatsApp-u. Podesi Twilio WhatsApp sandbox "When a message comes in"
+          na /api/webhook/whatsapp da bi ponude bile zabeležene.
         </p>
       </div>
     </div>

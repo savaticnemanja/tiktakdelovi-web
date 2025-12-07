@@ -1,6 +1,5 @@
 import path from "path";
 import fs from "fs";
-import { randomUUID } from "crypto";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import express from "express";
@@ -36,6 +35,13 @@ const SELLER_NUMBERS = (process.env.SELLER_NUMBERS || "")
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean);
+const normalizeNumber = (value = "") =>
+  String(value)
+    .trim()
+    .replace(/^whatsapp:/i, "")
+    .replace(/[^\d+]/g, "");
+const SELLER_SET = new Set(SELLER_NUMBERS.map((s) => normalizeNumber(s)));
+let nextRequestId = 1001;
 
 let twilioClient = null;
 if (
@@ -83,6 +89,84 @@ const sendMessage = async ({ to, body }) => {
   throw new Error("Unsupported provider configured.");
 };
 
+const extractRequestId = (text = "") => {
+  const match = String(text).match(/\bID[:\s]*([0-9]+)/i);
+  if (match) return match[1];
+  const directNumber = String(text).match(/\b(\d{3,})\b/); // prefer multi-digit ids
+  return directNumber ? directNumber[1] : null;
+};
+
+const parseSellerBid = (text = "") => {
+  const match = String(text).match(/\/ponuda\s+(\d+)\s+(.+)/i);
+  if (!match) return null;
+  return { requestId: match[1], offerText: match[2].trim() };
+};
+
+const formatBidTemplate = (req) => {
+  if (!req?.bids?.length) {
+    return `Pregled ponuda za zahtev ID:${req.id}\nJoš nema pristiglih ponuda.`;
+  }
+
+  const lines = req.bids.map((bid, idx) => {
+    const statusLabel =
+      bid.state === "confirmed"
+        ? "[POTVRĐENO] "
+        : bid.state === "denied"
+        ? "[ODBIJENO] "
+        : "";
+    return `${idx + 1}) ${statusLabel}Prodavac ${bid.seller}\n${bid.text}`;
+  });
+
+  const instructions = [
+    `Odgovori:`,
+    `POTVRDI <broj ponude> za ID:${req.id} da prihvatiš`,
+    `ODBIJ <broj ponude> za ID:${req.id} da odbiješ`
+  ].join("\n");
+
+  return [`Pregled ponuda za zahtev ID:${req.id}`, ...lines, instructions].join("\n");
+};
+
+const sendBidTemplateToBuyer = async (req) => {
+  if (!req?.customerNumber) return;
+  const template = formatBidTemplate(req);
+  try {
+    await sendMessage({ to: req.customerNumber, body: template });
+  } catch (err) {
+    console.error("Failed to send bid template to buyer:", err.message);
+  }
+};
+
+const parseBidCommand = (text = "") => {
+  const trimmed = String(text).trim();
+  const confirmMatch = trimmed.match(/\b(potvrdi|confirm|accept)\s+(\d+)/i);
+  const denyMatch = trimmed.match(/\b(odbij|deny|reject|decline)\s+(\d+)/i);
+  if (confirmMatch) {
+    return { action: "confirm", bidIndex: Number(confirmMatch[2]) - 1 };
+  }
+  if (denyMatch) {
+    return { action: "deny", bidIndex: Number(denyMatch[2]) - 1 };
+  }
+  return null;
+};
+
+const forwardSelectionToOwner = async ({ request, bid }) => {
+  if (!OWNER_NUMBER) {
+    throw new Error("Owner number not configured (set OWNER_NUMBER).");
+  }
+
+  const ownerMessage = [
+    "POTVRĐENA PONUDA",
+    `ID zahteva: ${request.id}`,
+    `Prodavac: ${bid.seller}`,
+    `Ponuda: ${bid.text}`,
+    `Kupac: ${request.customerName} (${request.customerNumber})`,
+    "Poruka kupca:",
+    request.message
+  ].join("\n");
+
+  await sendMessage({ to: OWNER_NUMBER, body: ownerMessage });
+};
+
 // compatibility single-recipient send
 app.post("/api/notify", async (req, res) => {
   try {
@@ -102,6 +186,11 @@ app.post("/api/notify", async (req, res) => {
 
 // In-memory store of requests/bids (replace with DB for production)
 const requests = new Map();
+const findRequestsForBuyer = (normalizedNumber) =>
+  Array.from(requests.values()).filter(
+    (req) => req.customerNumberNormalized === normalizedNumber
+  );
+const generateRequestId = () => String(nextRequestId++);
 
 app.post("/api/request", async (req, res) => {
   try {
@@ -113,14 +202,22 @@ app.post("/api/request", async (req, res) => {
       return res.status(500).json({ error: "No sellers configured (set SELLER_NUMBERS)." });
     }
 
-    const requestId = randomUUID();
+    const requestId = generateRequestId();
     const createdAt = new Date().toISOString();
-    const sellerBody = `New request from ${name} (${customerNumber})\nREQ:${requestId}\n${message}\nReply with: REQ:${requestId} your offer`;
+    const sellerBody = [
+      `Novi zahtev od ${name} (${customerNumber})`,
+      `ID:${requestId}`,
+      message,
+      `Odgovori sa: /ponuda ${requestId} <cena u EUR i detalji>`
+    ].join("\n");
+
+    const customerNumberNormalized = normalizeNumber(customerNumber);
 
     requests.set(requestId, {
       id: requestId,
       customerName: name,
       customerNumber,
+      customerNumberNormalized,
       message,
       createdAt,
       bids: [],
@@ -166,22 +263,30 @@ app.post("/api/confirm", async (req, res) => {
       return res.status(404).json({ error: "Request not found" });
     }
 
-    const ownerMessage = [
-      "CONFIRMED ORDER",
-      `REQ:${requestId}`,
-      `Seller: ${seller}`,
-      `Offer: ${offerText}`,
-      `Customer: ${stored.customerName} (${stored.customerNumber})`,
-      "Original request:",
-      stored.message
-    ].join("\n");
+    const normalizedSeller = normalizeNumber(seller);
+    let selectedBid = null;
+    const updatedBids = stored.bids.map((bid) => {
+      const sameSeller = normalizeNumber(bid.seller) === normalizedSeller && bid.text === offerText;
+      if (sameSeller) {
+        selectedBid = { ...bid, state: "confirmed" };
+        return selectedBid;
+      }
+      return bid;
+    });
 
-    await sendMessage({ to: OWNER_NUMBER, body: ownerMessage });
+    if (!selectedBid) {
+      selectedBid = { seller, text: offerText, createdAt: new Date().toISOString(), state: "confirmed" };
+      updatedBids.push(selectedBid);
+    }
+
+    stored.bids = updatedBids;
     stored.selection = {
-      seller,
-      offerText,
+      seller: selectedBid.seller,
+      offerText: selectedBid.text,
       confirmedAt: new Date().toISOString()
     };
+
+    await forwardSelectionToOwner({ request: { ...stored, id: requestId }, bid: selectedBid });
     requests.set(requestId, stored);
 
     return res.json({ ok: true, forwardedTo: OWNER_NUMBER });
@@ -196,6 +301,13 @@ app.post("/api/webhook/whatsapp", async (req, res) => {
   try {
     let text = null;
     let from = null;
+
+    const respondOk = () => {
+      if (PROVIDER === "twilio") {
+        return res.status(200).type("text/xml").send("<Response></Response>");
+      }
+      return res.status(200).json({ ok: true });
+    };
 
     // Twilio webhook (urlencoded)
     if (req.body?.Body && req.body?.From) {
@@ -214,43 +326,101 @@ app.post("/api/webhook/whatsapp", async (req, res) => {
     }
 
     if (!text || !from) {
-      if (PROVIDER === "twilio") {
-        return res.status(200).type("text/xml").send("<Response></Response>");
-      }
-      return res.status(200).json({ ignored: true });
+      return respondOk();
     }
 
-    const match = String(text).match(/REQ:([a-zA-Z0-9\-]+)/i);
-    if (!match) {
-      if (PROVIDER === "twilio") {
-        return res.status(200).type("text/xml").send("<Response></Response>");
-      }
-      return res.status(200).json({ ignored: true, reason: "no request id" });
+    const fromNormalized = normalizeNumber(from);
+    const command = parseBidCommand(text);
+    const sellerBid = parseSellerBid(text);
+    let reqId = sellerBid?.requestId || extractRequestId(text);
+
+    const buyerMatches = findRequestsForBuyer(fromNormalized);
+    if (!reqId && command && buyerMatches.length === 1) {
+      reqId = buyerMatches[0].id; // allow buyer to skip ID if they have a single open request
     }
 
-    const reqId = match[1];
-    const stored = requests.get(reqId);
-    if (!stored) {
-      if (PROVIDER === "twilio") {
-        return res.status(200).type("text/xml").send("<Response></Response>");
+    if (command && !reqId && buyerMatches.length) {
+      try {
+        await sendMessage({
+          to: buyerMatches[0].customerNumber,
+          body: `Dodaj ID zahteva. Primer: ${command.action.toUpperCase()} 1 za ID:${buyerMatches[0].id}`
+        });
+      } catch (err) {
+        console.error("Failed to nudge buyer for ID:", err.message);
       }
-      return res.status(200).json({ ignored: true, reason: "unknown request" });
+      return respondOk();
     }
 
-    const bid = { seller: from, text, createdAt: new Date().toISOString() };
+    const stored = reqId ? requests.get(reqId) : null;
+
+    const isBuyer = stored?.customerNumberNormalized === fromNormalized;
+    const isSeller = SELLER_SET.has(fromNormalized);
+
+    if (isBuyer && command) {
+      const targetBid = stored.bids[command.bidIndex];
+      if (!targetBid) {
+        await sendMessage({
+          to: stored.customerNumber,
+          body: `Ne mogu da nađem ponudu #${command.bidIndex + 1} za ID:${reqId}. Odgovori POTVRDI <broj> ili ODBIJ <broj>.`
+        });
+        return respondOk();
+      }
+
+      const updatedBid = {
+        ...targetBid,
+        state: command.action === "confirm" ? "confirmed" : "denied"
+      };
+
+      stored.bids[command.bidIndex] = updatedBid;
+      requests.set(reqId, stored);
+
+      if (command.action === "confirm") {
+        stored.selection = {
+          seller: updatedBid.seller,
+          offerText: updatedBid.text,
+          confirmedAt: new Date().toISOString()
+        };
+        try {
+          await forwardSelectionToOwner({ request: stored, bid: updatedBid });
+        } catch (err) {
+          console.error("Failed to forward selection to owner:", err.message);
+          await sendMessage({
+            to: stored.customerNumber,
+            body: `Zabeležili smo potvrdu za ID:${reqId}, ali nismo mogli da obavestimo vlasnika: ${err.message}`
+          });
+        }
+        await sendMessage({
+          to: stored.customerNumber,
+          body: `Potvrdili ste ponudu #${command.bidIndex + 1} za ID:${reqId}.`
+        });
+      } else {
+        await sendMessage({
+          to: stored.customerNumber,
+          body: `Ponuda #${command.bidIndex + 1} je označena kao odbijena za ID:${reqId}.`
+        });
+      }
+
+      await sendBidTemplateToBuyer(stored);
+      return respondOk();
+    }
+
+    if (!isSeller || !sellerBid || !reqId || !stored) {
+      return respondOk();
+    }
+
+    const bid = {
+      seller: from,
+      text: sellerBid.offerText,
+      createdAt: new Date().toISOString(),
+      state: "pending"
+    };
     stored.bids.push(bid);
     requests.set(reqId, stored);
 
-    // forward to customer
-    try {
-      const notifyText = `Seller ${from} replied to REQ:${reqId}\n${text}`;
-      await sendMessage({ to: stored.customerNumber, body: notifyText });
-    } catch (err) {
-      console.error("Failed to notify customer:", err.message);
-    }
+    await sendBidTemplateToBuyer(stored);
 
     if (PROVIDER === "twilio") {
-      const ack = `<Response><Message>Thanks! Bid recorded for REQ:${reqId}</Message></Response>`;
+      const ack = `<Response><Message>Hvala! Ponuda zabeležena za ID:${reqId}</Message></Response>`;
       return res.type("text/xml").send(ack);
     }
     return res.json({ ok: true });

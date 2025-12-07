@@ -18,7 +18,7 @@ PROVIDER=meta
 TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=your_token
 TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
- OWNER_NUMBER=+15551239999   # receives confirmed orders
+OWNER_NUMBER=+15551239999   # receives confirmed orders
 
 # Meta (if PROVIDER=meta)
 META_WHATSAPP_TOKEN=replace_me
@@ -54,6 +54,14 @@ Compose reads `.env`, builds via Dockerfile, and exposes http://localhost:4000.
 - `POST /api/confirm` with `{ requestId, seller, offerText }` to forward the selected bid to `OWNER_NUMBER`
 - `POST /api/webhook/whatsapp` inbound webhook (configure provider to POST here; sellers must reply with `REQ:<id>` in message)
 - `POST /api/notify` legacy single-send
+
+### WhatsApp tok (sve poruke na srpskom)
+- ID zahteva je prost inkrement (1001, 1002, ...).
+- Kada kreiraš zahtev, prodavci dobijaju poruku: `Novi zahtev ... ID:<id> ... Odgovori sa: /ponuda <id> <cena u EUR i detalji>`.
+- Ponuda prodavca stiže kao `/ponuda {id} {cena u eur + opis}` i automatski se vezuje za zahtev.
+- Kupac dobija šablon sa svim ponudama u WhatsApp-u. Svaka ponuda ima redni broj.
+- Kupac odgovara `POTVRDI <broj ponude> za ID:<id>` da prihvati ili `ODBIJ <broj ponude> za ID:<id>` da odbije.
+- Kada kupac potvrdi, izabrana ponuda se prosleđuje na `OWNER_NUMBER`. Šablon se ponovo šalje posle svake akcije.
 
 ## Twilio WhatsApp sandbox
 - Each seller number must join your sandbox once using the join code shown in the Twilio Console.
