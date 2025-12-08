@@ -1,0 +1,80 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [main]
+
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  deploy:
+    if: github.event_name == 'push' || github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Load SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          known_hosts: unnecessary
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Prepare deployment package
+        run: |
+          mkdir deploy
+          rsync -av --exclude='.git' --exclude='node_modules' ./ deploy/
+          tar -czf app.tar.gz -C deploy .
+
+      - name: Upload package to VPS
+        run: |
+          scp app.tar.gz \
+            "${{ secrets.DEPLOY_USER }}"@"${{ secrets.DEPLOY_HOST }}":"${{ secrets.DEPLOY_PATH }}"
+
+      - name: Deploy on VPS
+        run: |
+          ssh "${{ secrets.DEPLOY_USER }}"@"${{ secrets.DEPLOY_HOST }}" "
+            set -e
+            cd '${{ secrets.DEPLOY_PATH }}'
+
+            HOST_PORT=\$(grep HOST_PORT .env | cut -d '=' -f2)
+
+            echo '>>> Killing ANY container using port '$HOST_PORT
+            docker ps --filter 'publish='\$HOST_PORT -q | xargs -r docker stop
+            docker ps --filter 'publish='\$HOST_PORT -q | xargs -r docker rm
+
+            echo '>>> Extracting new release'
+            rm -rf current_tmp
+            mkdir current_tmp
+            tar -xzf app.tar.gz -C current_tmp
+
+            echo '>>> Removing previous current_old'
+            rm -rf current_old
+
+            echo '>>> Swapping release directories'
+            if [ -d current ]; then
+              mv current current_old
+            fi
+            mv current_tmp current
+
+            echo '>>> Copying .env into new release'
+            cp .env current/.env
+
+            cd current
+
+            echo '>>> Stopping old containers (compose)'
+            docker compose down || true
+
+            echo '>>> Starting new containers'
+            docker compose up --build -d
+
+            echo '>>> Deploy complete!'
+          "
