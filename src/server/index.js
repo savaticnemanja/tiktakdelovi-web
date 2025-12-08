@@ -24,6 +24,8 @@ const PROVIDER = (process.env.PROVIDER || "meta").toLowerCase();
 const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID || "";
 const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || "";
 const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM || ""; // e.g. "whatsapp:+1415xxxxxxx"
+const TWILIO_ORDER_TEMPLATE_SID =
+  process.env.TWILIO_ORDER_TEMPLATE_SID || "HXc2504355df553798e7df16c0d6b999eb";
 const OWNER_NUMBER = process.env.OWNER_NUMBER || ""; // who receives confirmed orders
 
 // Meta (WhatsApp Cloud API) vars (if using Meta)
@@ -55,14 +57,30 @@ if (
   console.warn("Twilio not initialized: missing or invalid ACCOUNT_SID/AUTH_TOKEN.");
 }
 
-const sendMessage = async ({ to, body }) => {
+const sendMessage = async ({ to, body, template }) => {
   if (PROVIDER === "twilio") {
     if (!twilioClient || !TWILIO_WHATSAPP_FROM) {
       throw new Error("Twilio not configured.");
     }
-    const twResponse = await twilioClient.messages.create({
+    const basePayload = {
       from: TWILIO_WHATSAPP_FROM,
-      to: `whatsapp:${to}`,
+      to: `whatsapp:${to}`
+    };
+
+    // Prefer Content Template (Quick Reply) when provided
+    if (template?.contentSid) {
+      const twResponse = await twilioClient.messages.create({
+        ...basePayload,
+        contentSid: template.contentSid,
+        contentVariables: template.variables
+          ? JSON.stringify(template.variables)
+          : undefined
+      });
+      return { sid: twResponse.sid, contentSid: template.contentSid };
+    }
+
+    const twResponse = await twilioClient.messages.create({
+      ...basePayload,
       body
     });
     return { sid: twResponse.sid };
@@ -170,10 +188,34 @@ const forwardSelectionToOwner = async ({ request, bid }) => {
 // compatibility single-recipient send
 app.post("/api/notify", async (req, res) => {
   try {
-    const { name, recipient, message } = req.body || {};
-    if (!name || !recipient || !message) {
-      return res.status(400).json({ error: "name, recipient and message are required" });
+    const { name, recipient, message, date, time } = req.body || {};
+    const hasTemplateData = PROVIDER === "twilio" && TWILIO_ORDER_TEMPLATE_SID && date && time;
+    if (!recipient) {
+      return res.status(400).json({ error: "recipient is required" });
     }
+    if (!hasTemplateData && (!name || !message)) {
+      return res
+        .status(400)
+        .json({ error: "name, recipient and message are required (or date/time for template)" });
+    }
+
+    // Use Twilio Content Template (Quick Reply) when available + data supplied
+    if (hasTemplateData) {
+      const result = await sendMessage({
+        to: recipient,
+        template: {
+          contentSid: TWILIO_ORDER_TEMPLATE_SID,
+          variables: { date, time }
+        }
+      });
+      return res.json({
+        message: "Sent via Twilio template",
+        provider: PROVIDER,
+        templateSid: TWILIO_ORDER_TEMPLATE_SID,
+        result
+      });
+    }
+
     const fullMessage = `From: ${name}\n\n${message}`;
     const result = await sendMessage({ to: recipient, body: fullMessage });
     return res.json({ message: "Sent", provider: PROVIDER, result });

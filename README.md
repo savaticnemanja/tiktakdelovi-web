@@ -18,6 +18,7 @@ PROVIDER=meta
 TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=your_token
 TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
+TWILIO_ORDER_TEMPLATE_SID=HXc2504355df553798e7df16c0d6b999eb
 OWNER_NUMBER=+15551239999   # receives confirmed orders
 
 # Meta (if PROVIDER=meta)
@@ -55,7 +56,7 @@ Compose reads `.env`, builds via Dockerfile, and exposes http://localhost:${HOST
 - `GET /api/offers/:id` to retrieve stored bids
 - `POST /api/confirm` with `{ requestId, seller, offerText }` to forward the selected bid to `OWNER_NUMBER`
 - `POST /api/webhook/whatsapp` inbound webhook (configure provider to POST here; sellers must reply with `REQ:<id>` in message)
-- `POST /api/notify` legacy single-send
+- `POST /api/notify` legacy single-send; when `PROVIDER=twilio` and `date` + `time` are provided, it sends the `notifications_order_update_template` Quick Reply template (Confirm / Reschedule buttons) using `TWILIO_ORDER_TEMPLATE_SID`
 
 ### WhatsApp tok (sve poruke na srpskom)
 - ID zahteva je prost inkrement (1001, 1002, ...).
