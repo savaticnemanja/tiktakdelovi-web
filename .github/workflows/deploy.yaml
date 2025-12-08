@@ -45,7 +45,10 @@ jobs:
             set -e
             cd '${{ secrets.DEPLOY_PATH }}'
 
-            HOST_PORT=\$(grep HOST_PORT .env | cut -d '=' -f2)
+            HOST_PORT=\$(grep -E '^HOST_PORT=' .env | cut -d '=' -f2)
+            HOST_PORT=\${HOST_PORT:-8081}
+
+            export COMPOSE_PROJECT_NAME=autoparts-app
 
             echo '>>> Killing ANY container using port '$HOST_PORT
             docker ps --filter 'publish='\$HOST_PORT -q | xargs -r docker stop

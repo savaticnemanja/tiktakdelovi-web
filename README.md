@@ -27,25 +27,27 @@ META_PHONE_NUMBER_ID=replace_me
 # Comma-separated seller phone numbers (E.164)
 SELLER_NUMBERS=+15551230001,+15551230002
 
-PORT=4000
+# Ports (HOST_PORT is what the VPS exposes; PORT is what the container listens on)
+HOST_PORT=8081
+PORT=80
 ```
 
 ## Run locally
 ```
 npm install
-npm run dev   # Vite on 5173, API on 4000 (proxied)
+npm run dev   # Vite on 5173, API on PORT (set PORT=4000 for local dev)
 ```
 For production preview:
 ```
 npm run build
-npm start     # serves dist via Express on 4000
+npm start     # serves dist via Express on PORT
 ```
 
 ## Docker / Compose
 ```
-docker compose up --build
+docker compose up --build   # defaults to http://localhost:8081
 ```
-Compose reads `.env`, builds via Dockerfile, and exposes http://localhost:4000.
+Compose reads `.env`, builds via Dockerfile, and exposes http://localhost:${HOST_PORT:-8081}.
 
 ## Endpoints
 - `GET /api/health`

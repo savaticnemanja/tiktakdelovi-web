@@ -1,28 +1,25 @@
-# Multi-stage build: build Vite frontend, then serve via Express backend
-FROM node:18-alpine AS build
+# Build Vite frontend, then serve via Express backend (Node 20)
+FROM node:20-alpine AS deps
 WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci
 
-COPY package*.json ./
-RUN npm install
-
+FROM deps AS build
 COPY . .
 RUN npm run build
 
-FROM node:18-alpine AS prod
+FROM node:20-alpine AS production
 WORKDIR /app
-
 ENV NODE_ENV=production
+ENV PORT=80
 
-ARG PORT=80
-ENV PORT=${PORT}
-
-COPY package*.json ./
-RUN npm install --omit=dev
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 
 COPY --from=build /app/dist ./dist
 COPY --from=build /app/src ./src
 COPY --from=build /app/index.html ./index.html
 
-EXPOSE ${PORT}
+EXPOSE 80
 
 CMD ["node", "src/server/index.js"]
