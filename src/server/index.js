@@ -26,6 +26,7 @@ const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN || "";
 const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM || ""; // e.g. "whatsapp:+1415xxxxxxx"
 const TWILIO_ORDER_TEMPLATE_SID =
   process.env.TWILIO_ORDER_TEMPLATE_SID || "HXc2504355df553798e7df16c0d6b999eb";
+const TWILIO_SELLER_TEMPLATE_SID = process.env.TWILIO_SELLER_TEMPLATE_SID || "";
 const OWNER_NUMBER = process.env.OWNER_NUMBER || ""; // who receives confirmed orders
 
 // Meta (WhatsApp Cloud API) vars (if using Meta)
@@ -252,6 +253,17 @@ app.post("/api/request", async (req, res) => {
       message,
       `Odgovori sa: /ponuda ${requestId} <cena u EUR i detalji>`
     ].join("\n");
+    const sellerTemplate =
+      PROVIDER === "twilio" && TWILIO_SELLER_TEMPLATE_SID
+        ? {
+            contentSid: TWILIO_SELLER_TEMPLATE_SID,
+            // Template should have two placeholders: {{1}} and {{2}}
+            variables: {
+              1: `Novi zahtev od ${name} (${customerNumber}), ID:${requestId}`,
+              2: `Odgovori sa: /ponuda ${requestId} <cena u EUR i detalji>`
+            }
+          }
+        : null;
 
     const customerNumberNormalized = normalizeNumber(customerNumber);
 
@@ -269,7 +281,11 @@ app.post("/api/request", async (req, res) => {
     const results = [];
     for (const seller of SELLER_NUMBERS) {
       try {
-        const result = await sendMessage({ to: seller, body: sellerBody });
+        const result = await sendMessage({
+          to: seller,
+          body: sellerBody,
+          template: sellerTemplate
+        });
         results.push({ seller, ok: true, result });
       } catch (err) {
         console.error(`Send to seller ${seller} failed:`, err.message);

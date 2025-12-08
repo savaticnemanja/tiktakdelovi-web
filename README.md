@@ -19,6 +19,8 @@ TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=your_token
 TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
 TWILIO_ORDER_TEMPLATE_SID=HXc2504355df553798e7df16c0d6b999eb
+# Optional: template used when broadcasting new requests to sellers (expects two placeholders {{1}} and {{2}})
+TWILIO_SELLER_TEMPLATE_SID=
 OWNER_NUMBER=+15551239999   # receives confirmed orders
 
 # Meta (if PROVIDER=meta)
@@ -52,7 +54,7 @@ Compose reads `.env`, builds via Dockerfile, and exposes http://localhost:${HOST
 
 ## Endpoints
 - `GET /api/health`
-- `POST /api/request` with `{ name, customerNumber, message }` (broadcast to sellers; returns `requestId`)
+- `POST /api/request` with `{ name, customerNumber, message }` (broadcast to sellers; returns `requestId`). When `PROVIDER=twilio` and `TWILIO_SELLER_TEMPLATE_SID` is set, seller broadcasts use that template with two variables: `{{1}}` = `Novi zahtev od {name} ({customerNumber}), ID:{id}` and `{{2}}` = `Odgovori sa: /ponuda {id} <cena u EUR i detalji>`.
 - `GET /api/offers/:id` to retrieve stored bids
 - `POST /api/confirm` with `{ requestId, seller, offerText }` to forward the selected bid to `OWNER_NUMBER`
 - `POST /api/webhook/whatsapp` inbound webhook (configure provider to POST here; sellers must reply with `REQ:<id>` in message)
