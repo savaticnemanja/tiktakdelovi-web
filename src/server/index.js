@@ -665,6 +665,29 @@ app.get("/api/push/public-key", (req, res) => {
   return res.json({ publicKey: WEBPUSH_PUBLIC_KEY });
 });
 
+app.post("/api/mock/push", async (req, res) => {
+  if (!WEBPUSH_PUBLIC_KEY || !WEBPUSH_PRIVATE_KEY) {
+    return res.status(500).json({ error: "Web Push not configured on server." });
+  }
+  const { subscription } = req.body || {};
+  if (!subscription) {
+    return res.status(400).json({ error: "subscription is required" });
+  }
+  try {
+    await sendPushNotification({
+      subscriptions: [subscription],
+      title: "Mock push",
+      body: "Ovo je test push obaveštenje.",
+      data: { url: "/" },
+      tag: "mock-push"
+    });
+    return res.json({ ok: true });
+  } catch (err) {
+    console.error("Mock push error:", err?.message || err);
+    return res.status(500).json({ error: err?.message || "Mock push failed" });
+  }
+});
+
 // Simple health
 app.get("/api/health", (req, res) => res.json({ ok: true, provider: PROVIDER }));
 

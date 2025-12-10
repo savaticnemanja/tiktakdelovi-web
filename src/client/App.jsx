@@ -37,6 +37,7 @@ export default function App() {
     typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window
   );
   const [pushPublicKey, setPushPublicKey] = useState(null);
+  const [pushError, setPushError] = useState(null);
   const [demoTo, setDemoTo] = useState("");
   const [demoOfferId, setDemoOfferId] = useState("1001");
   const [demoOfferPrice, setDemoOfferPrice] = useState("50");
@@ -190,8 +191,11 @@ export default function App() {
         const data = await parseJson(res);
         if (!res.ok) throw new Error(data?.error || "Push key fetch failed");
         setPushPublicKey(data.publicKey);
+        setPushError(null);
       } catch (err) {
         console.error("Push key error:", err.message);
+        setPushError(err.message);
+        setPushPublicKey(null);
       }
     };
     loadKey();
@@ -222,8 +226,12 @@ export default function App() {
   };
 
   const scheduleMockNotification = async () => {
-    if (typeof window === "undefined" || !("Notification" in window)) {
-      setMockStatus({ ok: false, text: "Browser notifications not supported." });
+    if (typeof window === "undefined" || !pushSupport) {
+      setMockStatus({ ok: false, text: "Push/service worker not supported." });
+      return;
+    }
+    if (!pushSubscriptionRef.current) {
+      setMockStatus({ ok: false, text: "Enable push first." });
       return;
     }
     try {
@@ -243,18 +251,21 @@ export default function App() {
       if (mockTimeoutRef.current) {
         clearTimeout(mockTimeoutRef.current);
       }
-      setMockStatus({ ok: true, text: "Will notify in 10 seconds..." });
-      mockTimeoutRef.current = setTimeout(() => {
+      setMockStatus({ ok: true, text: "Will send mock push in 2 seconds..." });
+      mockTimeoutRef.current = setTimeout(async () => {
         try {
-          const notification = new Notification("Test obaveštenje", {
-            body: "Ovo je mock notifikacija (10s kašnjenje)."
+          const res = await fetch("/api/mock/push", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ subscription: pushSubscriptionRef.current })
           });
-          notification.onclick = () => window.focus();
-          setMockStatus({ ok: true, text: "Mock notification sent." });
+          const data = await parseJson(res);
+          if (!res.ok) throw new Error(data?.error || "Mock push failed");
+          setMockStatus({ ok: true, text: "Mock push sent." });
         } catch (err) {
-          setMockStatus({ ok: false, text: err.message || "Failed to send notification." });
+          setMockStatus({ ok: false, text: err.message || "Failed to send mock push." });
         }
-      }, 10000);
+      }, 2000);
     } catch (err) {
       setMockStatus({ ok: false, text: err.message || "Notification error." });
     }
@@ -276,6 +287,10 @@ export default function App() {
       setStatus({ ok: false, text: "Browser does not support push." });
       return;
     }
+    if (!pushPublicKey) {
+      setPushError(pushError || "Push not configured on server.");
+      return;
+    }
     try {
       const permission = await Notification.requestPermission();
       setNotificationPermission(permission);
@@ -284,19 +299,32 @@ export default function App() {
         setStatus({ ok: false, text: "Notifications not granted." });
         return;
       }
-      const registration = await navigator.serviceWorker.register("/sw.js");
-      const existing = await registration.pushManager.getSubscription();
+      let registration;
+      try {
+        registration = await navigator.serviceWorker.register("/sw.js");
+      } catch (err) {
+        setPushError(err?.message || "Failed to register service worker.");
+        return;
+      }
+      const activeRegistration = await navigator.serviceWorker.ready;
+      const reg = activeRegistration || registration;
+      if (!reg) {
+        setPushError("Service worker not ready.");
+        return;
+      }
+      const existing = await reg.pushManager.getSubscription();
       const subscription =
         existing ||
-        (await registration.pushManager.subscribe({
+        (await reg.pushManager.subscribe({
           userVisibleOnly: true,
           applicationServerKey: urlBase64ToUint8Array(pushPublicKey)
         }));
       pushSubscriptionRef.current = subscription;
       setPushEnabled(true);
       setPushReady(true);
+      setPushError(null);
     } catch (err) {
-      setStatus({ ok: false, text: err.message || "Push enable failed" });
+      setPushError(err?.message || "Push enable failed");
     }
   };
 
@@ -374,11 +402,10 @@ export default function App() {
             {pushSupport && (
               <div className="status ok">
                 Push (closed browser) notifications: {pushEnabled && pushReady ? "ready" : "disabled"}
-                {"  "}
-                {!pushEnabled && pushPublicKey && (
-                  <button type="button" onClick={enablePush} style={{ marginLeft: 8 }}>
-                    Enable push
-                  </button>
+                {pushError && (
+                  <span style={{ marginLeft: 8, color: "#c00" }}>
+                    {pushError || "Push not configured"}
+                  </span>
                 )}
               </div>
             )}
@@ -475,15 +502,35 @@ export default function App() {
           <div className="section" style={{ marginTop: 20 }}>
             <h3>Mock browser notification</h3>
             <p className="note">
-              Click to schedule a local notification that fires after 10 seconds. Useful while Twilio
-              limits are hit.
+              Click to send a mock push (via your push subscription) after ~2 seconds. Enable push first
+              so this works even if the tab is closed.
             </p>
             <button type="button" onClick={scheduleMockNotification}>
-              Send mock notification in 10s
+              Send mock push in 2s
             </button>
             {mockStatus && (
               <div className={`status ${mockStatus.ok ? "ok" : "err"}`}>
                 {mockStatus.ok ? "OK" : "ERR"} {mockStatus.text}
+              </div>
+            )}
+            {pushSupport && (
+              <div style={{ marginTop: 12 }}>
+                <div className="status ok">
+                  Push (closed browser) notifications: {pushEnabled && pushReady ? "ready" : "disabled"}
+                  {pushError && (
+                    <span style={{ marginLeft: 8, color: "#c00" }}>
+                      {pushError || "Push not configured"}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={enablePush}
+                  disabled={pushEnabled || !pushPublicKey}
+                  style={{ marginTop: 8 }}
+                >
+                  {pushEnabled ? "Push enabled" : pushPublicKey ? "Enable push" : "Push not configured"}
+                </button>
               </div>
             )}
           </div>

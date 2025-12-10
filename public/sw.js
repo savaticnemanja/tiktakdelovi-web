@@ -1,7 +1,21 @@
 /* eslint-disable no-restricted-globals */
+// version: 002
+
+self.addEventListener("install", (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
 self.addEventListener("push", (event) => {
   if (!event.data) return;
-  const payload = event.data.json();
+  let payload = {};
+  try {
+    payload = event.data.json();
+  } catch (_) {
+    payload = { title: "Notification", body: event.data.text() };
+  }
   const title = payload.title || "Nova obavestavanje";
   const options = {
     body: payload.body || "",
