@@ -6,6 +6,7 @@ import express from "express";
 import cors from "cors";
 import axios from "axios";
 import Twilio from "twilio";
+import webpush from "web-push";
 
 dotenv.config();
 
@@ -33,6 +34,8 @@ const TWILIO_CONTENT_LANGUAGE = process.env.TWILIO_CONTENT_LANGUAGE || "";
 const TWILIO_BUYER_TEMPLATE_NUMERIC_VARS =
   (process.env.TWILIO_BUYER_TEMPLATE_NUMERIC_VARS || "").toLowerCase() === "true";
 const OWNER_NUMBER = process.env.OWNER_NUMBER || ""; // who receives confirmed orders
+const WEBPUSH_PUBLIC_KEY = process.env.WEBPUSH_PUBLIC_KEY || "";
+const WEBPUSH_PRIVATE_KEY = process.env.WEBPUSH_PRIVATE_KEY || "";
 
 // Meta (WhatsApp Cloud API) vars (if using Meta)
 const META_WHATSAPP_TOKEN = process.env.META_WHATSAPP_TOKEN || "";
@@ -112,6 +115,22 @@ const sendMessage = async ({ to, body, template }) => {
     return { data: metaResp.data };
   }
   throw new Error("Unsupported provider configured.");
+};
+
+if (WEBPUSH_PUBLIC_KEY && WEBPUSH_PRIVATE_KEY) {
+  webpush.setVapidDetails("mailto:dev@localhost", WEBPUSH_PUBLIC_KEY, WEBPUSH_PRIVATE_KEY);
+}
+
+const sendPushNotification = async ({ subscriptions = [], title, body, data, tag }) => {
+  if (!WEBPUSH_PUBLIC_KEY || !WEBPUSH_PRIVATE_KEY) return;
+  const payload = JSON.stringify({ title, body, data, tag });
+  for (const sub of subscriptions) {
+    try {
+      await webpush.sendNotification(sub, payload);
+    } catch (err) {
+      console.error("Web push send failed:", err.message || err);
+    }
+  }
 };
 
 const extractRequestId = (text = "") => {
@@ -209,6 +228,16 @@ const sendBidTemplateToBuyer = async (req, { latestBid, latestBidIndex } = {}) =
         bid: latestBid,
         bidIndex: latestBidIndex
       });
+      await sendPushNotification({
+        subscriptions: req.pushSubscriptions || [],
+        title: `Nova ponuda za ID:${req.id}`,
+        body: latestBid.text,
+        data: {
+          url: "/",
+          requestId: req.id
+        },
+        tag: `offer-${req.id}-${latestBidIndex}`
+      });
     } catch (err) {
       console.error("Failed to send buyer template:", err.message);
     }
@@ -304,7 +333,7 @@ const generateRequestId = () => String(nextRequestId++);
 
 app.post("/api/request", async (req, res) => {
   try {
-    const { name, customerNumber, message } = req.body || {};
+    const { name, customerNumber, message, pushSubscription } = req.body || {};
     if (!name || !customerNumber || !message) {
       return res.status(400).json({ error: "name, customerNumber and message are required" });
     }
@@ -342,7 +371,8 @@ app.post("/api/request", async (req, res) => {
       message,
       createdAt,
       bids: [],
-      selection: null
+      selection: null,
+      pushSubscriptions: pushSubscription ? [pushSubscription] : []
     });
 
     const results = [];
@@ -626,6 +656,13 @@ app.post("/api/demo/buyer-offer", async (req, res) => {
       status: twilioStatus || 500
     });
   }
+});
+
+app.get("/api/push/public-key", (req, res) => {
+  if (!WEBPUSH_PUBLIC_KEY) {
+    return res.status(404).json({ error: "Web Push not configured" });
+  }
+  return res.json({ publicKey: WEBPUSH_PUBLIC_KEY });
 });
 
 // Simple health

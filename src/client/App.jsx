@@ -31,11 +31,20 @@ export default function App() {
     typeof window !== "undefined" && "Notification" in window ? Notification.permission === "granted" : false
   );
   const knownOffersRef = useRef(new Set());
+  const [pushEnabled, setPushEnabled] = useState(false);
+  const [pushReady, setPushReady] = useState(false);
+  const [pushSupport, setPushSupport] = useState(
+    typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window
+  );
+  const [pushPublicKey, setPushPublicKey] = useState(null);
   const [demoTo, setDemoTo] = useState("");
   const [demoOfferId, setDemoOfferId] = useState("1001");
   const [demoOfferPrice, setDemoOfferPrice] = useState("50");
   const [demoSending, setDemoSending] = useState(false);
   const [demoStatus, setDemoStatus] = useState(null);
+  const [mockStatus, setMockStatus] = useState(null);
+  const mockTimeoutRef = useRef(null);
+  const pushSubscriptionRef = useRef(null);
 
   const send = async (e) => {
     e.preventDefault();
@@ -52,7 +61,8 @@ export default function App() {
         body: JSON.stringify({
           name,
           customerNumber,
-          message
+          message,
+          pushSubscription: pushSubscriptionRef.current
         })
       });
 
@@ -166,6 +176,27 @@ export default function App() {
     return () => clearInterval(interval);
   }, [requestId, notificationsEnabled]);
 
+  useEffect(() => () => {
+    if (mockTimeoutRef.current) {
+      clearTimeout(mockTimeoutRef.current);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!pushSupport) return;
+    const loadKey = async () => {
+      try {
+        const res = await fetch("/api/push/public-key");
+        const data = await parseJson(res);
+        if (!res.ok) throw new Error(data?.error || "Push key fetch failed");
+        setPushPublicKey(data.publicKey);
+      } catch (err) {
+        console.error("Push key error:", err.message);
+      }
+    };
+    loadKey();
+  }, [pushSupport]);
+
   const sendDemoTemplate = async (e) => {
     e.preventDefault();
     setDemoSending(true);
@@ -187,6 +218,85 @@ export default function App() {
       setDemoStatus({ ok: false, text: err.message });
     } finally {
       setDemoSending(false);
+    }
+  };
+
+  const scheduleMockNotification = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setMockStatus({ ok: false, text: "Browser notifications not supported." });
+      return;
+    }
+    try {
+      if (Notification.permission === "default") {
+        const permission = await Notification.requestPermission();
+        setNotificationPermission(permission);
+        setNotificationsEnabled(permission === "granted");
+        if (permission !== "granted") {
+          setMockStatus({ ok: false, text: "Notifications not granted." });
+          return;
+        }
+      } else if (Notification.permission === "denied") {
+        setMockStatus({ ok: false, text: "Notifications blocked in browser." });
+        return;
+      }
+
+      if (mockTimeoutRef.current) {
+        clearTimeout(mockTimeoutRef.current);
+      }
+      setMockStatus({ ok: true, text: "Will notify in 10 seconds..." });
+      mockTimeoutRef.current = setTimeout(() => {
+        try {
+          const notification = new Notification("Test obaveštenje", {
+            body: "Ovo je mock notifikacija (10s kašnjenje)."
+          });
+          notification.onclick = () => window.focus();
+          setMockStatus({ ok: true, text: "Mock notification sent." });
+        } catch (err) {
+          setMockStatus({ ok: false, text: err.message || "Failed to send notification." });
+        }
+      }, 10000);
+    } catch (err) {
+      setMockStatus({ ok: false, text: err.message || "Notification error." });
+    }
+  };
+
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+    const rawData = atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; i++) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  };
+
+  const enablePush = async () => {
+    if (!pushSupport) {
+      setStatus({ ok: false, text: "Browser does not support push." });
+      return;
+    }
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      setNotificationsEnabled(permission === "granted");
+      if (permission !== "granted") {
+        setStatus({ ok: false, text: "Notifications not granted." });
+        return;
+      }
+      const registration = await navigator.serviceWorker.register("/sw.js");
+      const existing = await registration.pushManager.getSubscription();
+      const subscription =
+        existing ||
+        (await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(pushPublicKey)
+        }));
+      pushSubscriptionRef.current = subscription;
+      setPushEnabled(true);
+      setPushReady(true);
+    } catch (err) {
+      setStatus({ ok: false, text: err.message || "Push enable failed" });
     }
   };
 
@@ -241,10 +351,10 @@ export default function App() {
               </button>
             </div>
             {offerStatus && (
-              <div className={`status ${offerStatus.ok ? "ok" : "err"}`}>
-                {offerStatus.ok ? "OK" : "ERR"} {offerStatus.text}
-              </div>
-            )}
+            <div className={`status ${offerStatus.ok ? "ok" : "err"}`}>
+              {offerStatus.ok ? "OK" : "ERR"} {offerStatus.text}
+            </div>
+          )}
             {typeof window !== "undefined" && "Notification" in window && (
               <div className="status ok">
                 Browser notifications:{" "}
@@ -257,6 +367,17 @@ export default function App() {
                 {notificationPermission !== "granted" && (
                   <button type="button" onClick={requestNotifications} style={{ marginLeft: 8 }}>
                     Enable
+                  </button>
+                )}
+              </div>
+            )}
+            {pushSupport && (
+              <div className="status ok">
+                Push (closed browser) notifications: {pushEnabled && pushReady ? "ready" : "disabled"}
+                {"  "}
+                {!pushEnabled && pushPublicKey && (
+                  <button type="button" onClick={enablePush} style={{ marginLeft: 8 }}>
+                    Enable push
                   </button>
                 )}
               </div>
@@ -350,6 +471,22 @@ export default function App() {
               {demoStatus.ok ? "OK" : "ERR"} {demoStatus.text}
             </div>
           )}
+
+          <div className="section" style={{ marginTop: 20 }}>
+            <h3>Mock browser notification</h3>
+            <p className="note">
+              Click to schedule a local notification that fires after 10 seconds. Useful while Twilio
+              limits are hit.
+            </p>
+            <button type="button" onClick={scheduleMockNotification}>
+              Send mock notification in 10s
+            </button>
+            {mockStatus && (
+              <div className={`status ${mockStatus.ok ? "ok" : "err"}`}>
+                {mockStatus.ok ? "OK" : "ERR"} {mockStatus.text}
+              </div>
+            )}
+          </div>
         </div>
 
         <p className="note">
