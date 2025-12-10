@@ -530,6 +530,28 @@ app.post("/api/webhook/whatsapp", async (req, res) => {
     }
 
     if (!isSeller || !sellerBid || !reqId || !stored) {
+      if (isSeller) {
+        const hints = [];
+        if (!sellerBid) {
+          hints.push("Format za ponudu: /ponuda <ID> <cena i detalji>");
+        }
+        if (!reqId) {
+          hints.push("Dodaj ID zahteva posle /ponuda.");
+        } else if (!stored) {
+          hints.push(`Ne mogu da pronađem zahtev ID:${reqId}.`);
+        }
+        const helper = hints.join(" ");
+        if (helper) {
+          try {
+            await sendMessage({
+              to: from,
+              body: `${helper} Primer: /ponuda ${reqId || "<id>"} 50e deo + ugradnja`
+            });
+          } catch (err) {
+            console.error("Failed to guide seller on malformed bid:", err.message);
+          }
+        }
+      }
       return respondOk();
     }
 
