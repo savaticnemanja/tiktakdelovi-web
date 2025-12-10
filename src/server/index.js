@@ -27,6 +27,8 @@ const TWILIO_WHATSAPP_FROM = process.env.TWILIO_WHATSAPP_FROM || ""; // e.g. "wh
 const TWILIO_ORDER_TEMPLATE_SID =
   process.env.TWILIO_ORDER_TEMPLATE_SID || "HXc2504355df553798e7df16c0d6b999eb";
 const TWILIO_SELLER_TEMPLATE_SID = process.env.TWILIO_SELLER_TEMPLATE_SID || "";
+const TWILIO_BUYER_TEMPLATE_SID =
+  process.env.TWILIO_BUYER_TEMPLATE_SID || "HX8d6d1f3aef7c389578e36f7a25d45ad1";
 const OWNER_NUMBER = process.env.OWNER_NUMBER || ""; // who receives confirmed orders
 
 // Meta (WhatsApp Cloud API) vars (if using Meta)
@@ -133,7 +135,8 @@ const formatBidTemplate = (req) => {
         : bid.state === "denied"
         ? "[ODBIJENO] "
         : "";
-    return `${idx + 1}) ${statusLabel}Prodavac ${bid.seller}\n${bid.text}`;
+    const offerLabel = bid.offerId ? ` (Ponuda ID: ${bid.offerId})` : "";
+    return `${idx + 1}) ${statusLabel}Prodavac ${bid.seller}${offerLabel}\n${bid.text}`;
   });
 
   const instructions = [
@@ -145,8 +148,43 @@ const formatBidTemplate = (req) => {
   return [`Pregled ponuda za zahtev ID:${req.id}`, ...lines, instructions].join("\n");
 };
 
-const sendBidTemplateToBuyer = async (req) => {
+const sendBuyerOfferTemplate = async ({ request, bid, bidIndex }) => {
+  if (
+    PROVIDER !== "twilio" ||
+    !twilioClient ||
+    !TWILIO_BUYER_TEMPLATE_SID ||
+    !request?.customerNumber ||
+    !bid
+  ) {
+    return null;
+  }
+
+  const variables = {
+    offer_id: bid.offerId || `${request.id}-${(bidIndex ?? 0) + 1}`,
+    offer_price: `${bid.text} (prodavac: ${bid.seller})`
+  };
+
+  return sendMessage({
+    to: request.customerNumber,
+    template: { contentSid: TWILIO_BUYER_TEMPLATE_SID, variables }
+  });
+};
+
+const sendBidTemplateToBuyer = async (req, { latestBid, latestBidIndex } = {}) => {
   if (!req?.customerNumber) return;
+
+  if (latestBid) {
+    try {
+      await sendBuyerOfferTemplate({
+        request: req,
+        bid: latestBid,
+        bidIndex: latestBidIndex
+      });
+    } catch (err) {
+      console.error("Failed to send buyer template:", err.message);
+    }
+  }
+
   const template = formatBidTemplate(req);
   try {
     await sendMessage({ to: req.customerNumber, body: template });
@@ -466,7 +504,9 @@ app.post("/api/webhook/whatsapp", async (req, res) => {
       return respondOk();
     }
 
+    const bidIndex = stored.bids.length;
     const bid = {
+      offerId: `${reqId}-${bidIndex + 1}`,
       seller: from,
       text: sellerBid.offerText,
       createdAt: new Date().toISOString(),
@@ -475,7 +515,7 @@ app.post("/api/webhook/whatsapp", async (req, res) => {
     stored.bids.push(bid);
     requests.set(reqId, stored);
 
-    await sendBidTemplateToBuyer(stored);
+    await sendBidTemplateToBuyer(stored, { latestBid: bid, latestBidIndex: bidIndex });
 
     if (PROVIDER === "twilio") {
       const ack = `<Response><Message>Hvala! Ponuda zabeležena za ID:${reqId}</Message></Response>`;
