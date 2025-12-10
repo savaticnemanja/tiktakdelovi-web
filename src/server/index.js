@@ -29,6 +29,9 @@ const TWILIO_ORDER_TEMPLATE_SID =
 const TWILIO_SELLER_TEMPLATE_SID = process.env.TWILIO_SELLER_TEMPLATE_SID || "";
 const TWILIO_BUYER_TEMPLATE_SID =
   process.env.TWILIO_BUYER_TEMPLATE_SID || "HX8d6d1f3aef7c389578e36f7a25d45ad1";
+const TWILIO_CONTENT_LANGUAGE = process.env.TWILIO_CONTENT_LANGUAGE || "";
+const TWILIO_BUYER_TEMPLATE_NUMERIC_VARS =
+  (process.env.TWILIO_BUYER_TEMPLATE_NUMERIC_VARS || "").toLowerCase() === "true";
 const OWNER_NUMBER = process.env.OWNER_NUMBER || ""; // who receives confirmed orders
 
 // Meta (WhatsApp Cloud API) vars (if using Meta)
@@ -75,6 +78,7 @@ const sendMessage = async ({ to, body, template }) => {
       const twResponse = await twilioClient.messages.create({
         ...basePayload,
         contentSid: template.contentSid,
+        contentLanguage: template.contentLanguage || TWILIO_CONTENT_LANGUAGE || undefined,
         contentVariables: template.variables
           ? JSON.stringify(template.variables)
           : undefined
@@ -159,15 +163,40 @@ const sendBuyerOfferTemplate = async ({ request, bid, bidIndex }) => {
     return null;
   }
 
-  const variables = {
-    offer_id: bid.offerId || `${request.id}-${(bidIndex ?? 0) + 1}`,
-    offer_price: `${bid.text} (prodavac: ${bid.seller})`
-  };
+  const offerIdValue = bid.offerId || `${request.id}-${(bidIndex ?? 0) + 1}`;
+  const offerPriceValue = `${bid.text} (prodavac: ${bid.seller})`;
 
-  return sendMessage({
-    to: request.customerNumber,
-    template: { contentSid: TWILIO_BUYER_TEMPLATE_SID, variables }
-  });
+  // Some Twilio Content Templates expect numeric placeholders ({{1}}, {{2}})
+  const variables = TWILIO_BUYER_TEMPLATE_NUMERIC_VARS
+    ? { 1: offerIdValue, 2: offerPriceValue }
+    : { offer_id: offerIdValue, offer_price: offerPriceValue };
+
+  try {
+    return await sendMessage({
+      to: request.customerNumber,
+      template: { contentSid: TWILIO_BUYER_TEMPLATE_SID, variables }
+    });
+  } catch (err) {
+    const code = err?.code || err?.status || err?.statusCode;
+    const msg =
+      err?.response?.data?.message ||
+      err?.response?.data?.error?.message ||
+      err?.message ||
+      "Unknown Twilio error";
+    console.error("Failed to send buyer template; falling back to text:", code, msg);
+
+    const fallback = [
+      "Nova ponuda (fallback bez template-a)",
+      `Ponuda ID: ${variables.offer_id}`,
+      `Cena/detalji: ${variables.offer_price}`
+    ].join("\n");
+
+    // Fallback to plain text so the buyer still gets the data
+    return sendMessage({
+      to: request.customerNumber,
+      body: fallback
+    });
+  }
 };
 
 const sendBidTemplateToBuyer = async (req, { latestBid, latestBidIndex } = {}) => {
@@ -525,6 +554,55 @@ app.post("/api/webhook/whatsapp", async (req, res) => {
   } catch (err) {
     console.error("Webhook error:", err?.response?.data || err.message || err);
     return res.status(500).json({ error: err.message || "Webhook error" });
+  }
+});
+
+// Demo endpoint to send buyer template directly with custom data
+app.post("/api/demo/buyer-offer", async (req, res) => {
+  try {
+    const { to, offerId, offerPrice } = req.body || {};
+    if (PROVIDER !== "twilio") {
+      return res.status(400).json({ error: "Twilio provider required for this demo." });
+    }
+    if (!twilioClient || !TWILIO_WHATSAPP_FROM || !TWILIO_BUYER_TEMPLATE_SID) {
+      return res
+        .status(500)
+        .json({ error: "Twilio buyer template not configured (check SID, from, credentials)." });
+    }
+    if (!to || !offerId || !offerPrice) {
+      return res.status(400).json({ error: "to, offerId and offerPrice are required" });
+    }
+
+    const result = await sendMessage({
+      to,
+      template: {
+        contentSid: TWILIO_BUYER_TEMPLATE_SID,
+        variables: {
+          offer_id: offerId,
+          offer_price: offerPrice
+        }
+      }
+    });
+
+    return res.json({
+      ok: true,
+      provider: PROVIDER,
+      templateSid: TWILIO_BUYER_TEMPLATE_SID,
+      result
+    });
+  } catch (err) {
+    const twilioStatus = err?.status || err?.statusCode;
+    const twilioMessage =
+      err?.response?.data?.message ||
+      err?.response?.data?.error?.message ||
+      err?.message ||
+      "Unknown error";
+    console.error("Demo buyer-offer error:", err?.response?.data || err.message || err);
+    return res.status(twilioStatus || 500).json({
+      error: twilioMessage,
+      details: err?.response?.data || undefined,
+      status: twilioStatus || 500
+    });
   }
 });
 

@@ -1,6 +1,15 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const offerKey = (offer) => `${offer.seller}|${offer.text}`;
+const parseJson = async (res) => {
+  const text = await res.text();
+  if (!text) return {};
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error("Invalid JSON response");
+  }
+};
 
 export default function App() {
   const [name, setName] = useState("");
@@ -15,6 +24,18 @@ export default function App() {
   const [selectedOfferKey, setSelectedOfferKey] = useState(null);
   const [confirming, setConfirming] = useState(false);
   const [confirmStatus, setConfirmStatus] = useState(null);
+  const [notificationPermission, setNotificationPermission] = useState(
+    typeof window !== "undefined" && "Notification" in window ? Notification.permission : "denied"
+  );
+  const [notificationsEnabled, setNotificationsEnabled] = useState(
+    typeof window !== "undefined" && "Notification" in window ? Notification.permission === "granted" : false
+  );
+  const knownOffersRef = useRef(new Set());
+  const [demoTo, setDemoTo] = useState("");
+  const [demoOfferId, setDemoOfferId] = useState("1001");
+  const [demoOfferPrice, setDemoOfferPrice] = useState("50");
+  const [demoSending, setDemoSending] = useState(false);
+  const [demoStatus, setDemoStatus] = useState(null);
 
   const send = async (e) => {
     e.preventDefault();
@@ -22,6 +43,7 @@ export default function App() {
     setStatus(null);
     setOfferStatus(null);
     setConfirmStatus(null);
+    knownOffersRef.current = new Set();
 
     try {
       const res = await fetch("/api/request", {
@@ -34,7 +56,7 @@ export default function App() {
         })
       });
 
-      const data = await res.json();
+      const data = await parseJson(res);
       if (!res.ok) throw new Error(data?.error || "Unknown error");
       setRequestId(data.requestId);
       setOffers([]);
@@ -47,23 +69,55 @@ export default function App() {
     }
   };
 
-  const fetchOffers = async () => {
+  const processOffers = (data, { notify = false } = {}) => {
+    const bids = data.bids || [];
+    setOffers(bids);
+    if (data.selection) {
+      setSelectedOfferKey(offerKey({ seller: data.selection.seller, text: data.selection.offerText }));
+    }
+
+    const currentKeys = new Set(bids.map((o) => offerKey(o)));
+    if (
+      notify &&
+      notificationsEnabled &&
+      notificationPermission === "granted" &&
+      typeof window !== "undefined" &&
+      "Notification" in window
+    ) {
+      const known = knownOffersRef.current;
+      bids.forEach((offer, idx) => {
+        const key = offerKey(offer);
+        if (!known.has(key)) {
+          const title = `Nova ponuda #${idx + 1} za ID:${requestId}`;
+          const body = `${offer.text}\nProdavac: ${offer.seller}`;
+          try {
+            const notification = new Notification(title, { body });
+            notification.onclick = () => window.focus();
+          } catch (_) {
+            // ignore permission errors
+          }
+        }
+      });
+    }
+    knownOffersRef.current = currentKeys;
+  };
+
+  const fetchOffers = async ({ silent = false, notify = false } = {}) => {
     if (!requestId) return;
-    setLoadingOffers(true);
-    setOfferStatus(null);
+    if (!silent) setLoadingOffers(true);
+    if (!silent) setOfferStatus(null);
     try {
       const res = await fetch(`/api/offers/${requestId}`);
-      const data = await res.json();
+      const data = await parseJson(res);
       if (!res.ok) throw new Error(data?.error || "Unable to fetch offers");
-      setOffers(data.bids || []);
-      if (data.selection) {
-        setSelectedOfferKey(offerKey({ seller: data.selection.seller, text: data.selection.offerText }));
+      processOffers(data, { notify });
+      if (!silent) {
+        setOfferStatus({ ok: true, text: `Offers: ${data.bids?.length || 0}` });
       }
-      setOfferStatus({ ok: true, text: `Offers: ${data.bids?.length || 0}` });
     } catch (err) {
-      setOfferStatus({ ok: false, text: err.message });
+      if (!silent) setOfferStatus({ ok: false, text: err.message });
     } finally {
-      setLoadingOffers(false);
+      if (!silent) setLoadingOffers(false);
     }
   };
 
@@ -81,7 +135,7 @@ export default function App() {
           offerText: offer.text
         })
       });
-      const data = await res.json();
+      const data = await parseJson(res);
       if (!res.ok) throw new Error(data?.error || "Unable to confirm offer");
       setSelectedOfferKey(offerKey(offer));
       setConfirmStatus({ ok: true, text: "Order sent to owner." });
@@ -89,6 +143,50 @@ export default function App() {
       setConfirmStatus({ ok: false, text: err.message });
     } finally {
       setConfirming(false);
+    }
+  };
+
+  const requestNotifications = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    try {
+      const permission = await Notification.requestPermission();
+      setNotificationPermission(permission);
+      setNotificationsEnabled(permission === "granted");
+    } catch (_) {
+      setNotificationPermission("denied");
+      setNotificationsEnabled(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!requestId) return undefined;
+    const interval = setInterval(() => {
+      fetchOffers({ silent: true, notify: true });
+    }, 10000);
+    return () => clearInterval(interval);
+  }, [requestId, notificationsEnabled]);
+
+  const sendDemoTemplate = async (e) => {
+    e.preventDefault();
+    setDemoSending(true);
+    setDemoStatus(null);
+    try {
+      const res = await fetch("/api/demo/buyer-offer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: demoTo,
+          offerId: demoOfferId,
+          offerPrice: demoOfferPrice
+        })
+      });
+      const data = await parseJson(res);
+      if (!res.ok) throw new Error(data?.error || "Unable to send demo template");
+      setDemoStatus({ ok: true, text: "Template sent via Twilio." });
+    } catch (err) {
+      setDemoStatus({ ok: false, text: err.message });
+    } finally {
+      setDemoSending(false);
     }
   };
 
@@ -147,6 +245,22 @@ export default function App() {
                 {offerStatus.ok ? "OK" : "ERR"} {offerStatus.text}
               </div>
             )}
+            {typeof window !== "undefined" && "Notification" in window && (
+              <div className="status ok">
+                Browser notifications:{" "}
+                {notificationPermission === "granted"
+                  ? "enabled"
+                  : notificationPermission === "denied"
+                  ? "blocked"
+                  : "not granted"}
+                {"  "}
+                {notificationPermission !== "granted" && (
+                  <button type="button" onClick={requestNotifications} style={{ marginLeft: 8 }}>
+                    Enable
+                  </button>
+                )}
+              </div>
+            )}
             <ul className="offers">
               {offers.length === 0 && <li className="muted">No offers yet.</li>}
               {offers.map((offer, idx) => (
@@ -189,6 +303,54 @@ export default function App() {
             {status.ok ? "OK" : "ERR"} {status.text}
           </div>
         )}
+
+        <hr />
+
+        <div className="section">
+          <h2>Send demo buyer offer template</h2>
+          <p className="note">
+            This hits <code>/api/demo/buyer-offer</code> and sends the Twilio template with{" "}
+            <code>offer_id</code> and <code>offer_price</code> variables. Enter any test number
+            reachable by your Twilio WhatsApp sender.
+          </p>
+          <form onSubmit={sendDemoTemplate}>
+            <label>
+              Recipient number (e.g. +381612345678)
+              <input
+                value={demoTo}
+                onChange={(e) => setDemoTo(e.target.value)}
+                placeholder="+381..."
+                required
+              />
+            </label>
+            <label>
+              offer_id
+              <input
+                value={demoOfferId}
+                onChange={(e) => setDemoOfferId(e.target.value)}
+                placeholder="1001"
+                required
+              />
+            </label>
+            <label>
+              offer_price
+              <input
+                value={demoOfferPrice}
+                onChange={(e) => setDemoOfferPrice(e.target.value)}
+                placeholder="50"
+                required
+              />
+            </label>
+            <button type="submit" disabled={demoSending}>
+              {demoSending ? "Sending..." : "Send demo template"}
+            </button>
+          </form>
+          {demoStatus && (
+            <div className={`status ${demoStatus.ok ? "ok" : "err"}`}>
+              {demoStatus.ok ? "OK" : "ERR"} {demoStatus.text}
+            </div>
+          )}
+        </div>
 
         <p className="note">
           Prodavci dobijaju ID zahteva i šalju ponudu kao <code>/ponuda {'{id} {cena u EUR i opis}'}</code>.
