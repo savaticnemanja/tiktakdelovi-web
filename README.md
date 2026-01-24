@@ -11,7 +11,7 @@ React (Vite) frontend + Express backend in one project. The app sends a single W
 ## Env
 Create `.env` at repo root:
 ```
-# Meta WhatsApp Cloud API
+# Meta WhatsApp Cloud API 
 META_WHATSAPP_TOKEN=replace_me
 META_PHONE_NUMBER_ID=replace_me
 META_TEMPLATE_NAME=bid_request_to_seller
