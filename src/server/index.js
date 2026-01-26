@@ -43,6 +43,9 @@ const bidStoreTtlMs = Number.isFinite(BID_STORE_TTL_HOURS)
   ? BID_STORE_TTL_HOURS * 60 * 60 * 1000
   : 72 * 60 * 60 * 1000;
 
+const logsDir = path.join(__dirname, "..", "..", "logs");
+const webhookLogPath = path.join(logsDir, "webhook-logs.json");
+
 const normalizePhone = (value) => String(value || "").replace(/^\+/, "").trim();
 
 const sanitizeTemplateText = (value) =>
@@ -50,6 +53,27 @@ const sanitizeTemplateText = (value) =>
     .replace(/[\r\n\t]+/g, " ")
     .replace(/\s{2,}/g, " ")
     .trim();
+
+const appendWebhookLog = async (payload) => {
+  if (!fs.existsSync(logsDir)) {
+    fs.mkdirSync(logsDir, { recursive: true });
+  }
+  let entries = [];
+  try {
+    const raw = await fs.promises.readFile(webhookLogPath, "utf8");
+    const parsed = JSON.parse(raw);
+    entries = Array.isArray(parsed) ? parsed : [];
+  } catch (err) {
+    if (err.code !== "ENOENT") {
+      throw err;
+    }
+  }
+  entries.push(payload);
+  await fs.promises.writeFile(
+    webhookLogPath,
+    JSON.stringify(entries, null, 2),
+  );
+};
 
 
 const saveBidRequest = ({ bidId, bidMessage, customerNumber, name }) => {
@@ -296,6 +320,10 @@ app.get("/webhook", (req, res) => {
 
 app.post("/webhook", async (req, res) => {
   try {
+    await appendWebhookLog({
+      receivedAt: new Date().toISOString(),
+      body: req.body,
+    });
     const entries = Array.isArray(req.body?.entry) ? req.body.entry : [];
     for (const entry of entries) {
       const changes = Array.isArray(entry?.changes) ? entry.changes : [];
@@ -348,6 +376,10 @@ app.post("/webhook", async (req, res) => {
 app.get("/api/health", (req, res) =>
   res.json({ ok: true, provider: PROVIDER }),
 );
+
+if (process.env.NODE_ENV !== "production") {
+  app.use("/logs", express.static(logsDir));
+}
 
 // Serve frontend build
 const distPath = path.join(__dirname, "..", "..", "dist");
