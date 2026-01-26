@@ -1,6 +1,6 @@
 # WhatsApp Notification MVP (Single package)
 
-React (Vite) frontend + Express backend in one project. The app broadcasts buyer requests to configured seller WhatsApp numbers and forwards tagged seller replies back to the buyer. The server serves the built frontend in production; during dev, Vite runs separately with API proxy.
+React (Vite) frontend + Express backend in one project. The app sends a single WhatsApp message (from the form) to all configured seller numbers via the Meta Cloud API. The server serves the built frontend in production; during dev, Vite runs separately with API proxy.
 
 ## Scripts
 - `npm install` — install all deps
@@ -11,21 +11,16 @@ React (Vite) frontend + Express backend in one project. The app broadcasts buyer
 ## Env
 Create `.env` at repo root:
 ```
-# choose: meta | twilio
-PROVIDER=meta
-
-# Twilio (if PROVIDER=twilio)
-TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-TWILIO_AUTH_TOKEN=your_token
-TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
-TWILIO_ORDER_TEMPLATE_SID=HXc2504355df553798e7df16c0d6b999eb
-# Optional: template used when broadcasting new requests to sellers (expects two placeholders {{1}} and {{2}})
-TWILIO_SELLER_TEMPLATE_SID=
-OWNER_NUMBER=+15551239999   # receives confirmed orders
-
-# Meta (if PROVIDER=meta)
+# Meta WhatsApp Cloud API
 META_WHATSAPP_TOKEN=replace_me
 META_PHONE_NUMBER_ID=replace_me
+META_TEMPLATE_NAME=bid_request_to_seller
+META_TEMPLATE_LANGUAGE=sr
+META_TEMPLATE_OFFER_NAME=bid_offer_to_buyer
+META_TEMPLATE_OWNER_NAME=bid_offer_to_owner
+META_WEBHOOK_VERIFY_TOKEN=replace_me
+OWNER_NUMBER=+15551230099
+BID_STORE_TTL_HOURS=72
 
 # Comma-separated seller phone numbers (E.164)
 SELLER_NUMBERS=+15551230001,+15551230002
@@ -54,20 +49,6 @@ Compose reads `.env`, builds via Dockerfile, and exposes http://localhost:${HOST
 
 ## Endpoints
 - `GET /api/health`
-- `POST /api/request` with `{ name, customerNumber, message }` (broadcast to sellers; returns `requestId`). When `PROVIDER=twilio` and `TWILIO_SELLER_TEMPLATE_SID` is set, seller broadcasts use that template with two variables: `{{1}}` = `Novi zahtev od {name} ({customerNumber}), ID:{id}` and `{{2}}` = `Odgovori sa: /ponuda {id} <cena u EUR i detalji>`.
-- `GET /api/offers/:id` to retrieve stored bids
-- `POST /api/confirm` with `{ requestId, seller, offerText }` to forward the selected bid to `OWNER_NUMBER`
-- `POST /api/webhook/whatsapp` inbound webhook (configure provider to POST here; sellers must reply with `REQ:<id>` in message)
-- `POST /api/notify` legacy single-send; when `PROVIDER=twilio` and `date` + `time` are provided, it sends the `notifications_order_update_template` Quick Reply template (Confirm / Reschedule buttons) using `TWILIO_ORDER_TEMPLATE_SID`
-
-### WhatsApp tok (sve poruke na srpskom)
-- ID zahteva je prost inkrement (1001, 1002, ...).
-- Kada kreiraš zahtev, prodavci dobijaju poruku: `Novi zahtev ... ID:<id> ... Odgovori sa: /ponuda <id> <cena u EUR i detalji>`.
-- Ponuda prodavca stiže kao `/ponuda {id} {cena u eur + opis}` i automatski se vezuje za zahtev.
-- Kupac dobija šablon sa svim ponudama u WhatsApp-u. Svaka ponuda ima redni broj.
-- Kupac odgovara `POTVRDI <broj ponude> za ID:<id>` da prihvati ili `ODBIJ <broj ponude> za ID:<id>` da odbije.
-- Kada kupac potvrdi, izabrana ponuda se prosleđuje na `OWNER_NUMBER`. Šablon se ponovo šalje posle svake akcije.
-
-## Twilio WhatsApp sandbox
-- Each seller number must join your sandbox once using the join code shown in the Twilio Console.
-- Set the sandbox "WHEN A MESSAGE COMES IN" URL to `https://<your-host>/api/webhook/whatsapp` so seller bids are captured (this replaces the default "you said..." message).
+- `POST /api/request` with `{ name, customerNumber, bidId, bidMessage }` (broadcasts the configured Meta template to sellers)
+- `GET /webhook` Meta verification endpoint (uses `META_WEBHOOK_VERIFY_TOKEN`)
+- `POST /webhook` Meta inbound messages; expects seller replies in `BID_ID PRICE` format and sends offer templates to buyer + owner
