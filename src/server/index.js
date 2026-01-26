@@ -31,6 +31,7 @@ const META_TEMPLATE_OWNER_NAME =
 const META_WEBHOOK_VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN || "";
 const OWNER_NUMBER = process.env.OWNER_NUMBER || "";
 const BID_STORE_TTL_HOURS = Number(process.env.BID_STORE_TTL_HOURS || "72");
+const BID_ID_START = Number(process.env.BID_ID_START || "10001");
 const LOGS_PUBLIC = process.env.LOGS_PUBLIC === "true";
 
 // Sellers to broadcast to
@@ -43,6 +44,7 @@ const bidStore = new Map();
 const bidStoreTtlMs = Number.isFinite(BID_STORE_TTL_HOURS)
   ? BID_STORE_TTL_HOURS * 60 * 60 * 1000
   : 72 * 60 * 60 * 1000;
+let nextBidId = Number.isFinite(BID_ID_START) ? BID_ID_START : 10001;
 
 const logsDir = path.join(__dirname, "..", "..", "logs");
 const webhookLogPath = path.join(logsDir, "webhook-logs.json");
@@ -246,10 +248,10 @@ const parseOfferMessage = (text) => {
 
 app.post("/api/request", async (req, res) => {
   try {
-    const { name, customerNumber, bidId, bidMessage } = req.body || {};
-    if (!name || !customerNumber || !bidId || !bidMessage) {
+    const { name, customerNumber, bidMessage } = req.body || {};
+    if (!name || !customerNumber || !bidMessage) {
       return res.status(400).json({
-        error: "name, customerNumber, bidId and bidMessage are required",
+        error: "name, customerNumber and bidMessage are required",
       });
     }
     if (!SELLER_NUMBERS.length) {
@@ -259,7 +261,7 @@ app.post("/api/request", async (req, res) => {
     }
 
     const savedBid = saveBidRequest({
-      bidId,
+      bidId: String(nextBidId++),
       bidMessage,
       customerNumber,
       name,

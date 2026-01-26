@@ -3,7 +3,6 @@ import React, { useState } from "react";
 export default function App() {
   const [name, setName] = useState("Nemanja");
   const [customerNumber, setCustomerNumber] = useState("+381652290662"); // e.g. +1234567890
-  const [bidId, setBidId] = useState("BID-0001");
   const [bidMessage, setBidMessage] = useState("Test bid request");
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState(null);
@@ -20,7 +19,6 @@ export default function App() {
         body: JSON.stringify({
           name,
           customerNumber,
-          bidId,
           bidMessage
         })
       });
@@ -62,16 +60,6 @@ export default function App() {
               value={customerNumber}
               onChange={(e) => setCustomerNumber(e.target.value)}
               placeholder="+1555..."
-              required
-            />
-          </label>
-
-          <label>
-            Bid ID
-            <input
-              value={bidId}
-              onChange={(e) => setBidId(e.target.value)}
-              placeholder="BID-12345"
               required
             />
           </label>
