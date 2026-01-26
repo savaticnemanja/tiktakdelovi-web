@@ -195,7 +195,7 @@ const sendOfferToBuyer = async ({ to, bidId, bidDetails, bidOffer }) => {
   }
   return sendTemplateMessage({
     to,
-    templateName: META_TEMPLATE_OFFER_NAME,
+    templateName: META_TEMPLATE_OFFER_NAME, 
     language: META_TEMPLATE_LANGUAGE,
     components: [
       {
