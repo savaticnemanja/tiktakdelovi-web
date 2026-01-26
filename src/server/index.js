@@ -11,6 +11,16 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Preloaded scraped model options
+let scrapedModels = {};
+try {
+  const modelsPath = path.join(__dirname, "..", "client", "data", "models.json");
+  const raw = fs.readFileSync(modelsPath, "utf8");
+  scrapedModels = JSON.parse(raw);
+} catch (err) {
+  console.warn("models.json not found or unreadable; will rely on live fetch.", err?.message || err);
+}
+
 const app = express();
 app.use(cors());
 app.use(
@@ -38,8 +48,24 @@ app.use("/webhook", (err, req, res, next) => {
   return next(err);
 });
 
+// Models API: serve from scraped cache only (no live fetch)
+app.get("/api/models", async (req, res) => {
+  const brand = String(req.query.brand || "").trim();
+  if (!brand) {
+    return res.status(400).json({ error: "brand is required" });
+  }
+
+  if (scrapedModels && scrapedModels[brand]) {
+    return res.json({ ok: true, options: scrapedModels[brand] });
+  }
+
+  return res
+    .status(404)
+    .json({ error: "Models not found in cache for this brand", options: [] });
+});
+
 // Configuration via .env
-const PROVIDER = "meta";
+const PROVIDER = process.env.PROVIDER || "meta";
 
 // Meta (WhatsApp Cloud API) vars (if using Meta)
 const META_WHATSAPP_TOKEN = process.env.META_WHATSAPP_TOKEN || "";
@@ -109,11 +135,22 @@ const appendWebhookLog = (payload) => appendJsonLog(webhookLogPath, payload);
 const appendReplyLog = (payload) => appendJsonLog(replyLogPath, payload);
 
 
-const saveBidRequest = ({ bidId, bidMessage, customerNumber, name }) => {
+const saveBidRequest = ({
+  bidId,
+  bidMessage,
+  customerNumber,
+  name,
+  make,
+  model,
+  year,
+}) => {
   const cleanedBidId = sanitizeTemplateText(bidId);
   const cleanedBidMessage = sanitizeTemplateText(bidMessage);
   const cleanedCustomerNumber = normalizePhone(customerNumber);
   const cleanedName = sanitizeTemplateText(name);
+  const cleanedMake = sanitizeTemplateText(make);
+  const cleanedModel = sanitizeTemplateText(model);
+  const cleanedYear = sanitizeTemplateText(year);
   if (!cleanedBidId || !cleanedBidMessage || !cleanedCustomerNumber) {
     throw new Error("bidId, bidMessage and customerNumber are required.");
   }
@@ -122,6 +159,9 @@ const saveBidRequest = ({ bidId, bidMessage, customerNumber, name }) => {
     bidMessage: cleanedBidMessage,
     customerNumber: cleanedCustomerNumber,
     name: cleanedName,
+    make: cleanedMake,
+    model: cleanedModel,
+    year: cleanedYear,
     createdAt: Date.now(),
   });
   return bidStore.get(cleanedBidId);
@@ -175,9 +215,19 @@ const sendTemplateMessage = async ({
   return { data: metaResp.data };
 };
 
-const sendBidRequestToSeller = async ({ to, bidId, bidMessage }) => {
+const sendBidRequestToSeller = async ({
+  to,
+  bidId,
+  bidMessage,
+  make,
+  model,
+  year,
+}) => {
   const sanitizedBidId = sanitizeTemplateText(bidId);
   const sanitizedBidMessage = sanitizeTemplateText(bidMessage);
+  const sanitizedMake = sanitizeTemplateText(make);
+  const sanitizedModel = sanitizeTemplateText(model);
+  const sanitizedYear = sanitizeTemplateText(year);
   if (!sanitizedBidId || !sanitizedBidMessage) {
     throw new Error("bidId and bidMessage are required.");
   }
@@ -192,7 +242,16 @@ const sendBidRequestToSeller = async ({ to, bidId, bidMessage }) => {
       },
       {
         type: "body",
-        parameters: [{ type: "text", parameter_name: "bid_message", text: sanitizedBidMessage }],
+        parameters: [
+          { type: "text", parameter_name: "make", text: sanitizedMake || "-" },
+          { type: "text", parameter_name: "model", text: sanitizedModel || "-" },
+          { type: "text", parameter_name: "year", text: sanitizedYear || "-" },
+          {
+            type: "text",
+            parameter_name: "bid_message",
+            text: sanitizedBidMessage,
+          },
+        ],
       },
     ],
   });
@@ -295,7 +354,7 @@ const parseOfferMessage = (text) => {
 
 app.post("/api/request", async (req, res) => {
   try {
-    const { name, customerNumber, bidMessage } = req.body || {};
+    const { name, customerNumber, bidMessage, make, model, year } = req.body || {};
     if (!name || !customerNumber || !bidMessage) {
       return res.status(400).json({
         error: "name, customerNumber and bidMessage are required",
@@ -312,6 +371,9 @@ app.post("/api/request", async (req, res) => {
       bidMessage,
       customerNumber,
       name,
+      make,
+      model,
+      year,
     });
 
     const results = [];
@@ -321,6 +383,9 @@ app.post("/api/request", async (req, res) => {
           to: seller,
           bidId: savedBid.bidId,
           bidMessage: savedBid.bidMessage,
+          make: savedBid.make,
+          model: savedBid.model,
+          year: savedBid.year,
         });
         results.push({ seller, ok: true, result });
       } catch (err) {
