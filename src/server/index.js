@@ -313,6 +313,15 @@ app.post("/api/request", async (req, res) => {
 });
 
 app.get("/webhook", (req, res) => {
+  appendWebhookLog({
+    receivedAt: new Date().toISOString(),
+    event: "webhook_verification",
+    method: req.method,
+    query: req.query ?? null,
+    headers: req.headers ?? null,
+  }).catch((err) => {
+    console.error("Webhook verification log failed:", err?.message || err);
+  });
   const mode = req.query["hub.mode"];
   const token = req.query["hub.verify_token"];
   const challenge = req.query["hub.challenge"];
@@ -326,6 +335,9 @@ app.post("/webhook", async (req, res) => {
   try {
     await appendWebhookLog({
       receivedAt: new Date().toISOString(),
+      event: "webhook_received",
+      method: req.method,
+      headers: req.headers ?? null,
       body: req.body,
     });
     const entries = Array.isArray(req.body?.entry) ? req.body.entry : [];
