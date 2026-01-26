@@ -31,6 +31,7 @@ const META_TEMPLATE_OWNER_NAME =
 const META_WEBHOOK_VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN || "";
 const OWNER_NUMBER = process.env.OWNER_NUMBER || "";
 const BID_STORE_TTL_HOURS = Number(process.env.BID_STORE_TTL_HOURS || "72");
+const LOGS_PUBLIC = process.env.LOGS_PUBLIC === "true";
 
 // Sellers to broadcast to
 const SELLER_NUMBERS = (process.env.SELLER_NUMBERS || "")
@@ -377,7 +378,7 @@ app.get("/api/health", (req, res) =>
   res.json({ ok: true, provider: PROVIDER }),
 );
 
-if (process.env.NODE_ENV !== "production") {
+if (process.env.NODE_ENV !== "production" || LOGS_PUBLIC) {
   app.use("/logs", express.static(logsDir));
 }
 
