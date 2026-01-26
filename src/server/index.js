@@ -13,7 +13,30 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(
+  express.json({
+    verify: (req, res, buf) => {
+      req.rawBody = buf?.toString("utf8");
+    },
+  }),
+);
+
+app.use("/webhook", (err, req, res, next) => {
+  if (err && err.type === "entity.parse.failed") {
+    appendWebhookLog({
+      receivedAt: new Date().toISOString(),
+      event: "webhook_parse_error",
+      method: req.method,
+      headers: req.headers ?? null,
+      rawBody: req.rawBody ?? null,
+      error: err.message,
+    }).catch((logErr) => {
+      console.error("Webhook parse error log failed:", logErr?.message || logErr);
+    });
+    return res.sendStatus(400);
+  }
+  return next(err);
+});
 
 // Configuration via .env
 const PROVIDER = "meta";
@@ -351,17 +374,49 @@ app.post("/webhook", async (req, res) => {
           const textBody = message?.text?.body;
           const from = message?.from;
           if (!textBody || !from) {
+            await appendWebhookLog({
+              receivedAt: new Date().toISOString(),
+              event: "message_skipped_missing_fields",
+              messageId: message?.id ?? null,
+              from: from ?? null,
+              textBody: textBody ?? null,
+            });
             continue;
           }
           const parsed = parseOfferMessage(textBody);
           if (!parsed) {
+            await appendWebhookLog({
+              receivedAt: new Date().toISOString(),
+              event: "message_skipped_unmatched_format",
+              messageId: message?.id ?? null,
+              from,
+              textBody,
+            });
             continue;
           }
           const bid = getBidRequest(parsed.bidId);
           if (!bid) {
             console.warn("Webhook offer ignored; bid not found:", parsed.bidId);
+            await appendWebhookLog({
+              receivedAt: new Date().toISOString(),
+              event: "message_skipped_bid_not_found",
+              messageId: message?.id ?? null,
+              from,
+              textBody,
+              bidId: parsed.bidId,
+              bidOffer: parsed.bidOffer,
+            });
             continue;
           }
+          await appendWebhookLog({
+            receivedAt: new Date().toISOString(),
+            event: "message_processed_offer",
+            messageId: message?.id ?? null,
+            from,
+            textBody,
+            bidId: parsed.bidId,
+            bidOffer: parsed.bidOffer,
+          });
           await appendReplyLog({
             receivedAt: new Date().toISOString(),
             bidId: parsed.bidId,
