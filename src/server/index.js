@@ -118,7 +118,7 @@ const sendTemplateMessage = async ({ to, templateName, language, components }) =
   if (!templateName) {
     throw new Error("Meta template name missing.");
   }
-  const url = `https://graph.facebook.com/v22.0/${META_PHONE_NUMBER_ID}/messages`;
+  const url = `https://graph.facebook.com/v24.0/${META_PHONE_NUMBER_ID}/messages`;
   const payload = {
     messaging_product: "whatsapp",
     to: normalizePhone(to),
