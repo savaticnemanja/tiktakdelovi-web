@@ -205,9 +205,9 @@ const sendOfferToBuyer = async ({ to, bidId, bidDetails, bidOffer }) => {
       {
         type: "body",
         parameters: [
-          { type: "text", text: sanitizedBidId },
-          { type: "text", text: sanitizedBidDetails },
-          { type: "text", text: sanitizedBidOffer },
+          { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+          { type: "text", parameter_name: "bid_details", text: sanitizedBidDetails },
+          { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
         ],
       },
     ],
