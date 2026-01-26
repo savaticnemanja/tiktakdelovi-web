@@ -52,6 +52,8 @@ const META_TEMPLATE_OFFER_NAME =
 const META_TEMPLATE_OWNER_NAME =
   process.env.META_TEMPLATE_OWNER_NAME || "bid_offer_to_owner";
 const META_WEBHOOK_VERIFY_TOKEN = process.env.META_WEBHOOK_VERIFY_TOKEN || "";
+const META_FLOW_SCREEN = process.env.META_FLOW_SCREEN || "Podaci za dostavu";
+const META_FLOW_BUTTON_INDEX = process.env.META_FLOW_BUTTON_INDEX || "0";
 const OWNER_NUMBER = process.env.OWNER_NUMBER || "";
 const BID_STORE_TTL_HOURS = Number(process.env.BID_STORE_TTL_HOURS || "72");
 const BID_ID_START = Number(process.env.BID_ID_START || "10001");
@@ -219,6 +221,17 @@ const sendOfferToBuyer = async ({ to, bidId, bidDetails, bidOffer }) => {
           { type: "text", parameter_name: "bid_id_body", text: sanitizedBidId },
           { type: "text", parameter_name: "bid_details", text: sanitizedBidDetails },
           { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
+        ],
+      },
+      {
+        type: "button",
+        sub_type: "flow",
+        index: META_FLOW_BUTTON_INDEX,
+        parameters: [
+          {
+            type: "payload",
+            payload: JSON.stringify({ screen: META_FLOW_SCREEN }),
+          },
         ],
       },
     ],
