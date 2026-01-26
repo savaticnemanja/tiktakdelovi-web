@@ -74,6 +74,10 @@ const webhookLogPath = path.join(logsDir, "webhook-logs.json");
 const replyLogPath = path.join(logsDir, "reply-logs.json");
 
 const normalizePhone = (value) => String(value || "").replace(/^\+/, "").trim();
+const withPlus = (value) => {
+  const cleaned = normalizePhone(value);
+  return cleaned ? `+${cleaned}` : "";
+};
 
 const sanitizeTemplateText = (value) =>
   String(value ?? "")
@@ -134,7 +138,13 @@ const getBidRequest = (bidId) => {
   return bid;
 };
 
-const sendTemplateMessage = async ({ to, templateName, language, components }) => {
+const sendTemplateMessage = async ({
+  to,
+  templateName,
+  language,
+  components,
+  keepPlus = false,
+}) => {
   if (!META_WHATSAPP_TOKEN || !META_PHONE_NUMBER_ID) {
     throw new Error("Meta Cloud API not configured.");
   }
@@ -144,7 +154,7 @@ const sendTemplateMessage = async ({ to, templateName, language, components }) =
   const url = `https://graph.facebook.com/v24.0/${META_PHONE_NUMBER_ID}/messages`;
   const payload = {
     messaging_product: "whatsapp",
-    to: normalizePhone(to),
+    to: keepPlus ? withPlus(to) : normalizePhone(to),
     type: "template",
     template: {
       name: templateName,
@@ -197,6 +207,7 @@ const sendOfferToBuyer = async ({ to, bidId, bidDetails, bidOffer }) => {
     to,
     templateName: META_TEMPLATE_OFFER_NAME, 
     language: META_TEMPLATE_LANGUAGE,
+    keepPlus: true,
     components: [
       {
         type: "header",
@@ -205,7 +216,7 @@ const sendOfferToBuyer = async ({ to, bidId, bidDetails, bidOffer }) => {
       {
         type: "body",
         parameters: [
-          { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+          { type: "text", parameter_name: "bid_id_body", text: sanitizedBidId },
           { type: "text", parameter_name: "bid_details", text: sanitizedBidDetails },
           { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
         ],
