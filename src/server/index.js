@@ -200,7 +200,7 @@ const sendOfferToBuyer = async ({ to, bidId, bidDetails, bidOffer }) => {
     components: [
       {
         type: "header",
-        parameters: [{ type: "text", text: sanitizedBidId }],
+        parameters: [{ type: "text", parameter_name: "bid_id", text: sanitizedBidId }],
       },
       {
         type: "body",
