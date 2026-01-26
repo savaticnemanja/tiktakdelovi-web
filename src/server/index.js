@@ -46,6 +46,7 @@ const bidStoreTtlMs = Number.isFinite(BID_STORE_TTL_HOURS)
 
 const logsDir = path.join(__dirname, "..", "..", "logs");
 const webhookLogPath = path.join(logsDir, "webhook-logs.json");
+const replyLogPath = path.join(logsDir, "reply-logs.json");
 
 const normalizePhone = (value) => String(value || "").replace(/^\+/, "").trim();
 
@@ -55,13 +56,13 @@ const sanitizeTemplateText = (value) =>
     .replace(/\s{2,}/g, " ")
     .trim();
 
-const appendWebhookLog = async (payload) => {
+const appendJsonLog = async (logPath, payload) => {
   if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir, { recursive: true });
   }
   let entries = [];
   try {
-    const raw = await fs.promises.readFile(webhookLogPath, "utf8");
+    const raw = await fs.promises.readFile(logPath, "utf8");
     const parsed = JSON.parse(raw);
     entries = Array.isArray(parsed) ? parsed : [];
   } catch (err) {
@@ -70,11 +71,11 @@ const appendWebhookLog = async (payload) => {
     }
   }
   entries.push(payload);
-  await fs.promises.writeFile(
-    webhookLogPath,
-    JSON.stringify(entries, null, 2),
-  );
+  await fs.promises.writeFile(logPath, JSON.stringify(entries, null, 2));
 };
+
+const appendWebhookLog = (payload) => appendJsonLog(webhookLogPath, payload);
+const appendReplyLog = (payload) => appendJsonLog(replyLogPath, payload);
 
 
 const saveBidRequest = ({ bidId, bidMessage, customerNumber, name }) => {
@@ -347,6 +348,16 @@ app.post("/webhook", async (req, res) => {
             console.warn("Webhook offer ignored; bid not found:", parsed.bidId);
             continue;
           }
+          await appendReplyLog({
+            receivedAt: new Date().toISOString(),
+            bidId: parsed.bidId,
+            bidOffer: parsed.bidOffer,
+            sellerNumber: from,
+            customerNumber: bid.customerNumber,
+            bidMessage: bid.bidMessage,
+            messageId: message?.id ?? null,
+            messageTimestamp: message?.timestamp ?? null,
+          });
           await sendOfferToBuyer({
             to: bid.customerNumber,
             bidId: bid.bidId,
