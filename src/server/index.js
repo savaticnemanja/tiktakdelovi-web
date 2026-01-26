@@ -427,19 +427,55 @@ app.post("/webhook", async (req, res) => {
             messageId: message?.id ?? null,
             messageTimestamp: message?.timestamp ?? null,
           });
-          await sendOfferToBuyer({
-            to: bid.customerNumber,
-            bidId: bid.bidId,
-            bidDetails: bid.bidMessage,
-            bidOffer: parsed.bidOffer,
-          });
-          await sendOfferToOwner({
-            to: OWNER_NUMBER,
-            bidId: bid.bidId,
-            bidDetails: bid.bidMessage,
-            bidOffer: parsed.bidOffer,
-            sellerNumber: from,
-          });
+          try {
+            await sendOfferToBuyer({
+              to: bid.customerNumber,
+              bidId: bid.bidId,
+              bidDetails: bid.bidMessage,
+              bidOffer: parsed.bidOffer,
+            });
+            await appendWebhookLog({
+              receivedAt: new Date().toISOString(),
+              event: "buyer_offer_sent",
+              bidId: parsed.bidId,
+              bidOffer: parsed.bidOffer,
+              to: bid.customerNumber,
+            });
+          } catch (err) {
+            await appendWebhookLog({
+              receivedAt: new Date().toISOString(),
+              event: "buyer_offer_failed",
+              bidId: parsed.bidId,
+              bidOffer: parsed.bidOffer,
+              to: bid.customerNumber,
+              error: err?.response?.data || err.message || String(err),
+            });
+          }
+          try {
+            await sendOfferToOwner({
+              to: OWNER_NUMBER,
+              bidId: bid.bidId,
+              bidDetails: bid.bidMessage,
+              bidOffer: parsed.bidOffer,
+              sellerNumber: from,
+            });
+            await appendWebhookLog({
+              receivedAt: new Date().toISOString(),
+              event: "owner_offer_sent",
+              bidId: parsed.bidId,
+              bidOffer: parsed.bidOffer,
+              to: OWNER_NUMBER,
+            });
+          } catch (err) {
+            await appendWebhookLog({
+              receivedAt: new Date().toISOString(),
+              event: "owner_offer_failed",
+              bidId: parsed.bidId,
+              bidOffer: parsed.bidOffer,
+              to: OWNER_NUMBER,
+              error: err?.response?.data || err.message || String(err),
+            });
+          }
         }
       }
     }
