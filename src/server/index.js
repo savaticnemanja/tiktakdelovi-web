@@ -96,6 +96,8 @@ const bidStoreTtlMs = Number.isFinite(BID_STORE_TTL_HOURS)
   ? BID_STORE_TTL_HOURS * 60 * 60 * 1000
   : 72 * 60 * 60 * 1000;
 let nextBidId = Number.isFinite(BID_ID_START) ? BID_ID_START : 10001;
+// Map Meta messageId -> bidId so we can correlate flow replies to a bid
+const messageToBid = new Map();
 
 const logsDir = path.join(__dirname, "..", "..", "logs");
 const webhookLogPath = path.join(logsDir, "webhook-logs.json");
@@ -241,7 +243,7 @@ const sendBidRequestToSeller = async ({
   if (!sanitizedBidId || !sanitizedBidMessage) {
     throw new Error("bidId and bidMessage are required.");
   }
-  return sendTemplateMessage({
+  const metaResp = await sendTemplateMessage({
     to,
     templateName: META_TEMPLATE_NAME,
     language: META_TEMPLATE_LANGUAGE,
@@ -278,6 +280,12 @@ const sendBidRequestToSeller = async ({
       },
     ],
   });
+  // Track outbound message id for correlation with flow replies
+  const sentId = metaResp?.data?.messages?.[0]?.id;
+  if (sentId) {
+    messageToBid.set(sentId, sanitizedBidId);
+  }
+  return metaResp;
 };
 
 const sendOfferToBuyer = async ({ to, bidId, bidDetails, bidOffer }) => {
@@ -510,6 +518,51 @@ app.post("/webhook", async (req, res) => {
             } catch (err) {
               // keep raw string if JSON.parse fails
             }
+            // Correlate to bid via the original message id (context.id)
+            const repliedToId = message?.context?.id;
+            const bidIdFromMap = repliedToId ? messageToBid.get(repliedToId) : null;
+            const bid = bidIdFromMap ? getBidRequest(bidIdFromMap) : null;
+
+            // Map flow field ids to domain fields
+            const price =
+              responseData?.screen_0_Cena_0 ||
+              responseData?.price ||
+              null;
+            const note =
+              responseData?.screen_0_Napomena_1 ||
+              responseData?.note ||
+              "";
+            const needsMoreInfoRaw =
+              responseData?.screen_0_Potrebne_dodatne_informacije_2 || "";
+            const needsMoreInfo =
+              String(needsMoreInfoRaw || "").toLowerCase().includes("da") ||
+              needsMoreInfoRaw === "1" ||
+              needsMoreInfoRaw === "yes";
+
+            // If we can tie back to a bid, notify buyer with the seller's offer
+            if (bid && bid.customerNumber && price) {
+              const offerText = needsMoreInfo
+                ? `${price} (seller requests more info)`
+                : price;
+              try {
+                await sendOfferToBuyer({
+                  to: bid.customerNumber,
+                  bidId: bid.bidId,
+                  bidDetails: note || bid.bidMessage,
+                  bidOffer: offerText,
+                });
+              } catch (err) {
+                await appendWebhookLog({
+                  receivedAt: new Date().toISOString(),
+                  event: "flow_response_forward_failed",
+                  messageId: message?.id ?? null,
+                  from,
+                  bidId: bid.bidId,
+                  error: err?.response?.data || err.message || String(err),
+                });
+              }
+            }
+
             await appendWebhookLog({
               receivedAt: new Date().toISOString(),
               event: "flow_response_received",
@@ -518,6 +571,8 @@ app.post("/webhook", async (req, res) => {
               flowName: nfm.name ?? null,
               responseJson: responseJsonRaw ?? null,
               responseData,
+              bidId: bid?.bidId ?? null,
+              correlatedMessageId: repliedToId ?? null,
             });
             continue;
           }
