@@ -14,7 +14,7 @@ Create `.env` at repo root:
 # Meta WhatsApp Cloud API
 META_WHATSAPP_TOKEN=replace_me
 META_PHONE_NUMBER_ID=replace_me
-META_TEMPLATE_NAME=bid_request_to_seller
+META_TEMPLATE_NAME=seller_inquiry
 META_TEMPLATE_LANGUAGE=sr
 META_TEMPLATE_OFFER_NAME=bid_offer_to_buyer
 META_TEMPLATE_OWNER_NAME=bid_offer_to_owner
