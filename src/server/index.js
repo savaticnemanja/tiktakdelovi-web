@@ -71,7 +71,7 @@ const PROVIDER = process.env.PROVIDER || "meta";
 const META_WHATSAPP_TOKEN = process.env.META_WHATSAPP_TOKEN || "";
 const META_PHONE_NUMBER_ID = process.env.META_PHONE_NUMBER_ID || ""; // numeric id for your phone number in the Meta Cloud API
 const META_TEMPLATE_NAME =
-  process.env.META_TEMPLATE_NAME || "bid_request_to_seller";
+  process.env.META_TEMPLATE_NAME || "seller_inquiry";
 const META_TEMPLATE_LANGUAGE = process.env.META_TEMPLATE_LANGUAGE || "en_US";
 const META_TEMPLATE_OFFER_NAME =
   process.env.META_TEMPLATE_OFFER_NAME || "bid_offer_to_buyer";
@@ -143,6 +143,8 @@ const saveBidRequest = ({
   make,
   model,
   year,
+  fuelType,
+  chassis,
 }) => {
   const cleanedBidId = sanitizeTemplateText(bidId);
   const cleanedBidMessage = sanitizeTemplateText(bidMessage);
@@ -151,6 +153,8 @@ const saveBidRequest = ({
   const cleanedMake = sanitizeTemplateText(make);
   const cleanedModel = sanitizeTemplateText(model);
   const cleanedYear = sanitizeTemplateText(year);
+  const cleanedFuelType = sanitizeTemplateText(fuelType);
+  const cleanedChassis = sanitizeTemplateText(chassis);
   if (!cleanedBidId || !cleanedBidMessage || !cleanedCustomerNumber) {
     throw new Error("bidId, bidMessage and customerNumber are required.");
   }
@@ -162,6 +166,8 @@ const saveBidRequest = ({
     make: cleanedMake,
     model: cleanedModel,
     year: cleanedYear,
+    fuelType: cleanedFuelType,
+    chassis: cleanedChassis,
     createdAt: Date.now(),
   });
   return bidStore.get(cleanedBidId);
@@ -222,12 +228,16 @@ const sendBidRequestToSeller = async ({
   make,
   model,
   year,
+  fuelType,
+  chassis,
 }) => {
   const sanitizedBidId = sanitizeTemplateText(bidId);
   const sanitizedBidMessage = sanitizeTemplateText(bidMessage);
   const sanitizedMake = sanitizeTemplateText(make);
   const sanitizedModel = sanitizeTemplateText(model);
   const sanitizedYear = sanitizeTemplateText(year);
+  const sanitizedFuel = sanitizeTemplateText(fuelType);
+  const sanitizedChassis = sanitizeTemplateText(chassis);
   if (!sanitizedBidId || !sanitizedBidMessage) {
     throw new Error("bidId and bidMessage are required.");
   }
@@ -246,10 +256,23 @@ const sendBidRequestToSeller = async ({
           { type: "text", parameter_name: "make", text: sanitizedMake || "-" },
           { type: "text", parameter_name: "model", text: sanitizedModel || "-" },
           { type: "text", parameter_name: "year", text: sanitizedYear || "-" },
+          { type: "text", parameter_name: "fuel_type", text: sanitizedFuel || "-" },
+          { type: "text", parameter_name: "chassis", text: sanitizedChassis || "-" },
           {
             type: "text",
             parameter_name: "bid_message",
             text: sanitizedBidMessage,
+          },
+        ],
+      },
+      {
+        type: "button",
+        sub_type: "flow",
+        index: META_FLOW_BUTTON_INDEX,
+        parameters: [
+          {
+            type: "payload",
+            payload: JSON.stringify({ screen: META_FLOW_SCREEN }),
           },
         ],
       },
@@ -354,7 +377,16 @@ const parseOfferMessage = (text) => {
 
 app.post("/api/request", async (req, res) => {
   try {
-    const { name, customerNumber, bidMessage, make, model, year } = req.body || {};
+    const {
+      name,
+      customerNumber,
+      bidMessage,
+      make,
+      model,
+      year,
+      fuelType,
+      chassis,
+    } = req.body || {};
     if (!name || !customerNumber || !bidMessage) {
       return res.status(400).json({
         error: "name, customerNumber and bidMessage are required",
@@ -374,6 +406,8 @@ app.post("/api/request", async (req, res) => {
       make,
       model,
       year,
+      fuelType,
+      chassis,
     });
 
     const results = [];
@@ -386,6 +420,8 @@ app.post("/api/request", async (req, res) => {
           make: savedBid.make,
           model: savedBid.model,
           year: savedBid.year,
+          fuelType: savedBid.fuelType,
+          chassis: savedBid.chassis,
         });
         results.push({ seller, ok: true, result });
       } catch (err) {

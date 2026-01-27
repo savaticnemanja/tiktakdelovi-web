@@ -17,6 +17,8 @@ export default function App() {
   const [make, setMake] = useState("");
   const [model, setModel] = useState("");
   const [year, setYear] = useState("");
+  const [fuelType, setFuelType] = useState("");
+  const [chassis, setChassis] = useState("");
   const [models, setModels] = useState([]);
   const [modelsLoading, setModelsLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -37,7 +39,9 @@ export default function App() {
           bidMessage,
           make,
           model,
-          year
+          year,
+          fuelType,
+          chassis
         })
       });
 
@@ -167,6 +171,29 @@ export default function App() {
                 </option>
               ))}
             </select>
+          </label>
+
+          <label>
+            Fuel type
+            <select value={fuelType} onChange={(e) => setFuelType(e.target.value)} required>
+              <option value="">Select fuel type</option>
+              <option value="Petrol">Petrol</option>
+              <option value="Diesel">Diesel</option>
+              <option value="Hybrid">Hybrid</option>
+              <option value="Electric">Electric</option>
+              <option value="LPG">LPG</option>
+              <option value="CNG">CNG</option>
+              <option value="Other">Other</option>
+            </select>
+          </label>
+
+          <label>
+            Chassis / VIN
+            <input
+              value={chassis}
+              onChange={(e) => setChassis(e.target.value)}
+              placeholder="Optional VIN or chassis number"
+            />
           </label>
 
           <label>
