@@ -498,6 +498,30 @@ app.post("/webhook", async (req, res) => {
         for (const message of messages) {
           const textBody = message?.text?.body;
           const from = message?.from;
+          const interactiveType = message?.interactive?.type;
+
+          // Flow completion responses (nfm_reply) arrive as interactive messages
+          if (interactiveType === "nfm_reply") {
+            const nfm = message.interactive?.nfm_reply || {};
+            const responseJsonRaw = nfm.response_json;
+            let responseData = null;
+            try {
+              responseData = responseJsonRaw ? JSON.parse(responseJsonRaw) : null;
+            } catch (err) {
+              // keep raw string if JSON.parse fails
+            }
+            await appendWebhookLog({
+              receivedAt: new Date().toISOString(),
+              event: "flow_response_received",
+              messageId: message?.id ?? null,
+              from,
+              flowName: nfm.name ?? null,
+              responseJson: responseJsonRaw ?? null,
+              responseData,
+            });
+            continue;
+          }
+
           if (!textBody || !from) {
             await appendWebhookLog({
               receivedAt: new Date().toISOString(),
