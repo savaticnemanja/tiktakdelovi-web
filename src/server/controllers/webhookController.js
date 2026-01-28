@@ -72,18 +72,20 @@ export const createWebhookController = ({
                 const buyerName = pickValue(responseData, [
                   "buyer_name",
                   "name",
+                  "screen_0_Ime_i_prezime_0",
                   "screen_0_Ime_0",
                   "screen_0_Ime_1",
                 ]);
                 const buyerAddress = pickValue(responseData, [
                   "buyer_address",
                   "address",
-                  "screen_0_Adresa_0",
                   "screen_0_Adresa_1",
+                  "screen_0_Adresa_0",
                 ]);
                 const buyerCity = pickValue(responseData, [
                   "buyer_city",
                   "city",
+                  "screen_0_Grad_2",
                   "screen_0_Grad_0",
                   "screen_0_Grad_1",
                 ]);
@@ -91,6 +93,7 @@ export const createWebhookController = ({
                   "buyer_postal_code",
                   "postal_code",
                   "zip",
+                  "screen_0_Potanski_broj_3",
                   "screen_0_Postanski_broj_0",
                   "screen_0_Postanski_broj_1",
                 ]);
@@ -98,6 +101,7 @@ export const createWebhookController = ({
                   "buyer_contact",
                   "contact",
                   "phone",
+                  "screen_0_Kontakt_telefon_4",
                   "screen_0_Kontakt_0",
                   "screen_0_Kontakt_1",
                 ]);
