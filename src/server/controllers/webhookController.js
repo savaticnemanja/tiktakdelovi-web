@@ -85,6 +85,8 @@ export const createWebhookController = ({
                 bidId: bid.bidId,
                 bidDetails: bid.bidMessage,
                 bidOffer: parsed.bidOffer,
+                // TODO
+                bidNote: "TEST - NIJE IMPLEMENTIRANO U WHATSAPPU",
               });
             } catch (err) {
               console.error(

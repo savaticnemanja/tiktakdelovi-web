@@ -136,10 +136,11 @@ export const createMetaClient = ({
     return metaResp;
   };
 
-  const sendOfferToBuyer = async ({ to, bidId, bidDetails, bidOffer }) => {
+  const sendOfferToBuyer = async ({ to, bidId, bidDetails, bidOffer, bidNote }) => {
     const sanitizedBidId = sanitize(bidId);
     const sanitizedBidDetails = sanitize(bidDetails);
     const sanitizedBidOffer = sanitize(bidOffer);
+    const sanitizedBidNote = sanitize(bidNote);
     if (!sanitizedBidId || !sanitizedBidDetails || !sanitizedBidOffer) {
       throw new Error("bidId, bidDetails and bidOffer are required.");
     }
@@ -175,6 +176,11 @@ export const createMetaClient = ({
               type: "text",
               parameter_name: "bid_offer",
               text: sanitizedBidOffer,
+            },
+            {
+              type: "text",
+              parameter_name: "bid_note",
+              text: sanitizedBidNote || "-",
             },
           ],
         },

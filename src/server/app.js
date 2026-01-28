@@ -11,11 +11,16 @@ import { createWebhookController } from "./controllers/webhookController.js";
 import { createHealthController } from "./controllers/healthController.js";
 import { createApiRouter } from "./routes/api.js";
 import { createWebhookRouter } from "./routes/webhook.js";
+import { createRequestLogger } from "./services/requestLogger.js";
 
 export const createApp = () => {
   const app = express();
   app.use(cors());
   app.use(express.json());
+
+  const logsDir = new URL("../../logs", import.meta.url).pathname;
+  const { apiLogger, webhookLogger, getApiLogs, getWebhookLogs } =
+    createRequestLogger({ logsDir });
 
   const bidStore = createBidStore({
     ttlMs: ENV.BID_STORE_TTL_MS,
@@ -51,11 +56,14 @@ export const createApp = () => {
     verifyToken: ENV.META_WEBHOOK_VERIFICATION_TOKEN,
   });
 
-  app.use("/api", createApiRouter({
+  app.use("/api", apiLogger, createApiRouter({
     requestController,
     healthController,
   }));
-  app.use("/webhook", createWebhookRouter({ webhookController }));
+  app.use("/webhook", webhookLogger, createWebhookRouter({ webhookController }));
+
+  app.get("/logs/api", getApiLogs);
+  app.get("/logs/webhook", getWebhookLogs);
 
   const distPath = new URL("../../dist", import.meta.url).pathname;
   if (fs.existsSync(distPath)) {
