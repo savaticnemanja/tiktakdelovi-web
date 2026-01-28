@@ -1,0 +1,21 @@
+export const MAKES = [
+  { value: "honda", label: "Honda" },
+];
+
+export const MODELS = {
+  honda: [
+    { value: "accord", label: "Accord" },
+    { value: "civic", label: "Civic" },
+    { value: "concerto", label: "Concerto" },
+    { value: "cr-v", label: "CR-V" },
+    { value: "cr-z", label: "CR-Z" },
+    { value: "crx", label: "CRX" },
+    { value: "fr-v", label: "FR-V" },
+    { value: "hr-v", label: "HR-V" },
+    { value: "insight", label: "Insight" },
+    { value: "jazz", label: "Jazz" },
+    { value: "legend", label: "Legend" },
+    { value: "zr-v", label: "ZR-V" },
+    { value: "ostalo", label: "Ostalo" },
+  ],
+};

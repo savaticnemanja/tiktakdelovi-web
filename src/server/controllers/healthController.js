@@ -1,3 +1,3 @@
-export const createHealthController = ({ provider }) => {
-  return (req, res) => res.json({ ok: true, provider });
+export const createHealthController = () => {
+  return (req, res) => res.json({ ok: true });
 };

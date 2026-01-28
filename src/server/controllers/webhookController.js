@@ -32,41 +32,28 @@ export const createWebhookController = ({
             const interactiveType = message?.interactive?.type;
 
             if (interactiveType === "nfm_reply") {
-              const nfm = message.interactive?.nfm_reply || {};
-              const responseJsonRaw = nfm.response_json;
-              let responseData = null;
-              try {
-                responseData = responseJsonRaw ? JSON.parse(responseJsonRaw) : null;
-              } catch (err) {
-                // keep raw string if JSON.parse fails
-              }
               const repliedToId = message?.context?.id;
               const bidIdFromMap = repliedToId
                 ? messageToBid.get(repliedToId)
                 : null;
               const bid = bidIdFromMap ? bidStore.getBidRequest(bidIdFromMap) : null;
 
-              const price =
-                responseData?.screen_0_Cena_0 || responseData?.price || null;
-              const note =
-                responseData?.screen_0_Napomena_1 || responseData?.note || "";
-              const needsMoreInfoRaw =
-                responseData?.screen_0_Potrebne_dodatne_informacije_2 || "";
-              const needsMoreInfo =
-                String(needsMoreInfoRaw || "").toLowerCase().includes("da") ||
-                needsMoreInfoRaw === "1" ||
-                needsMoreInfoRaw === "yes";
+              const responseJsonRaw = message?.interactive?.nfm_reply?.response_json;
+              let responseData = null;
+              try {
+                responseData = responseJsonRaw ? JSON.parse(responseJsonRaw) : null;
+              } catch (err) {
+                responseData = null;
+              }
+              const price = responseData?.screen_0_Cena_0 || responseData?.price;
 
               if (bid && bid.customerNumber && price) {
-                const offerText = needsMoreInfo
-                  ? `${price} (seller requests more info)`
-                  : price;
                 try {
                   await metaClient.sendOfferToBuyer({
                     to: bid.customerNumber,
                     bidId: bid.bidId,
-                    bidDetails: note || bid.bidMessage,
-                    bidOffer: offerText,
+                    bidDetails: bid.bidMessage,
+                    bidOffer: String(price),
                   });
                 } catch (err) {
                   console.error(
@@ -89,7 +76,6 @@ export const createWebhookController = ({
 
             const bid = bidStore.getBidRequest(parsed.bidId);
             if (!bid) {
-              console.warn("Webhook offer ignored; bid not found:", parsed.bidId);
               continue;
             }
 

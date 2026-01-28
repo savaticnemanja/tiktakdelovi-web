@@ -5,21 +5,18 @@ import { sanitizeTemplateText } from "../utils/sanitize.js";
 export const createMetaClient = ({
   token,
   phoneNumberId,
-  templateName,
+  templateSellerInquiry,
+  templateSellerInquiryFlowTitle,
+  templateBuyerOffer,
+  templateBuyerOfferFlowTitle,
+  templateOwnerNotification,
   templateLanguage,
-  templateOfferName,
-  templateOwnerName,
-  flowScreen,
-  flowButtonIndex,
   messageToBid,
 }) => {
-  const sendTemplateMessage = async ({
-    to,
-    templateName: template,
-    language,
-    components,
-    keepPlus = false,
-  }) => {
+  const sanitize = (value) => sanitizeTemplateText(value);
+  const sanitizeOrDash = (value) => sanitize(value) || "-";
+
+  const sendTemplate = async ({ to, template, components, keepPlus = false }) => {
     if (!token || !phoneNumberId) {
       throw new Error("Meta Cloud API not configured.");
     }
@@ -34,7 +31,7 @@ export const createMetaClient = ({
       template: {
         name: template,
         language: {
-          code: language,
+          code: templateLanguage,
         },
         components,
       },
@@ -48,7 +45,7 @@ export const createMetaClient = ({
     return { data: metaResp.data };
   };
 
-  const sendBidRequestToSeller = async ({
+  const sendInquiryToSeller = async ({
     to,
     bidId,
     bidMessage,
@@ -58,20 +55,19 @@ export const createMetaClient = ({
     fuelType,
     chassis,
   }) => {
-    const sanitizedBidId = sanitizeTemplateText(bidId);
-    const sanitizedBidMessage = sanitizeTemplateText(bidMessage);
-    const sanitizedMake = sanitizeTemplateText(make);
-    const sanitizedModel = sanitizeTemplateText(model);
-    const sanitizedYear = sanitizeTemplateText(year);
-    const sanitizedFuel = sanitizeTemplateText(fuelType);
-    const sanitizedChassis = sanitizeTemplateText(chassis);
+    const sanitizedBidId = sanitize(bidId);
+    const sanitizedBidMessage = sanitize(bidMessage);
+    const sanitizedMake = sanitizeOrDash(make);
+    const sanitizedModel = sanitizeOrDash(model);
+    const sanitizedYear = sanitizeOrDash(year);
+    const sanitizedFuel = sanitizeOrDash(fuelType);
+    const sanitizedChassis = sanitizeOrDash(chassis);
     if (!sanitizedBidId || !sanitizedBidMessage) {
       throw new Error("bidId and bidMessage are required.");
     }
-    const metaResp = await sendTemplateMessage({
+    const metaResp = await sendTemplate({
       to,
-      templateName,
-      language: templateLanguage,
+      template: templateSellerInquiry,
       components: [
         {
           type: "header",
@@ -89,27 +85,27 @@ export const createMetaClient = ({
             {
               type: "text",
               parameter_name: "make",
-              text: sanitizedMake || "-",
+              text: sanitizedMake,
             },
             {
               type: "text",
               parameter_name: "model",
-              text: sanitizedModel || "-",
+              text: sanitizedModel,
             },
             {
               type: "text",
               parameter_name: "year",
-              text: sanitizedYear || "-",
+              text: sanitizedYear,
             },
             {
               type: "text",
               parameter_name: "fuel_type",
-              text: sanitizedFuel || "-",
+              text: sanitizedFuel,
             },
             {
               type: "text",
               parameter_name: "chassis",
-              text: sanitizedChassis || "-",
+              text: sanitizedChassis,
             },
             {
               type: "text",
@@ -121,11 +117,11 @@ export const createMetaClient = ({
         {
           type: "button",
           sub_type: "flow",
-          index: flowButtonIndex,
+          index: "0",
           parameters: [
             {
               type: "payload",
-              payload: JSON.stringify({ screen: flowScreen }),
+              payload: JSON.stringify({ screen: templateSellerInquiryFlowTitle }),
             },
           ],
         },
@@ -141,16 +137,15 @@ export const createMetaClient = ({
   };
 
   const sendOfferToBuyer = async ({ to, bidId, bidDetails, bidOffer }) => {
-    const sanitizedBidId = sanitizeTemplateText(bidId);
-    const sanitizedBidDetails = sanitizeTemplateText(bidDetails);
-    const sanitizedBidOffer = sanitizeTemplateText(bidOffer);
+    const sanitizedBidId = sanitize(bidId);
+    const sanitizedBidDetails = sanitize(bidDetails);
+    const sanitizedBidOffer = sanitize(bidOffer);
     if (!sanitizedBidId || !sanitizedBidDetails || !sanitizedBidOffer) {
       throw new Error("bidId, bidDetails and bidOffer are required.");
     }
-    return sendTemplateMessage({
+    return sendTemplate({
       to,
-      templateName: templateOfferName,
-      language: templateLanguage,
+      template: templateBuyerOffer,
       keepPlus: true,
       components: [
         {
@@ -186,11 +181,11 @@ export const createMetaClient = ({
         {
           type: "button",
           sub_type: "flow",
-          index: flowButtonIndex,
+          index: "0",
           parameters: [
             {
               type: "payload",
-              payload: JSON.stringify({ screen: flowScreen }),
+              payload: JSON.stringify({ screen: templateBuyerOfferFlowTitle }),
             },
           ],
         },
@@ -205,13 +200,13 @@ export const createMetaClient = ({
     bidOffer,
     sellerNumber,
   }) => {
-    if (!templateOwnerName || !to) {
+    if (!templateOwnerNotification || !to) {
       return null;
     }
-    const sanitizedBidId = sanitizeTemplateText(bidId);
-    const sanitizedBidDetails = sanitizeTemplateText(bidDetails);
-    const sanitizedBidOffer = sanitizeTemplateText(bidOffer);
-    const sanitizedSellerNumber = sanitizeTemplateText(sellerNumber);
+    const sanitizedBidId = sanitize(bidId);
+    const sanitizedBidDetails = sanitize(bidDetails);
+    const sanitizedBidOffer = sanitize(bidOffer);
+    const sanitizedSellerNumber = sanitize(sellerNumber);
     if (
       !sanitizedBidId ||
       !sanitizedBidDetails ||
@@ -222,10 +217,9 @@ export const createMetaClient = ({
         "bidId, bidDetails, bidOffer and sellerNumber are required.",
       );
     }
-    return sendTemplateMessage({
+    return sendTemplate({
       to,
-      templateName: templateOwnerName,
-      language: templateLanguage,
+      template: templateOwnerNotification,
       components: [
         {
           type: "header",
@@ -245,8 +239,7 @@ export const createMetaClient = ({
   };
 
   return {
-    sendTemplateMessage,
-    sendBidRequestToSeller,
+    sendInquiryToSeller,
     sendOfferToBuyer,
     sendOfferToOwner,
   };

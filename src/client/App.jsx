@@ -1,35 +1,11 @@
 import React, { useEffect, useState } from "react";
-import MAKES from "./data/makes";
-import MODELS from "./data/models.json";
-
-const YEARS = [
-  2027, 2026, 2025, 2024, 2023, 2022, 2021, 2020, 2019, 2018, 2017, 2016, 2015,
-  2014, 2013, 2012, 2011, 2010, 2009, 2008, 2007, 2006, 2005, 2004, 2003, 2002,
-  2001, 2000, 1999, 1998, 1997, 1996, 1995, 1994, 1993, 1992, 1991, 1990, 1989,
-  1988, 1987, 1986, 1985, 1984, 1983, 1982, 1981, 1980, 1979, 1978, 1977, 1976,
-  1975, 1970, 1965, 1960, 1955, 1950, 1945, 1940, 1935, 1930
-];
-const FUEL_TYPES = [
-  "Benzin",
-  "Dizel",
-  "Hibrid",
-  "Električni",
-  "LPG",
-  "CNG",
-  "Ostalo"
-];
-const CHASSIS_TYPES = [
-  "Limuzina",
-  "Hečbek",
-  "Karavan",
-  "Kupe",
-  "Kabriolet/Roadster",
-  "Monovolumen (MiniVan)",
-  "Džip (SUV)",
-  "Pickup"
-];
-
-const firstValue = (items) => (items || [])[0]?.value ?? (items || [])[0] ?? "";
+import { MAKES, MODELS } from "./data/vehicleData";
+import {
+  YEARS,
+  FUEL_TYPES,
+  CHASSIS_TYPES,
+  firstValue,
+} from "./data/formOptions";
 
 // Safe JSON parse helper for fetch responses
 const parseJson = async (res) => {

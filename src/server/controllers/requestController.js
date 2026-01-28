@@ -43,7 +43,7 @@ export const createRequestController = ({
       const results = [];
       for (const seller of sellerNumbers) {
         try {
-          const result = await metaClient.sendBidRequestToSeller({
+          const result = await metaClient.sendInquiryToSeller({
             to: seller,
             bidId: savedBid.bidId,
             bidMessage: savedBid.bidMessage,
