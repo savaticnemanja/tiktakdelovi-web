@@ -40,6 +40,14 @@ export const createBidStore = ({ ttlMs, idStart }) => {
       year: cleanedYear,
       fuelType: cleanedFuelType,
       chassis: cleanedChassis,
+      sellerContact: "",
+      bidOffer: "",
+      bidNote: "",
+      buyerName: "",
+      buyerAddress: "",
+      buyerCity: "",
+      buyerPostalCode: "",
+      buyerContact: "",
       createdAt: Date.now(),
     });
     return store.get(cleanedBidId);
@@ -61,5 +69,14 @@ export const createBidStore = ({ ttlMs, idStart }) => {
   return {
     saveBidRequest,
     getBidRequest,
+    updateBid: (bidId, updates) => {
+      const bid = getBidRequest(bidId);
+      if (!bid) {
+        return null;
+      }
+      const next = { ...bid, ...updates };
+      store.set(next.bidId, next);
+      return next;
+    },
   };
 };

@@ -1,4 +1,5 @@
 import { parseOfferMessage } from "../utils/parseOffer.js";
+import { normalizePhone } from "../utils/phone.js";
 
 export const createWebhookController = ({
   bidStore,
@@ -19,6 +20,22 @@ export const createWebhookController = ({
 
   const handleWebhook = async (req, res) => {
     try {
+      const pickValue = (data, keys) =>
+        keys
+          .map((key) => data?.[key])
+          .find((value) => value !== undefined && value !== null && String(value).trim() !== "");
+
+      const getMapEntry = (messageId) => {
+        const entry = messageId ? messageToBid.get(messageId) : null;
+        if (!entry) {
+          return null;
+        }
+        if (typeof entry === "string") {
+          return { bidId: entry, kind: "seller_inquiry" };
+        }
+        return entry;
+      };
+
       const entries = Array.isArray(req.body?.entry) ? req.body.entry : [];
       for (const entry of entries) {
         const changes = Array.isArray(entry?.changes) ? entry.changes : [];
@@ -33,10 +50,10 @@ export const createWebhookController = ({
 
             if (interactiveType === "nfm_reply") {
               const repliedToId = message?.context?.id;
-              const bidIdFromMap = repliedToId
-                ? messageToBid.get(repliedToId)
+              const mapEntry = getMapEntry(repliedToId);
+              const bid = mapEntry?.bidId
+                ? bidStore.getBidRequest(mapEntry.bidId)
                 : null;
-              const bid = bidIdFromMap ? bidStore.getBidRequest(bidIdFromMap) : null;
 
               const responseJsonRaw = message?.interactive?.nfm_reply?.response_json;
               let responseData = null;
@@ -51,20 +68,98 @@ export const createWebhookController = ({
                 responseData?.note ||
                 "";
 
-              if (bid && bid.customerNumber && price) {
-                try {
-                  await metaClient.sendOfferToBuyer({
-                    to: bid.customerNumber,
-                    bidId: bid.bidId,
-                    bidDetails: bid.bidMessage,
-                    bidOffer: String(price),
-                    bidNote: String(note || "-"),
-                  });
-                } catch (err) {
-                  console.error(
-                    "Flow response forward failed:",
-                    err?.response?.data || err.message || String(err),
-                  );
+              if (mapEntry?.kind === "buyer_offer" && bid) {
+                const buyerName = pickValue(responseData, [
+                  "buyer_name",
+                  "name",
+                  "screen_0_Ime_0",
+                  "screen_0_Ime_1",
+                ]);
+                const buyerAddress = pickValue(responseData, [
+                  "buyer_address",
+                  "address",
+                  "screen_0_Adresa_0",
+                  "screen_0_Adresa_1",
+                ]);
+                const buyerCity = pickValue(responseData, [
+                  "buyer_city",
+                  "city",
+                  "screen_0_Grad_0",
+                  "screen_0_Grad_1",
+                ]);
+                const buyerPostalCode = pickValue(responseData, [
+                  "buyer_postal_code",
+                  "postal_code",
+                  "zip",
+                  "screen_0_Postanski_broj_0",
+                  "screen_0_Postanski_broj_1",
+                ]);
+                const buyerContact = pickValue(responseData, [
+                  "buyer_contact",
+                  "contact",
+                  "phone",
+                  "screen_0_Kontakt_0",
+                  "screen_0_Kontakt_1",
+                ]);
+
+                const updated = bidStore.updateBid(bid.bidId, {
+                  buyerName,
+                  buyerAddress,
+                  buyerCity,
+                  buyerPostalCode,
+                  buyerContact,
+                });
+                if (updated?.sellerContact && updated?.bidOffer) {
+                  try {
+                    await metaClient.sendOfferToOwner({
+                      to: ownerNumber,
+                      bidId: updated.bidId,
+                      make: updated.make,
+                      model: updated.model,
+                      year: updated.year,
+                      fuelType: updated.fuelType,
+                      chassis: updated.chassis,
+                      buyerName: updated.buyerName,
+                      buyerAddress: updated.buyerAddress,
+                      buyerCity: updated.buyerCity,
+                      buyerPostalCode: updated.buyerPostalCode,
+                      buyerContact: updated.buyerContact,
+                      bidMessage: updated.bidMessage,
+                      sellerNumber: updated.sellerContact,
+                      bidOffer: updated.bidOffer,
+                    });
+                  } catch (err) {
+                    console.error(
+                      "Owner notification failed:",
+                      err?.response?.data || err.message || String(err),
+                    );
+                  }
+                }
+                continue;
+              }
+
+              if (mapEntry?.kind === "seller_inquiry") {
+                const sellerContact = normalizePhone(from);
+                const updated = bidStore.updateBid(mapEntry.bidId, {
+                  sellerContact,
+                  bidOffer: price ? String(price) : "",
+                  bidNote: note ? String(note) : "",
+                });
+                if (updated && updated.customerNumber && price) {
+                  try {
+                    await metaClient.sendOfferToBuyer({
+                      to: updated.customerNumber,
+                      bidId: updated.bidId,
+                      bidDetails: updated.bidMessage,
+                      bidOffer: String(price),
+                      bidNote: String(note || "-"),
+                    });
+                  } catch (err) {
+                    console.error(
+                      "Flow response forward failed:",
+                      err?.response?.data || err.message || String(err),
+                    );
+                  }
                 }
               }
               continue;
@@ -84,33 +179,21 @@ export const createWebhookController = ({
               continue;
             }
 
+            const updatedBid = bidStore.updateBid(parsed.bidId, {
+              sellerContact: normalizePhone(from),
+              bidOffer: parsed.bidOffer,
+            });
+
             try {
               await metaClient.sendOfferToBuyer({
-                to: bid.customerNumber,
-                bidId: bid.bidId,
-                bidDetails: bid.bidMessage,
+                to: updatedBid?.customerNumber || bid.customerNumber,
+                bidId: updatedBid?.bidId || bid.bidId,
+                bidDetails: updatedBid?.bidMessage || bid.bidMessage,
                 bidOffer: parsed.bidOffer,
-                // TODO
-                bidNote: "TEST - NIJE IMPLEMENTIRANO U WHATSAPPU",
               });
             } catch (err) {
               console.error(
                 "Buyer offer failed:",
-                err?.response?.data || err.message || String(err),
-              );
-            }
-
-            try {
-              await metaClient.sendOfferToOwner({
-                to: ownerNumber,
-                bidId: bid.bidId,
-                bidDetails: bid.bidMessage,
-                bidOffer: parsed.bidOffer,
-                sellerNumber: from,
-              });
-            } catch (err) {
-              console.error(
-                "Owner offer failed:",
                 err?.response?.data || err.message || String(err),
               );
             }

@@ -143,13 +143,19 @@ export const createMetaClient = ({
 
     const sentId = metaResp?.data?.messages?.[0]?.id;
     if (sentId && messageToBid) {
-      messageToBid.set(sentId, sanitizedBidId);
+      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "seller_inquiry" });
     }
 
     return metaResp;
   };
 
-  const sendOfferToBuyer = async ({ to, bidId, bidDetails, bidOffer, bidNote }) => {
+  const sendOfferToBuyer = async ({
+    to,
+    bidId,
+    bidDetails,
+    bidOffer,
+    bidNote,
+  }) => {
     const sanitizedBidId = sanitize(bidId);
     const sanitizedBidDetails = sanitize(bidDetails);
     const sanitizedBidOffer = sanitize(bidOffer);
@@ -157,7 +163,7 @@ export const createMetaClient = ({
     if (!sanitizedBidId || !sanitizedBidDetails || !sanitizedBidOffer) {
       throw new Error("bidId, bidDetails and bidOffer are required.");
     }
-    return sendTemplate({
+    const metaResp = await sendTemplate({
       to,
       template: templateBuyerOffer,
       keepPlus: true,
@@ -210,12 +216,27 @@ export const createMetaClient = ({
         },
       ],
     });
+    const sentId = metaResp?.data?.messages?.[0]?.id;
+    if (sentId && messageToBid) {
+      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "buyer_offer" });
+    }
+    return metaResp;
   };
 
   const sendOfferToOwner = async ({
     to,
     bidId,
-    bidDetails,
+    make,
+    model,
+    year,
+    fuelType,
+    chassis,
+    buyerName,
+    buyerAddress,
+    buyerCity,
+    buyerPostalCode,
+    buyerContact,
+    bidMessage,
     bidOffer,
     sellerNumber,
   }) => {
@@ -223,17 +244,26 @@ export const createMetaClient = ({
       return null;
     }
     const sanitizedBidId = sanitize(bidId);
-    const sanitizedBidDetails = sanitize(bidDetails);
+    const sanitizedMake = sanitizeOrDash(make);
+    const sanitizedModel = sanitizeOrDash(model);
+    const sanitizedYear = sanitizeOrDash(year);
+    const sanitizedFuel = sanitizeOrDash(fuelType);
+    const sanitizedChassis = sanitizeOrDash(chassis);
+    const sanitizedBuyerName = sanitizeOrDash(buyerName);
+    const sanitizedBuyerAddress = sanitizeOrDash(buyerAddress);
+    const sanitizedBuyerCity = sanitizeOrDash(buyerCity);
+    const sanitizedBuyerPostalCode = sanitizeOrDash(buyerPostalCode);
+    const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
+    const sanitizedBidMessage = sanitizeOrDash(bidMessage);
     const sanitizedBidOffer = sanitize(bidOffer);
     const sanitizedSellerNumber = sanitize(sellerNumber);
     if (
       !sanitizedBidId ||
-      !sanitizedBidDetails ||
       !sanitizedBidOffer ||
       !sanitizedSellerNumber
     ) {
       throw new Error(
-        "bidId, bidDetails, bidOffer and sellerNumber are required.",
+        "bidId, bidOffer and sellerNumber are required.",
       );
     }
     return sendTemplate({
@@ -242,15 +272,42 @@ export const createMetaClient = ({
       components: [
         {
           type: "header",
-          parameters: [{ type: "text", text: sanitizedBidId }],
+          parameters: [
+            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+          ],
         },
         {
           type: "body",
           parameters: [
-            { type: "text", text: sanitizedBidId },
-            { type: "text", text: sanitizedBidDetails },
-            { type: "text", text: sanitizedBidOffer },
-            { type: "text", text: sanitizedSellerNumber },
+            { type: "text", parameter_name: "make", text: sanitizedMake },
+            { type: "text", parameter_name: "model", text: sanitizedModel },
+            { type: "text", parameter_name: "year", text: sanitizedYear },
+            { type: "text", parameter_name: "fuel_type", text: sanitizedFuel },
+            { type: "text", parameter_name: "chassis", text: sanitizedChassis },
+            { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
+            {
+              type: "text",
+              parameter_name: "buyer_address",
+              text: sanitizedBuyerAddress,
+            },
+            { type: "text", parameter_name: "buyer_city", text: sanitizedBuyerCity },
+            {
+              type: "text",
+              parameter_name: "buyer_postal_code",
+              text: sanitizedBuyerPostalCode,
+            },
+            {
+              type: "text",
+              parameter_name: "buyer_contact",
+              text: sanitizedBuyerContact,
+            },
+            { type: "text", parameter_name: "bid_message", text: sanitizedBidMessage },
+            {
+              type: "text",
+              parameter_name: "seller_contact",
+              text: sanitizedSellerNumber,
+            },
+            { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
           ],
         },
       ],
