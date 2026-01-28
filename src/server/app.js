@@ -12,6 +12,7 @@ import { createHealthController } from "./controllers/healthController.js";
 import { createApiRouter } from "./routes/api.js";
 import { createWebhookRouter } from "./routes/webhook.js";
 import { createRequestLogger } from "./services/requestLogger.js";
+import { createMetaLogger } from "./services/metaLogger.js";
 
 export const createApp = () => {
   const app = express();
@@ -21,6 +22,7 @@ export const createApp = () => {
   const logsDir = new URL("../../logs", import.meta.url).pathname;
   const { apiLogger, webhookLogger, getApiLogs, getWebhookLogs } =
     createRequestLogger({ logsDir });
+  const { logError: logMetaError, getMetaLogs } = createMetaLogger({ logsDir });
 
   const bidStore = createBidStore({
     ttlMs: ENV.BID_STORE_TTL_MS,
@@ -38,6 +40,7 @@ export const createApp = () => {
     templateBuyerOfferFlowTitle: ENV.META_TEMPLATE_BUYER_OFFER_FLOW_TITLE,
     templateOwnerNotification: ENV.META_TEMPLATE_OWNER_NOTIFICATION,
     messageToBid,
+    metaLogger: { logError: logMetaError },
   });
 
   const requestController = createRequestController({
@@ -64,6 +67,7 @@ export const createApp = () => {
 
   app.get("/logs/api", getApiLogs);
   app.get("/logs/webhook", getWebhookLogs);
+  app.get("/logs/meta", getMetaLogs);
 
   const distPath = new URL("../../dist", import.meta.url).pathname;
   if (fs.existsSync(distPath)) {

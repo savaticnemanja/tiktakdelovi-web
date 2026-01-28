@@ -12,6 +12,7 @@ export const createMetaClient = ({
   templateOwnerNotification,
   templateLanguage,
   messageToBid,
+  metaLogger,
 }) => {
   const sanitize = (value) => sanitizeTemplateText(value);
   const sanitizeOrDash = (value) => sanitize(value) || "-";
@@ -36,13 +37,25 @@ export const createMetaClient = ({
         components,
       },
     };
-    const metaResp = await axios.post(url, payload, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-    return { data: metaResp.data };
+    try {
+      const metaResp = await axios.post(url, payload, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      return { data: metaResp.data };
+    } catch (err) {
+      await metaLogger?.logError?.({
+        at: new Date().toISOString(),
+        url,
+        template,
+        to,
+        payload,
+        error: err?.response?.data || err.message || String(err),
+      });
+      throw err;
+    }
   };
 
   const sendInquiryToSeller = async ({
