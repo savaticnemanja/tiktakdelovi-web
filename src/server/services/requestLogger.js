@@ -83,13 +83,14 @@ export const createRequestLogger = ({ logsDir }) => {
     return async (req, res) => {
       try {
         const raw = await fs.promises.readFile(filePath, "utf8");
-        const parsed = JSON.parse(raw);
-        return res.json(Array.isArray(parsed) ? parsed : []);
-      } catch (err) {
-        if (err.code === "ENOENT") {
+        try {
+          const parsed = JSON.parse(raw);
+          return res.json(Array.isArray(parsed) ? parsed : []);
+        } catch (err) {
           return res.json([]);
         }
-        return res.status(500).json({ error: "Failed to read logs" });
+      } catch (err) {
+        return res.json([]);
       }
     };
   };

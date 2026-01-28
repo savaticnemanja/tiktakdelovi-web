@@ -46,6 +46,10 @@ export const createWebhookController = ({
                 responseData = null;
               }
               const price = responseData?.screen_0_Cena_0 || responseData?.price;
+              const note =
+                responseData?.screen_0_Napomena_1 ||
+                responseData?.note ||
+                "";
 
               if (bid && bid.customerNumber && price) {
                 try {
@@ -54,6 +58,7 @@ export const createWebhookController = ({
                     bidId: bid.bidId,
                     bidDetails: bid.bidMessage,
                     bidOffer: String(price),
+                    bidNote: String(note || "-"),
                   });
                 } catch (err) {
                   console.error(
