@@ -177,7 +177,7 @@ export const createMetaClient = ({
           parameters: [
             {
               type: "text",
-              parameter_name: "bid_id_body",
+              parameter_name: "bid_id",
               text: sanitizedBidId,
             },
             {
