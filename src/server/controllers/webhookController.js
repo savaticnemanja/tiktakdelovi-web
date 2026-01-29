@@ -20,6 +20,12 @@ export const createWebhookController = ({
 
   const handleWebhook = async (req, res) => {
     try {
+      const stripBuyerAppend = (text = "") => {
+        const marker = "/br*DODATNE INFORMACIJE OD KUPCA*/br";
+        const idx = text.indexOf(marker);
+        return idx >= 0 ? text.slice(0, idx).trimEnd() : text;
+      };
+
       const pickValue = (data, keys) =>
         keys
           .map((key) => data?.[key])
@@ -69,14 +75,27 @@ export const createWebhookController = ({
                 "";
 
               if (mapEntry?.kind === "buyer_review" && bid) {
-                const buyerAdditionalInfo = pickValue(responseData, [
+                const buyerAdditionalInfoPicked = pickValue(responseData, [
                   "buyer_additional_info",
                   "additional_info",
                   "screen_0_Dodatne_informacije_0",
                   "screen_0_Dodatne_informacije_1",
                   "screen_0_Dodatne_informacije_2",
+                  "screen_0_Dodatna_napomena_0",
+                  "screen_0_Dodatna_napomena_1",
                 ]);
-                const baseMessage = bid.bidMessage || "";
+                const buyerAdditionalInfo =
+                  buyerAdditionalInfoPicked ||
+                  Object.entries(responseData || {})
+                    .filter(
+                      ([key, value]) =>
+                        key !== "flow_token" &&
+                        typeof value === "string" &&
+                        value.trim() !== "",
+                    )
+                    .map(([, value]) => value.trim())
+                    .join(" / ");
+                const baseMessage = stripBuyerAppend(bid.bidMessage || "");
                 const appendedMessage = buyerAdditionalInfo
                   ? `${baseMessage}/br*DODATNE INFORMACIJE OD KUPCA*/br${buyerAdditionalInfo}`
                   : baseMessage;
@@ -210,18 +229,23 @@ export const createWebhookController = ({
                   return "";
                 })();
 
+                const baseBidDetails = stripBuyerAppend(
+                  bid?.bidMessage || bidStore.getBidRequest(mapEntry.bidId)?.bidMessage || "",
+                );
+
                 const updated = bidStore.updateBid(mapEntry.bidId, {
                   sellerContact,
                   bidOffer: price ? String(price) : "",
                   bidNote: note ? String(note) : "",
                   needsMoreInfo,
+                  bidMessage: baseBidDetails || bid?.bidMessage,
                 });
                 if (updated && updated.customerNumber && needsMoreInfo === "yes") {
                   try {
                     await metaClient.sendBuyerReview({
                       to: updated.customerNumber,
                       bidId: updated.bidId,
-                      bidDetails: updated.bidMessage,
+                      bidDetails: baseBidDetails || updated.bidMessage,
                       bidNote: String(note || "-"),
                     });
                   } catch (err) {
