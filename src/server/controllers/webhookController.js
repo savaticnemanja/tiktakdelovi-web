@@ -222,6 +222,7 @@ export const createWebhookController = ({
                       to: updated.customerNumber,
                       bidId: updated.bidId,
                       bidDetails: updated.bidMessage,
+                      bidNote: String(note || "-"),
                     });
                   } catch (err) {
                     console.error(

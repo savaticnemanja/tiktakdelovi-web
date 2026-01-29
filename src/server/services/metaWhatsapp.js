@@ -155,9 +155,11 @@ export const createMetaClient = ({
     to,
     bidId,
     bidDetails,
+    bidNote,
   }) => {
     const sanitizedBidId = sanitize(bidId);
     const sanitizedBidDetails = sanitize(bidDetails);
+    const sanitizedBidNote = sanitize(bidNote) || "-";
     if (!sanitizedBidId || !sanitizedBidDetails) {
       throw new Error("bidId and bidDetails are required.");
     }
@@ -188,6 +190,11 @@ export const createMetaClient = ({
               type: "text",
               parameter_name: "bid_details",
               text: sanitizedBidDetails,
+            },
+            {
+              type: "text",
+              parameter_name: "bid_note",
+              text: sanitizedBidNote || "-",
             },
           ],
         },
