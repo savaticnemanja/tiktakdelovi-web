@@ -21,7 +21,7 @@ export const createWebhookController = ({
   const handleWebhook = async (req, res) => {
     try {
       const stripBuyerAppend = (text = "") => {
-        const marker = "/br*DODATNE INFORMACIJE OD KUPCA*/br";
+        const marker = "*DODATNE INFORMACIJE OD KUPCA*";
         const idx = text.indexOf(marker);
         return idx >= 0 ? text.slice(0, idx).trimEnd() : text;
       };
@@ -97,7 +97,7 @@ export const createWebhookController = ({
                     .join(" / ");
                 const baseMessage = stripBuyerAppend(bid.bidMessage || "");
                 const appendedMessage = buyerAdditionalInfo
-                  ? `${baseMessage}/br*DODATNE INFORMACIJE OD KUPCA*/br${buyerAdditionalInfo}`
+                  ? `${baseMessage}*DODATNE INFORMACIJE OD KUPCA*${buyerAdditionalInfo}`
                   : baseMessage;
 
                 const updatedBid = bidStore.updateBid(mapEntry.bidId, {
