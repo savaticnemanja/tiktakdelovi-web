@@ -191,10 +191,20 @@ export const createWebhookController = ({
                 ]);
                 const needsMoreInfo = (() => {
                   const normalized = String(needsMoreInfoRaw || "").toLowerCase();
-                  if (normalized.startsWith("0_") || normalized === "yes" || normalized === "da") {
+                  if (
+                    normalized.startsWith("0_") ||
+                    normalized.endsWith("_da") ||
+                    normalized.includes("da") ||
+                    normalized === "yes"
+                  ) {
                     return "yes";
                   }
-                  if (normalized.startsWith("1_") || normalized === "no" || normalized === "ne") {
+                  if (
+                    normalized.startsWith("1_") ||
+                    normalized.endsWith("_ne") ||
+                    normalized.includes("ne") ||
+                    normalized === "no"
+                  ) {
                     return "no";
                   }
                   return "";
