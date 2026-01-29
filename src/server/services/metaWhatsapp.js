@@ -7,6 +7,8 @@ export const createMetaClient = ({
   phoneNumberId,
   templateSellerInquiry,
   templateSellerInquiryFlowTitle,
+  templateBuyerReview,
+  templateBuyerReviewFlowTitle,
   templateBuyerOffer,
   templateBuyerOfferFlowTitle,
   templateOwnerNotification,
@@ -146,6 +148,66 @@ export const createMetaClient = ({
       messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "seller_inquiry" });
     }
 
+    return metaResp;
+  };
+
+  const sendBuyerReview = async ({
+    to,
+    bidId,
+    bidDetails,
+  }) => {
+    const sanitizedBidId = sanitize(bidId);
+    const sanitizedBidDetails = sanitize(bidDetails);
+    if (!sanitizedBidId || !sanitizedBidDetails) {
+      throw new Error("bidId and bidDetails are required.");
+    }
+    const metaResp = await sendTemplate({
+      to,
+      template: templateBuyerReview,
+      keepPlus: true,
+      components: [
+        {
+          type: "header",
+          parameters: [
+            {
+              type: "text",
+              parameter_name: "bid_id",
+              text: sanitizedBidId,
+            },
+          ],
+        },
+        {
+          type: "body",
+          parameters: [
+            {
+              type: "text",
+              parameter_name: "bid_id",
+              text: sanitizedBidId,
+            },
+            {
+              type: "text",
+              parameter_name: "bid_details",
+              text: sanitizedBidDetails,
+            },
+          ],
+        },
+        {
+          type: "button",
+          sub_type: "flow",
+          index: "0",
+          parameters: [
+            {
+              type: "payload",
+              payload: JSON.stringify({ screen: templateBuyerReviewFlowTitle }),
+            },
+          ],
+        },
+      ],
+    });
+    const sentId = metaResp?.data?.messages?.[0]?.id;
+    if (sentId && messageToBid) {
+      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "buyer_review" });
+    }
     return metaResp;
   };
 
@@ -316,6 +378,7 @@ export const createMetaClient = ({
 
   return {
     sendInquiryToSeller,
+    sendBuyerReview,
     sendOfferToBuyer,
     sendOfferToOwner,
   };

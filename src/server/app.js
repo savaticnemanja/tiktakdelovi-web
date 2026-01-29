@@ -35,6 +35,8 @@ export const createApp = () => {
     phoneNumberId: ENV.META_PHONE_NUMBER_ID,
     templateSellerInquiry: ENV.META_TEMPLATE_SELLER_INQUIRY,
     templateSellerInquiryFlowTitle: ENV.META_TEMPLATE_SELLER_INQUIRY_FLOW_TITLE,
+    templateBuyerReview: ENV.META_TEMPLATE_BUYER_REVIEW,
+    templateBuyerReviewFlowTitle: ENV.META_TEMPLATE_BUYER_REVIEW_FLOW_TITLE,
     templateLanguage: ENV.META_TEMPLATE_LANGUAGE,
     templateBuyerOffer: ENV.META_TEMPLATE_BUYER_OFFER,
     templateBuyerOfferFlowTitle: ENV.META_TEMPLATE_BUYER_OFFER_FLOW_TITLE,

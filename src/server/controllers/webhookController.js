@@ -68,6 +68,46 @@ export const createWebhookController = ({
                 responseData?.note ||
                 "";
 
+              if (mapEntry?.kind === "buyer_review" && bid) {
+                const buyerAdditionalInfo = pickValue(responseData, [
+                  "buyer_additional_info",
+                  "additional_info",
+                  "screen_0_Dodatne_informacije_0",
+                  "screen_0_Dodatne_informacije_1",
+                  "screen_0_Dodatne_informacije_2",
+                ]);
+                const baseMessage = bid.bidMessage || "";
+                const appendedMessage = buyerAdditionalInfo
+                  ? `${baseMessage}/br*DODATNE INFORMACIJE OD KUPCA*/br${buyerAdditionalInfo}`
+                  : baseMessage;
+
+                const updatedBid = bidStore.updateBid(mapEntry.bidId, {
+                  buyerAdditionalInfo: buyerAdditionalInfo || "",
+                  bidMessage: appendedMessage,
+                });
+
+                if (updatedBid?.sellerContact) {
+                  try {
+                    await metaClient.sendInquiryToSeller({
+                      to: updatedBid.sellerContact,
+                      bidId: updatedBid.bidId,
+                      bidMessage: updatedBid.bidMessage,
+                      make: updatedBid.make,
+                      model: updatedBid.model,
+                      year: updatedBid.year,
+                      fuelType: updatedBid.fuelType,
+                      chassis: updatedBid.chassis,
+                    });
+                  } catch (err) {
+                    console.error(
+                      "Seller follow-up inquiry failed:",
+                      err?.response?.data || err.message || String(err),
+                    );
+                  }
+                }
+                continue;
+              }
+
               if (mapEntry?.kind === "buyer_offer" && bid) {
                 const buyerName = pickValue(responseData, [
                   "buyer_name",
@@ -144,11 +184,43 @@ export const createWebhookController = ({
 
               if (mapEntry?.kind === "seller_inquiry") {
                 const sellerContact = normalizePhone(from);
+                const needsMoreInfoRaw = pickValue(responseData, [
+                  "screen_0_Potrebne_dodatne_informacije_2",
+                  "needs_more_info",
+                  "more_info_needed",
+                ]);
+                const needsMoreInfo = (() => {
+                  const normalized = String(needsMoreInfoRaw || "").toLowerCase();
+                  if (normalized.startsWith("0_") || normalized === "yes" || normalized === "da") {
+                    return "yes";
+                  }
+                  if (normalized.startsWith("1_") || normalized === "no" || normalized === "ne") {
+                    return "no";
+                  }
+                  return "";
+                })();
+
                 const updated = bidStore.updateBid(mapEntry.bidId, {
                   sellerContact,
                   bidOffer: price ? String(price) : "",
                   bidNote: note ? String(note) : "",
+                  needsMoreInfo,
                 });
+                if (updated && updated.customerNumber && needsMoreInfo === "yes") {
+                  try {
+                    await metaClient.sendBuyerReview({
+                      to: updated.customerNumber,
+                      bidId: updated.bidId,
+                      bidDetails: updated.bidMessage,
+                    });
+                  } catch (err) {
+                    console.error(
+                      "Buyer review request failed:",
+                      err?.response?.data || err.message || String(err),
+                    );
+                  }
+                  continue;
+                }
                 if (updated && updated.customerNumber && price) {
                   try {
                     await metaClient.sendOfferToBuyer({

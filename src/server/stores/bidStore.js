@@ -43,6 +43,8 @@ export const createBidStore = ({ ttlMs, idStart }) => {
       sellerContact: "",
       bidOffer: "",
       bidNote: "",
+      needsMoreInfo: "",
+      buyerAdditionalInfo: "",
       buyerName: "",
       buyerAddress: "",
       buyerCity: "",
