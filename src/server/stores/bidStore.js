@@ -71,6 +71,18 @@ export const createBidStore = ({ ttlMs, idStart }) => {
   return {
     saveBidRequest,
     getBidRequest,
+    findLatestBySellerContact: (sellerContact) => {
+      const normalized = normalizePhone(sellerContact);
+      let latest = null;
+      for (const bid of store.values()) {
+        if (!bid?.sellerContact) continue;
+        if (normalizePhone(bid.sellerContact) !== normalized) continue;
+        if (!latest || bid.createdAt > latest.createdAt) {
+          latest = bid;
+        }
+      }
+      return latest;
+    },
     updateBid: (bidId, updates) => {
       const bid = getBidRequest(bidId);
       if (!bid) {

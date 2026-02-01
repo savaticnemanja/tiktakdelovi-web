@@ -18,6 +18,7 @@ export const createMetaClient = ({
 }) => {
   const sanitize = (value) => sanitizeTemplateText(value);
   const sanitizeMasked = (value) => sanitize(maskPhoneNumbers(value));
+  const sanitizeMaskedOrDash = (value) => sanitizeMasked(value) || "-";
   const sanitizeOrDash = (value) => sanitize(value) || "-";
 
   const sendTemplate = async ({ to, template, components, keepPlus = false }) => {
@@ -152,6 +153,33 @@ export const createMetaClient = ({
     return metaResp;
   };
 
+  const sendImageMessage = async ({ to, mediaId, caption, mask = false }) => {
+    if (!token || !phoneNumberId) {
+      throw new Error("Meta Cloud API not configured.");
+    }
+    if (!to || !mediaId) {
+      throw new Error("to and mediaId are required.");
+    }
+    const url = `https://graph.facebook.com/v24.0/${phoneNumberId}/messages`;
+    const safeCaption = mask ? sanitizeMasked(caption) : sanitize(caption);
+    const payload = {
+      messaging_product: "whatsapp",
+      to: withPlus(to),
+      type: "image",
+      image: {
+        id: mediaId,
+        caption: safeCaption || undefined,
+      },
+    };
+    const metaResp = await axios.post(url, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return { data: metaResp.data };
+  };
+
   const sendBuyerReview = async ({
     to,
     bidId,
@@ -160,7 +188,7 @@ export const createMetaClient = ({
   }) => {
     const sanitizedBidId = sanitize(bidId);
     const sanitizedBidDetails = sanitizeMasked(bidDetails);
-    const sanitizedBidNote = sanitizeMasked(bidNote) || "-";
+    const sanitizedBidNote = sanitizeMaskedOrDash(bidNote);
     if (!sanitizedBidId || !sanitizedBidDetails) {
       throw new Error("bidId and bidDetails are required.");
     }
@@ -229,7 +257,7 @@ export const createMetaClient = ({
     const sanitizedBidId = sanitize(bidId);
     const sanitizedBidDetails = sanitizeMasked(bidDetails);
     const sanitizedBidOffer = sanitize(bidOffer);
-    const sanitizedBidNote = sanitizeMasked(bidNote);
+    const sanitizedBidNote = sanitizeMaskedOrDash(bidNote);
     if (!sanitizedBidId || !sanitizedBidDetails || !sanitizedBidOffer) {
       throw new Error("bidId, bidDetails and bidOffer are required.");
     }
@@ -389,5 +417,6 @@ export const createMetaClient = ({
     sendBuyerReview,
     sendOfferToBuyer,
     sendOfferToOwner,
+    sendImageMessage,
   };
 };

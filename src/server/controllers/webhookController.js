@@ -49,6 +49,47 @@ export const createWebhookController = ({
             const textBody = message?.text?.body;
             const from = message?.from;
             const interactiveType = message?.interactive?.type;
+            const messageType = message?.type;
+
+            if (messageType === "image" && message?.image?.id && from) {
+              const sellerContact = normalizePhone(from);
+              const bid = bidStore.findLatestBySellerContact(sellerContact);
+              if (!bid) {
+                continue;
+              }
+              const priceLabel = bid.bidOffer ? ` (cena: ${bid.bidOffer} RSD)` : "";
+              const buyerCaption = `Slika dela od prodavca${priceLabel}`;
+              const ownerCaption = `${buyerCaption} / prodavac: ${sellerContact}`;
+              try {
+                await metaClient.sendImageMessage({
+                  to: bid.customerNumber,
+                  mediaId: message.image.id,
+                  caption: buyerCaption,
+                  mask: true,
+                });
+              } catch (err) {
+                console.error(
+                  "Buyer image forward failed:",
+                  err?.response?.data || err.message || String(err),
+                );
+              }
+              if (ownerNumber) {
+                try {
+                  await metaClient.sendImageMessage({
+                    to: ownerNumber,
+                    mediaId: message.image.id,
+                    caption: ownerCaption,
+                    mask: false,
+                  });
+                } catch (err) {
+                  console.error(
+                    "Owner image forward failed:",
+                    err?.response?.data || err.message || String(err),
+                  );
+                }
+              }
+              continue;
+            }
 
             if (interactiveType === "nfm_reply") {
               const repliedToId = message?.context?.id;
