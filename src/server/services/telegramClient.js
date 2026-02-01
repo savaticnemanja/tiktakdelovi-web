@@ -1,4 +1,4 @@
-import { sanitizeTemplateText, maskPhoneNumbers } from "../utils/sanitize.js";
+import { sanitizeTelegramText, maskPhoneNumbers } from "../utils/sanitize.js";
 
 export const createTelegramClient = ({ token }) => {
   if (!token) {
@@ -6,7 +6,7 @@ export const createTelegramClient = ({ token }) => {
   }
 
   const apiBase = `https://api.telegram.org/bot${token}`;
-  const sanitize = (value) => sanitizeTemplateText(value);
+  const sanitize = (value) => sanitizeTelegramText(value);
   const sanitizeMasked = (value) => sanitize(maskPhoneNumbers(value));
 
   const sendMessage = async ({ chatId, text, mask = false }) => {
