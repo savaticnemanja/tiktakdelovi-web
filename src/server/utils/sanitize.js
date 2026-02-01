@@ -3,3 +3,6 @@ export const sanitizeTemplateText = (value) =>
     .replace(/[\r\n\t]+/g, " ")
     .replace(/\s{2,}/g, " ")
     .trim();
+
+export const maskPhoneNumbers = (value, replacement = "uklonjen broj") =>
+  String(value ?? "").replace(/(\+?\d[\d\s().-]{5,}\d)/g, replacement);

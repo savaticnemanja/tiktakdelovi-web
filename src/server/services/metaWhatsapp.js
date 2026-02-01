@@ -1,6 +1,6 @@
 import axios from "axios";
 import { normalizePhone, withPlus } from "../utils/phone.js";
-import { sanitizeTemplateText } from "../utils/sanitize.js";
+import { sanitizeTemplateText, maskPhoneNumbers } from "../utils/sanitize.js";
 
 export const createMetaClient = ({
   token,
@@ -17,6 +17,7 @@ export const createMetaClient = ({
   metaLogger,
 }) => {
   const sanitize = (value) => sanitizeTemplateText(value);
+  const sanitizeMasked = (value) => sanitize(maskPhoneNumbers(value));
   const sanitizeOrDash = (value) => sanitize(value) || "-";
 
   const sendTemplate = async ({ to, template, components, keepPlus = false }) => {
@@ -71,7 +72,7 @@ export const createMetaClient = ({
     chassis,
   }) => {
     const sanitizedBidId = sanitize(bidId);
-    const sanitizedBidMessage = sanitize(bidMessage);
+    const sanitizedBidMessage = sanitizeMasked(bidMessage);
     const sanitizedMake = sanitizeOrDash(make);
     const sanitizedModel = sanitizeOrDash(model);
     const sanitizedYear = sanitizeOrDash(year);
@@ -158,8 +159,8 @@ export const createMetaClient = ({
     bidNote,
   }) => {
     const sanitizedBidId = sanitize(bidId);
-    const sanitizedBidDetails = sanitize(bidDetails);
-    const sanitizedBidNote = sanitize(bidNote) || "-";
+    const sanitizedBidDetails = sanitizeMasked(bidDetails);
+    const sanitizedBidNote = sanitizeMasked(bidNote) || "-";
     if (!sanitizedBidId || !sanitizedBidDetails) {
       throw new Error("bidId and bidDetails are required.");
     }
@@ -226,9 +227,9 @@ export const createMetaClient = ({
     bidNote,
   }) => {
     const sanitizedBidId = sanitize(bidId);
-    const sanitizedBidDetails = sanitize(bidDetails);
+    const sanitizedBidDetails = sanitizeMasked(bidDetails);
     const sanitizedBidOffer = sanitize(bidOffer);
-    const sanitizedBidNote = sanitize(bidNote);
+    const sanitizedBidNote = sanitizeMasked(bidNote);
     if (!sanitizedBidId || !sanitizedBidDetails || !sanitizedBidOffer) {
       throw new Error("bidId, bidDetails and bidOffer are required.");
     }
