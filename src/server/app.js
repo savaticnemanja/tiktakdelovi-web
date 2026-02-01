@@ -9,10 +9,12 @@ import { createMetaClient } from "./services/metaWhatsapp.js";
 import { createRequestController } from "./controllers/requestController.js";
 import { createWebhookController } from "./controllers/webhookController.js";
 import { createHealthController } from "./controllers/healthController.js";
+import { createTelegramController } from "./controllers/telegramController.js";
 import { createApiRouter } from "./routes/api.js";
 import { createWebhookRouter } from "./routes/webhook.js";
 import { createRequestLogger } from "./services/requestLogger.js";
 import { createMetaLogger } from "./services/metaLogger.js";
+import { createTelegramClient } from "./services/telegramClient.js";
 
 export const createApp = () => {
   const app = express();
@@ -44,6 +46,9 @@ export const createApp = () => {
     messageToBid,
     metaLogger: { logError: logMetaError },
   });
+  const telegramClient = createTelegramClient({
+    token: ENV.TELEGRAM_BOT_TOKEN,
+  });
 
   const requestController = createRequestController({
     sellerNumbers: ENV.SELLER_NUMBERS,
@@ -57,8 +62,14 @@ export const createApp = () => {
     bidStore,
     messageToBid,
     metaClient,
+    telegramClient,
     ownerNumber: ENV.OWNER_NUMBER,
     verifyToken: ENV.META_WEBHOOK_VERIFICATION_TOKEN,
+  });
+  const telegramController = createTelegramController({
+    bidStore,
+    telegramClient,
+    metaClient,
   });
 
   app.use("/api", apiLogger, createApiRouter({
@@ -66,6 +77,11 @@ export const createApp = () => {
     healthController,
   }));
   app.use("/webhook", webhookLogger, createWebhookRouter({ webhookController }));
+  app.post(
+    "/telegram/webhook",
+    telegramController.verifySecret,
+    telegramController.handleWebhook,
+  );
 
   app.get("/logs/api", getApiLogs);
   app.get("/logs/webhook", getWebhookLogs);

@@ -1,10 +1,16 @@
 import { parseOfferMessage } from "../utils/parseOffer.js";
 import { normalizePhone } from "../utils/phone.js";
+import {
+  formatBuyerOfferMessage,
+  formatBuyerReviewMessage,
+  formatBuyerImageCaption,
+} from "../services/telegramMessages.js";
 
 export const createWebhookController = ({
   bidStore,
   messageToBid,
   metaClient,
+  telegramClient,
   ownerNumber,
   verifyToken,
 }) => {
@@ -62,17 +68,34 @@ export const createWebhookController = ({
               if (!bid) {
                 continue;
               }
-              const priceLine = bid.bidOffer ? `\n\nCena - ${bid.bidOffer}` : "";
-              const buyerCaption = `Slika dela za zahtev #${bidId}${priceLine}`;
+              const buyerCaption = formatBuyerImageCaption({
+                bidId,
+                bidOffer: bid.bidOffer,
+              });
               const sellerContact = normalizePhone(from);
               const ownerCaption = `${buyerCaption} / prodavac: ${sellerContact}`;
               try {
-                await metaClient.sendImageMessage({
-                  to: bid.customerNumber,
-                  mediaId: message.image.id,
-                  caption: buyerCaption,
-                  mask: true,
-                });
+                if (
+                  bid.notificationPreference === "telegram" &&
+                  telegramClient &&
+                  bid.telegramChatId
+                ) {
+                  const media = await metaClient.downloadMedia(message.image.id);
+                  await telegramClient.sendPhoto({
+                    chatId: bid.telegramChatId,
+                    buffer: media.buffer,
+                    mimeType: media.mimeType,
+                    caption: buyerCaption,
+                    mask: true,
+                  });
+                } else {
+                  await metaClient.sendImageMessage({
+                    to: bid.customerNumber,
+                    mediaId: message.image.id,
+                    caption: buyerCaption,
+                    mask: true,
+                  });
+                }
               } catch (err) {
                 console.error(
                   "Buyer image forward failed:",
@@ -284,24 +307,56 @@ export const createWebhookController = ({
                   needsMoreInfo,
                   bidMessage: latestBidDetails || bid?.bidMessage,
                 });
-                if (updated && updated.customerNumber && needsMoreInfo === "yes") {
-                  try {
+              if (updated && updated.customerNumber && needsMoreInfo === "yes") {
+                try {
+                  if (
+                    updated.notificationPreference === "telegram" &&
+                    telegramClient &&
+                    updated.telegramChatId
+                  ) {
+                    await telegramClient.sendMessage({
+                      chatId: updated.telegramChatId,
+                      text: formatBuyerReviewMessage({
+                        bidId: updated.bidId,
+                        bidDetails: updated.bidMessage,
+                        bidNote: String(note || "-"),
+                      }),
+                      mask: true,
+                    });
+                  } else {
                     await metaClient.sendBuyerReview({
                       to: updated.customerNumber,
                       bidId: updated.bidId,
                       bidDetails: updated.bidMessage,
                       bidNote: String(note || "-"),
                     });
-                  } catch (err) {
-                    console.error(
-                      "Buyer review request failed:",
-                      err?.response?.data || err.message || String(err),
-                    );
                   }
-                  continue;
+                } catch (err) {
+                  console.error(
+                    "Buyer review request failed:",
+                    err?.response?.data || err.message || String(err),
+                  );
                 }
-                if (updated && updated.customerNumber && price) {
-                  try {
+                continue;
+              }
+              if (updated && updated.customerNumber && price) {
+                try {
+                  if (
+                    updated.notificationPreference === "telegram" &&
+                    telegramClient &&
+                    updated.telegramChatId
+                  ) {
+                    await telegramClient.sendMessage({
+                      chatId: updated.telegramChatId,
+                      text: formatBuyerOfferMessage({
+                        bidId: updated.bidId,
+                        bidDetails: updated.bidMessage,
+                        bidOffer: String(price),
+                        bidNote: String(note || "-"),
+                      }),
+                      mask: true,
+                    });
+                  } else {
                     await metaClient.sendOfferToBuyer({
                       to: updated.customerNumber,
                       bidId: updated.bidId,
@@ -309,11 +364,12 @@ export const createWebhookController = ({
                       bidOffer: String(price),
                       bidNote: String(note || "-"),
                     });
-                  } catch (err) {
-                    console.error(
-                      "Flow response forward failed:",
-                      err?.response?.data || err.message || String(err),
-                    );
+                  }
+                } catch (err) {
+                  console.error(
+                    "Flow response forward failed:",
+                    err?.response?.data || err.message || String(err),
+                  );
                   }
                 }
               }

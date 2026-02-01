@@ -28,9 +28,12 @@ const META_TEMPLATE_BUYER_OFFER_FLOW_TITLE =
 const META_TEMPLATE_OWNER_NOTIFICATION =
   process.env.META_TEMPLATE_OWNER_NOTIFICATION || "";
 
-  const BID_ID_START = Number.isFinite(Number(process.env.BID_ID_START))
-    ? Number(process.env.BID_ID_START)
-    : 10001;
+const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
+const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || "";
+
+const BID_ID_START = Number.isFinite(Number(process.env.BID_ID_START))
+  ? Number(process.env.BID_ID_START)
+  : 10001;
 
 const BID_STORE_TTL_MS = Number.isFinite(Number(process.env.BID_STORE_TTL_HOURS))
   ? Number(process.env.BID_STORE_TTL_HOURS) * 60 * 60 * 1000
@@ -50,6 +53,8 @@ export const ENV = {
   META_TEMPLATE_BUYER_OFFER,
   META_TEMPLATE_BUYER_OFFER_FLOW_TITLE,
   META_TEMPLATE_OWNER_NOTIFICATION,
+  TELEGRAM_BOT_TOKEN,
+  TELEGRAM_WEBHOOK_SECRET,
   BID_ID_START,
   BID_STORE_TTL_MS,
 };

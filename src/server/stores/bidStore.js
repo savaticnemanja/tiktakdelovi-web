@@ -12,6 +12,7 @@ export const createBidStore = ({ ttlMs, idStart }) => {
     bidMessage,
     customerNumber,
     name,
+    notificationPreference,
     make,
     model,
     year,
@@ -45,6 +46,8 @@ export const createBidStore = ({ ttlMs, idStart }) => {
       bidNote: "",
       needsMoreInfo: "",
       buyerAdditionalInfo: "",
+      notificationPreference: notificationPreference || "whatsapp",
+      telegramChatId: "",
       buyerName: "",
       buyerAddress: "",
       buyerCity: "",
@@ -71,6 +74,17 @@ export const createBidStore = ({ ttlMs, idStart }) => {
   return {
     saveBidRequest,
     getBidRequest,
+    findLatestByTelegramChatId: (chatId) => {
+      let latest = null;
+      for (const bid of store.values()) {
+        if (!bid?.telegramChatId) continue;
+        if (String(bid.telegramChatId) !== String(chatId)) continue;
+        if (!latest || bid.createdAt > latest.createdAt) {
+          latest = bid;
+        }
+      }
+      return latest;
+    },
     findLatestBySellerContact: (sellerContact) => {
       const normalized = normalizePhone(sellerContact);
       let latest = null;
