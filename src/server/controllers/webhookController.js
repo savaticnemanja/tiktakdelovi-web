@@ -229,23 +229,22 @@ export const createWebhookController = ({
                   return "";
                 })();
 
-                const baseBidDetails = stripBuyerAppend(
-                  bid?.bidMessage || bidStore.getBidRequest(mapEntry.bidId)?.bidMessage || "",
-                );
+                const latestBidDetails =
+                  bid?.bidMessage || bidStore.getBidRequest(mapEntry.bidId)?.bidMessage || "";
 
                 const updated = bidStore.updateBid(mapEntry.bidId, {
                   sellerContact,
                   bidOffer: price ? String(price) : "",
                   bidNote: note ? String(note) : "",
                   needsMoreInfo,
-                  bidMessage: baseBidDetails || bid?.bidMessage,
+                  bidMessage: latestBidDetails || bid?.bidMessage,
                 });
                 if (updated && updated.customerNumber && needsMoreInfo === "yes") {
                   try {
                     await metaClient.sendBuyerReview({
                       to: updated.customerNumber,
                       bidId: updated.bidId,
-                      bidDetails: baseBidDetails || updated.bidMessage,
+                      bidDetails: updated.bidMessage,
                       bidNote: String(note || "-"),
                     });
                   } catch (err) {
