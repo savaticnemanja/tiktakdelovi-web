@@ -96,18 +96,6 @@ export const createTelegramController = ({
         }
       }
 
-      if (updatedBid?.needsMoreInfo === "yes") {
-        await telegramClient.sendMessage({
-          chatId,
-          text: formatBuyerReviewMessage({
-            bidId: updatedBid.bidId,
-            bidDetails: updatedBid.bidMessage,
-            bidNote: updatedBid.bidNote || "-",
-          }),
-          mask: true,
-        });
-      }
-
       return res.sendStatus(200);
     } catch (err) {
       console.error(
