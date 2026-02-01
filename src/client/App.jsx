@@ -487,8 +487,12 @@ export default function App() {
         </div>
 
           <div className="footer-bottom">
-            <span>© 2026 TikTak Delovi. Sva prava zadržana.</span>
-            <span>Podrška: {sellerEmail}</span>
+            <span>
+              © 2026 TikTak Delovi. Sva prava zadržana. Razvio{" "}
+              <a className="footer-credit" href="https://nemanjas.dev">
+                nemanjas.dev
+              </a>
+            </span>
           </div>
         </div>
       </footer>

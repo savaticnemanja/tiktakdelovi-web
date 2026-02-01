@@ -562,6 +562,11 @@ button {
   font-size: 14px;
 }
 
+.footer-credit {
+  color: var(--accent);
+  font-weight: 600;
+}
+
 .footer-form h4 {
   margin: 0 0 8px;
 }
@@ -586,7 +591,8 @@ button {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   padding-top: 20px;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  text-align: center;
   gap: 6px;
   font-size: 12px;
   color: rgba(242, 238, 233, 0.6);
@@ -634,8 +640,7 @@ button {
   }
 
   .footer-bottom {
-    flex-direction: row;
-    justify-content: space-between;
+    justify-content: center;
   }
 }
 
