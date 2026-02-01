@@ -4,5 +4,5 @@ export const sanitizeTemplateText = (value) =>
     .replace(/\s{2,}/g, " ")
     .trim();
 
-export const maskPhoneNumbers = (value, replacement = "uklonjen broj") =>
+export const maskPhoneNumbers = (value, replacement = "[UKLONJEN BROJ]") =>
   String(value ?? "").replace(/(\+?\d[\d\s().-]{5,}\d)/g, replacement);
