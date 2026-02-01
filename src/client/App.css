@@ -408,6 +408,58 @@ label {
   margin-top: 2px;
 }
 
+.radio-field {
+  display: grid;
+  gap: 10px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.radio-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--muted);
+}
+
+.radio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.radio-icon {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+}
+
+.radio-icon svg {
+  width: 100%;
+  height: 100%;
+  fill: currentColor;
+}
+
+.radio-icon.whatsapp {
+  color: #25d366;
+}
+
+.radio-icon.viber {
+  color: #7360f2;
+}
+
+.radio-icon.telegram {
+  color: #2aabee;
+}
+
+.radio-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
 input,
 textarea,
 select {

@@ -52,13 +52,19 @@ export const createWebhookController = ({
             const messageType = message?.type;
 
             if (messageType === "image" && message?.image?.id && from) {
-              const sellerContact = normalizePhone(from);
-              const bid = bidStore.findLatestBySellerContact(sellerContact);
+              const caption = message?.image?.caption || "";
+              const bidIdMatch = caption.match(/#(\d+)/);
+              const bidId = bidIdMatch ? bidIdMatch[1] : null;
+              if (!bidId) {
+                continue;
+              }
+              const bid = bidStore.getBidRequest(bidId);
               if (!bid) {
                 continue;
               }
-              const priceLabel = bid.bidOffer ? ` (cena: ${bid.bidOffer} RSD)` : "";
-              const buyerCaption = `Slika dela od prodavca${priceLabel}`;
+              const priceLine = bid.bidOffer ? `\n\nCena - ${bid.bidOffer}` : "";
+              const buyerCaption = `Slika dela za zahtev #${bidId}${priceLine}`;
+              const sellerContact = normalizePhone(from);
               const ownerCaption = `${buyerCaption} / prodavac: ${sellerContact}`;
               try {
                 await metaClient.sendImageMessage({
