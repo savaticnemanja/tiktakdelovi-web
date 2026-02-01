@@ -424,6 +424,26 @@ label {
   color: var(--muted);
 }
 
+.field-help {
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--muted);
+}
+
+.checkbox-field {
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 10px;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 13px;
+}
+
+.checkbox-field input {
+  margin-top: 2px;
+}
+
 input,
 textarea,
 select {
@@ -433,6 +453,35 @@ select {
   font-size: 14px;
   font-family: inherit;
   background: #fff;
+}
+
+.phone-field {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.phone-prefix {
+  padding: 12px 14px;
+  border-right: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.phone-field input {
+  border: none;
+  border-radius: 0 12px 12px 0;
+  padding: 12px 14px;
+}
+
+.phone-field input:focus {
+  outline: none;
+  border-color: transparent;
+  outline: 2px solid rgba(212, 61, 43, 0.35);
+  outline-offset: -2px;
 }
 
 textarea {

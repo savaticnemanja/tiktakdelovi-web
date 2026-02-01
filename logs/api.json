@@ -1,0 +1,132 @@
+[
+  {
+    "at": "2026-02-01T11:16:08.298Z",
+    "type": "api",
+    "method": "POST",
+    "path": "/api/request",
+    "status": 400,
+    "durationMs": 0,
+    "request": {
+      "headers": {
+        "host": "localhost:4000",
+        "connection": "keep-alive",
+        "content-length": "144",
+        "sec-ch-ua-platform": "\"macOS\"",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+        "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Brave\";v=\"144\"",
+        "content-type": "application/json",
+        "sec-ch-ua-mobile": "?0",
+        "accept": "*/*",
+        "sec-gpc": "1",
+        "accept-language": "en-US,en;q=0.9",
+        "origin": "http://localhost:5173",
+        "sec-fetch-site": "same-site",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "http://localhost:5173/",
+        "accept-encoding": "gzip, deflate, br, zstd"
+      },
+      "query": {},
+      "body": {
+        "customerNumber": "+3810652290662",
+        "bidMessage": "Levi far",
+        "make": "honda",
+        "model": "accord",
+        "year": 2027,
+        "fuelType": "Benzin",
+        "chassis": "Limuzina"
+      }
+    },
+    "response": {
+      "error": "name, customerNumber and bidMessage are required"
+    }
+  },
+  {
+    "at": "2026-02-01T11:16:37.895Z",
+    "type": "api",
+    "method": "POST",
+    "path": "/api/request",
+    "status": 200,
+    "durationMs": 1709,
+    "request": {
+      "headers": {
+        "host": "localhost:4000",
+        "connection": "keep-alive",
+        "content-length": "144",
+        "sec-ch-ua-platform": "\"macOS\"",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+        "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Brave\";v=\"144\"",
+        "content-type": "application/json",
+        "sec-ch-ua-mobile": "?0",
+        "accept": "*/*",
+        "sec-gpc": "1",
+        "accept-language": "en-US,en;q=0.9",
+        "origin": "http://localhost:5173",
+        "sec-fetch-site": "same-site",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "http://localhost:5173/",
+        "accept-encoding": "gzip, deflate, br, zstd"
+      },
+      "query": {},
+      "body": {
+        "customerNumber": "+3810652290662",
+        "bidMessage": "Levi far",
+        "make": "honda",
+        "model": "accord",
+        "year": 2027,
+        "fuelType": "Benzin",
+        "chassis": "Limuzina"
+      }
+    },
+    "response": {
+      "ok": true,
+      "sent": [
+        {
+          "seller": "+381652290662",
+          "ok": true,
+          "result": {
+            "data": {
+              "messaging_product": "whatsapp",
+              "contacts": [
+                {
+                  "input": "381652290662",
+                  "wa_id": "381652290662"
+                }
+              ],
+              "messages": [
+                {
+                  "id": "wamid.HBgMMzgxNjUyMjkwNjYyFQIAERgSOTlDRUI2MzAzNDcyMDdCMDNEAA==",
+                  "message_status": "accepted"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "seller": "+38166092964",
+          "ok": true,
+          "result": {
+            "data": {
+              "messaging_product": "whatsapp",
+              "contacts": [
+                {
+                  "input": "38166092964",
+                  "wa_id": "38166092964"
+                }
+              ],
+              "messages": [
+                {
+                  "id": "wamid.HBgLMzgxNjYwOTI5NjQVAgARGBJEOEJGRTdFNDk4MThBOUQzRTIA",
+                  "message_status": "accepted"
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "template": "seller_inquiry",
+      "bidId": "10001"
+    }
+  }
+]

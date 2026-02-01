@@ -14,7 +14,6 @@ export default function App() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
   const sellerEmail = "partneri@tiktakdelovi.rs";
 
-  const [name, setName] = useState("");
   const [customerNumber, setCustomerNumber] = useState("");
   const [bidMessage, setBidMessage] = useState("");
   const [make, setMake] = useState(firstValue(MAKES));
@@ -39,12 +38,12 @@ export default function App() {
     setStatus(null);
 
     try {
+      const normalizedCustomer = `+381${customerNumber.replace(/\s+/g, "")}`;
       const res = await fetch(`${API_BASE}/api/request`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name,
-          customerNumber,
+          customerNumber: normalizedCustomer,
           bidMessage,
           make,
           model,
@@ -229,26 +228,6 @@ export default function App() {
             </div>
 
             <form className="form-card stagger" data-reveal="stagger" onSubmit={send}>
-              <label>
-                Vaše ime
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ana"
-                  required
-                />
-              </label>
-
-              <label>
-                Broj kupca (međunarodni format, npr. +381...)
-                <input
-                  value={customerNumber}
-                  onChange={(e) => setCustomerNumber(e.target.value)}
-                  placeholder="+381..."
-                  required
-                />
-              </label>
-
               <div className="field-grid">
                 <label>
                   Marka vozila
@@ -348,6 +327,32 @@ export default function App() {
                   placeholder="Npr. far za Honda Civic 2018, levo, hitno"
                   required
                 />
+              </label>
+
+              <label>
+                Kontakt broj
+                <div className="phone-field">
+                  <span className="phone-prefix">+381</span>
+                  <input
+                    value={customerNumber}
+                    onChange={(e) => setCustomerNumber(e.target.value)}
+                    placeholder="64 123 456"
+                    inputMode="tel"
+                    required
+                  />
+                </div>
+                <span className="field-help">
+                  Kontaktiraćemo vas putem WhatsApp-a, gde možete prihvatiti ili
+                  odbiti ponudu.
+                </span>
+              </label>
+
+              <label className="checkbox-field">
+                <input type="checkbox" required />
+                <span>
+                  Saglasan/na sam da budem kontaktiran/a putem WhatsApp-a radi
+                  dostave ponuda.
+                </span>
               </label>
 
               <button type="submit" className="btn primary" disabled={sending}>

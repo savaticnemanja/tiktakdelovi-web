@@ -17,9 +17,9 @@ export const createRequestController = ({
         chassis,
       } = req.body || {};
 
-      if (!name || !customerNumber || !bidMessage) {
+      if (!customerNumber || !bidMessage) {
         return res.status(400).json({
-          error: "name, customerNumber and bidMessage are required",
+          error: "customerNumber and bidMessage are required",
         });
       }
 
