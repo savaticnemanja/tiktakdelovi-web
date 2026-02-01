@@ -20,11 +20,7 @@ export const createWebhookController = ({
 
   const handleWebhook = async (req, res) => {
     try {
-      const stripBuyerAppend = (text = "") => {
-        const marker = " / ";
-        const idx = text.indexOf(marker);
-        return idx >= 0 ? text.slice(0, idx).trimEnd() : text;
-      };
+      const appendSeparator = " / ";
 
       const pickValue = (data, keys) =>
         keys
@@ -95,10 +91,12 @@ export const createWebhookController = ({
                     )
                     .map(([, value]) => value.trim())
                     .join(" / ");
-                const baseMessage = stripBuyerAppend(bid.bidMessage || "");
+                const currentMessage = bid.bidMessage || "";
                 const appendedMessage = buyerAdditionalInfo
-                  ? `${baseMessage} / ${buyerAdditionalInfo}`
-                  : baseMessage;
+                  ? [currentMessage, buyerAdditionalInfo]
+                      .filter((value) => String(value || "").trim() !== "")
+                      .join(appendSeparator)
+                  : currentMessage;
 
                 const updatedBid = bidStore.updateBid(mapEntry.bidId, {
                   buyerAdditionalInfo: buyerAdditionalInfo || "",
