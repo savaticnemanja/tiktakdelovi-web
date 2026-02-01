@@ -27,9 +27,7 @@ export default function App() {
   const [status, setStatus] = useState(null);
 
   const [sellerName, setSellerName] = useState("");
-  const [sellerShop, setSellerShop] = useState("");
   const [sellerNumber, setSellerNumber] = useState("");
-  const [sellerCity, setSellerCity] = useState("");
   const [sellerStatus, setSellerStatus] = useState(null);
 
   const send = async (e) => {
@@ -73,7 +71,7 @@ export default function App() {
   const registerSeller = (e) => {
     e.preventDefault();
     const subject = "Prijava prodavnice - TikTak Delovi";
-    const body = `Ime: ${sellerName}\nProdavnica: ${sellerShop}\nTelefon: ${sellerNumber}\nGrad: ${sellerCity}`;
+    const body = `Ime: ${sellerName}\nTelefon: ${sellerNumber}`;
     const mailto = `mailto:${sellerEmail}?subject=${encodeURIComponent(
       subject
     )}&body=${encodeURIComponent(body)}`;
@@ -136,9 +134,6 @@ export default function App() {
               loading="lazy"
             />
             <div className="hero-overlay" />
-            <div className="hero-badge reveal" data-reveal="fade">
-              Mreža proverenih prodavaca
-            </div>
             <div className="hero-content stagger" data-reveal="stagger">
               <p className="eyebrow">Brzo. Precizno. Lokalno.</p>
               <h1>
@@ -154,22 +149,8 @@ export default function App() {
                   Traži deo
                 </a>
                 <a className="btn ghost" href="#seller-form">
-                  Registruj prodavnicu
+                  Registrujte se kao prodavac
                 </a>
-              </div>
-              <div className="hero-metrics">
-                <div>
-                  <strong>2–5 min</strong>
-                  <span>do prve ponude</span>
-                </div>
-                <div>
-                  <strong>Jedan formular</strong>
-                  <span>više prodavaca</span>
-                </div>
-                <div>
-                  <strong>0% provizije</strong>
-                  <span>za kupce</span>
-                </div>
               </div>
             </div>
           </div>
@@ -189,7 +170,7 @@ export default function App() {
             <div className="step-card">
               <span className="step-number">02</span>
               <h3>Prodavci odgovaraju</h3>
-              <p>Upit stiže proverеним prodavcima iz vaše mreže.</p>
+              <p>Upit stiže proverenim prodavcima iz vaše mreže.</p>
             </div>
             <div className="step-card">
               <span className="step-number">03</span>
@@ -430,28 +411,23 @@ export default function App() {
           </div>
 
           <div className="footer-form">
-            <h4>Registrujte prodavnicu</h4>
+            <h4>Registrujte se kao prodavac</h4>
             <p>
               Unesite osnovne podatke i kliknite “Pošalji prijavu”. Otvoriće se
               vaš email klijent sa pripremljenom porukom.
             </p>
-            <form className="stagger" data-reveal="stagger" onSubmit={registerSeller}>
-              <div className="field-grid two">
+            <form
+              className="stagger seller-form"
+              data-reveal="stagger"
+              onSubmit={registerSeller}
+            >
+              <div className="field-grid two seller-grid">
                 <label>
                   Ime i prezime
                   <input
                     value={sellerName}
                     onChange={(e) => setSellerName(e.target.value)}
                     placeholder="Ivana Marković"
-                    required
-                  />
-                </label>
-                <label>
-                  Naziv prodavnice
-                  <input
-                    value={sellerShop}
-                    onChange={(e) => setSellerShop(e.target.value)}
-                    placeholder="Auto Line"
                     required
                   />
                 </label>
@@ -464,19 +440,12 @@ export default function App() {
                     required
                   />
                 </label>
-                <label>
-                  Grad
-                  <input
-                    value={sellerCity}
-                    onChange={(e) => setSellerCity(e.target.value)}
-                    placeholder="Beograd"
-                    required
-                  />
-                </label>
+                <div className="seller-submit">
+                  <button type="submit" className="btn light">
+                    Pošalji prijavu
+                  </button>
+                </div>
               </div>
-              <button type="submit" className="btn light">
-                Pošalji prijavu
-              </button>
               {sellerStatus && (
                 <div className="status ok" role="status" aria-live="polite">
                   {sellerStatus.text}
