@@ -552,6 +552,11 @@ button {
   border: 1px solid #f4caca;
 }
 
+.telegram-cta {
+  justify-content: center;
+  width: 100%;
+}
+
 .footer {
   background: #121212;
   color: #f2eee9;

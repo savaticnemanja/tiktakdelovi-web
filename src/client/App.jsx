@@ -62,6 +62,7 @@ export default function App() {
         text: sentCount
           ? `Poslato ${sentCount} prodavcu(a).${templateLabel}`
           : `Poslato.${templateLabel}`,
+        bidId: data?.bidId || null,
       });
     } catch (err) {
       setStatus({ ok: false, text: err.message });
@@ -403,6 +404,16 @@ export default function App() {
                   {status.ok ? "OK" : "GREŠKA"} {status.text}
                 </div>
               )}
+              {status?.ok &&
+                notificationPreference === "telegram" &&
+                status.bidId && (
+                  <a
+                    className="btn light telegram-cta"
+                    href={`https://t.me/tiktakdelovi_bot?start=${status.bidId}`}
+                  >
+                    Poveži Telegram za zahtev #{status.bidId}
+                  </a>
+                )}
             </form>
           </div>
         </section>
