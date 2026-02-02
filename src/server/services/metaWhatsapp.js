@@ -23,7 +23,13 @@ export const createMetaClient = ({
   const sanitizeMaskedOrDash = (value) => sanitizeMasked(value) || "-";
   const sanitizeOrDash = (value) => sanitize(value) || "-";
 
-  const sendTemplate = async ({ to, template, components, keepPlus = false }) => {
+  const sendTemplate = async ({
+    to,
+    template,
+    components,
+    keepPlus = false,
+    languageOverride,
+  }) => {
     if (!token || !phoneNumberId) {
       throw new Error("Meta Cloud API not configured.");
     }
@@ -38,7 +44,7 @@ export const createMetaClient = ({
       template: {
         name: template,
         language: {
-          code: templateLanguage,
+          code: languageOverride || templateLanguage,
         },
         components,
       },
@@ -155,28 +161,13 @@ export const createMetaClient = ({
     return metaResp;
   };
 
-  const sendNotifySeller = async ({
-    to,
-    bidId,
-    bidMessage,
-    make,
-    model,
-    year,
-    fuelType,
-    chassis,
-  }) => {
+  const sendNotifySeller = async ({ to, bidId }) => {
     if (!templateSellerNotification || !to) {
       return null;
     }
     const sanitizedBidId = sanitize(bidId);
-    const sanitizedBidMessage = sanitizeMasked(bidMessage);
-    const sanitizedMake = sanitizeOrDash(make);
-    const sanitizedModel = sanitizeOrDash(model);
-    const sanitizedYear = sanitizeOrDash(year);
-    const sanitizedFuel = sanitizeOrDash(fuelType);
-    const sanitizedChassis = sanitizeOrDash(chassis);
-    if (!sanitizedBidId || !sanitizedBidMessage) {
-      throw new Error("bidId and bidMessage are required.");
+    if (!sanitizedBidId) {
+      throw new Error("bidId is required.");
     }
     return sendTemplate({
       to,
@@ -197,33 +188,8 @@ export const createMetaClient = ({
           parameters: [
             {
               type: "text",
-              parameter_name: "make",
-              text: sanitizedMake,
-            },
-            {
-              type: "text",
-              parameter_name: "model",
-              text: sanitizedModel,
-            },
-            {
-              type: "text",
-              parameter_name: "year",
-              text: sanitizedYear,
-            },
-            {
-              type: "text",
-              parameter_name: "fuel_type",
-              text: sanitizedFuel,
-            },
-            {
-              type: "text",
-              parameter_name: "chassis",
-              text: sanitizedChassis,
-            },
-            {
-              type: "text",
-              parameter_name: "bid_message",
-              text: sanitizedBidMessage,
+              parameter_name: "bid_id",
+              text: sanitizedBidId,
             },
           ],
         },
@@ -569,6 +535,7 @@ export const createMetaClient = ({
     return sendTemplate({
       to,
       template: templateCourierNotification,
+      languageOverride: "en",
       components: [
         {
           type: "header",

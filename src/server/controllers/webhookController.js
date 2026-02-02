@@ -179,12 +179,6 @@ export const createWebhookController = ({
                     await metaClient.sendNotifySeller({
                       to: bid.sellerContact,
                       bidId: bid.bidId,
-                      bidMessage: bid.bidMessage,
-                      make: bid.make,
-                      model: bid.model,
-                      year: bid.year,
-                      fuelType: bid.fuelType,
-                      chassis: bid.chassis,
                     });
                   } catch (err) {
                     console.error(
