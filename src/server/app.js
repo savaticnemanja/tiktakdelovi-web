@@ -67,6 +67,7 @@ export const createApp = () => {
     telegramClient,
     ownerNumber: ENV.OWNER_NUMBER,
     courierNumber: ENV.COURIER_NUMBER,
+    sellerNumbers: ENV.SELLER_NUMBERS,
     verifyToken: ENV.META_WEBHOOK_VERIFICATION_TOKEN,
   });
   const telegramController = createTelegramController({

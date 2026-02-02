@@ -13,6 +13,7 @@ export const createWebhookController = ({
   telegramClient,
   ownerNumber,
   courierNumber,
+  sellerNumbers,
   verifyToken,
 }) => {
   const verifyWebhook = (req, res) => {
@@ -59,8 +60,15 @@ export const createWebhookController = ({
             const messageType = message?.type;
 
             if (messageType === "image" && message?.image?.id && from) {
+              const normalizedSender = normalizePhone(from);
+              const allowedSellers = Array.isArray(sellerNumbers)
+                ? sellerNumbers.map((number) => normalizePhone(number))
+                : [];
+              if (!allowedSellers.includes(normalizedSender)) {
+                continue;
+              }
               const caption = message?.image?.caption || "";
-              const bidIdMatch = caption.match(/#(\d+)/);
+              const bidIdMatch = caption.match(/(\d+)/);
               const bidId = bidIdMatch ? bidIdMatch[1] : null;
               if (!bidId) {
                 continue;
