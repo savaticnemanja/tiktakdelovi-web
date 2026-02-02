@@ -58,6 +58,3 @@ Compose reads `.env`, builds via Dockerfile, and exposes http://localhost:${HOST
 - `POST /api/request` with `{ name, customerNumber, bidMessage, make, model, year, fuelType, chassis }`
 - `GET /webhook` Meta verification endpoint (uses `META_WEBHOOK_VERIFICATION_TOKEN`)
 - `POST /webhook` Meta inbound messages; expects seller replies in `BID_ID PRICE` format and sends offer templates to buyer + owner
-
-
-- OWNER IMA CTA DA PROSLEDI POTVRDU DOSTAVLJACU I PRODAVCU (ODVOJENO)
