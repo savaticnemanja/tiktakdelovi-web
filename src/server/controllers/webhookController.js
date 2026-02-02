@@ -12,6 +12,7 @@ export const createWebhookController = ({
   metaClient,
   telegramClient,
   ownerNumber,
+  courierNumber,
   verifyToken,
 }) => {
   const verifyWebhook = (req, res) => {
@@ -104,6 +105,96 @@ export const createWebhookController = ({
               }
               // Owner forwarding disabled by request.
               continue;
+            }
+
+            if (messageType === "button" && message?.button && from) {
+              const sender = normalizePhone(from);
+              const ownerSender = normalizePhone(ownerNumber);
+              if (!ownerSender || sender !== ownerSender) {
+                continue;
+              }
+
+              const repliedToId = message?.context?.id;
+              const mapEntry = getMapEntry(repliedToId);
+              const buttonPayload = message.button.payload || message.button.text || "";
+              let actionFromPayload = "";
+              let bidIdFromPayload = "";
+              try {
+                const parsedPayload = JSON.parse(buttonPayload);
+                actionFromPayload = String(parsedPayload?.action || "");
+                bidIdFromPayload = String(parsedPayload?.bid_id || parsedPayload?.bidId || "");
+              } catch (err) {
+                actionFromPayload = "";
+                bidIdFromPayload = "";
+              }
+              const mapEntryWithFallback =
+                mapEntry ||
+                (bidIdFromPayload
+                  ? { bidId: bidIdFromPayload, kind: "owner_notification" }
+                  : null);
+              if (!mapEntryWithFallback || mapEntryWithFallback.kind !== "owner_notification") {
+                continue;
+              }
+              const bid = mapEntryWithFallback?.bidId
+                ? bidStore.getBidRequest(mapEntryWithFallback.bidId)
+                : null;
+              if (!bid) {
+                continue;
+              }
+
+              const normalizedPayload = String(buttonPayload).toLowerCase();
+              if (actionFromPayload === "notify_courier" || normalizedPayload.includes("dostavlja")) {
+                if (courierNumber && bid.sellerContact && bid.bidOffer) {
+                  try {
+                    await metaClient.sendOfferToCourier({
+                      to: courierNumber,
+                      bidId: bid.bidId,
+                      make: bid.make,
+                      model: bid.model,
+                      year: bid.year,
+                      fuelType: bid.fuelType,
+                      chassis: bid.chassis,
+                      buyerName: bid.buyerName,
+                      buyerAddress: bid.buyerAddress,
+                      buyerCity: bid.buyerCity,
+                      buyerPostalCode: bid.buyerPostalCode,
+                      buyerContact: bid.buyerContact,
+                      bidMessage: bid.bidMessage,
+                      sellerNumber: bid.sellerContact,
+                      bidOffer: bid.bidOffer,
+                    });
+                  } catch (err) {
+                    console.error(
+                      "Courier notification failed:",
+                      err?.response?.data || err.message || String(err),
+                    );
+                  }
+                }
+                continue;
+              }
+
+              if (actionFromPayload === "notify_seller" || normalizedPayload.includes("prodav")) {
+                if (bid.sellerContact) {
+                  try {
+                    await metaClient.sendNotifySeller({
+                      to: bid.sellerContact,
+                      bidId: bid.bidId,
+                      bidMessage: bid.bidMessage,
+                      make: bid.make,
+                      model: bid.model,
+                      year: bid.year,
+                      fuelType: bid.fuelType,
+                      chassis: bid.chassis,
+                    });
+                  } catch (err) {
+                    console.error(
+                      "Seller notify failed:",
+                      err?.response?.data || err.message || String(err),
+                    );
+                  }
+                }
+                continue;
+              }
             }
 
             if (interactiveType === "nfm_reply") {
@@ -250,6 +341,32 @@ export const createWebhookController = ({
                       "Owner notification failed:",
                       err?.response?.data || err.message || String(err),
                     );
+                  }
+                  if (courierNumber) {
+                    try {
+                      await metaClient.sendOfferToCourier({
+                        to: courierNumber,
+                        bidId: updated.bidId,
+                        make: updated.make,
+                        model: updated.model,
+                        year: updated.year,
+                        fuelType: updated.fuelType,
+                        chassis: updated.chassis,
+                        buyerName: updated.buyerName,
+                        buyerAddress: updated.buyerAddress,
+                        buyerCity: updated.buyerCity,
+                        buyerPostalCode: updated.buyerPostalCode,
+                        buyerContact: updated.buyerContact,
+                        bidMessage: updated.bidMessage,
+                        sellerNumber: updated.sellerContact,
+                        bidOffer: updated.bidOffer,
+                      });
+                    } catch (err) {
+                      console.error(
+                        "Courier notification failed:",
+                        err?.response?.data || err.message || String(err),
+                      );
+                    }
                   }
                 }
                 continue;

@@ -36,6 +36,7 @@ export const createApp = () => {
     token: ENV.META_WHATSAPP_TOKEN,
     phoneNumberId: ENV.META_PHONE_NUMBER_ID,
     templateSellerInquiry: ENV.META_TEMPLATE_SELLER_INQUIRY,
+    templateSellerNotification: ENV.META_TEMPLATE_SELLER_NOTIFICATION,
     templateSellerInquiryFlowTitle: ENV.META_TEMPLATE_SELLER_INQUIRY_FLOW_TITLE,
     templateBuyerReview: ENV.META_TEMPLATE_BUYER_REVIEW,
     templateBuyerReviewFlowTitle: ENV.META_TEMPLATE_BUYER_REVIEW_FLOW_TITLE,
@@ -43,6 +44,7 @@ export const createApp = () => {
     templateBuyerOffer: ENV.META_TEMPLATE_BUYER_OFFER,
     templateBuyerOfferFlowTitle: ENV.META_TEMPLATE_BUYER_OFFER_FLOW_TITLE,
     templateOwnerNotification: ENV.META_TEMPLATE_OWNER_NOTIFICATION,
+    templateCourierNotification: ENV.META_TEMPLATE_COURIER_NOTIFICATION,
     messageToBid,
     metaLogger: { logError: logMetaError },
   });
@@ -64,6 +66,7 @@ export const createApp = () => {
     metaClient,
     telegramClient,
     ownerNumber: ENV.OWNER_NUMBER,
+    courierNumber: ENV.COURIER_NUMBER,
     verifyToken: ENV.META_WEBHOOK_VERIFICATION_TOKEN,
   });
   const telegramController = createTelegramController({
