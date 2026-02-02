@@ -535,7 +535,6 @@ export const createMetaClient = ({
     return sendTemplate({
       to,
       template: templateCourierNotification,
-      languageOverride: "en",
       components: [
         {
           type: "header",
