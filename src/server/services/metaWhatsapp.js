@@ -556,8 +556,8 @@ export const createMetaClient = ({
             { type: "text", parameter_name: "buyer_postal_code", text: sanitizedBuyerPostalCode },
             { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
             { type: "text", parameter_name: "bid_message", text: sanitizedBidMessage },
+            { type: "text", parameter_name: "seller_contact", text: sanitizedSellerNumber },
             { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
-            { type: "text", parameter_name: "seller_number", text: sanitizedSellerNumber },
           ],
         },
         {
