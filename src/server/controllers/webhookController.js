@@ -336,32 +336,6 @@ export const createWebhookController = ({
                       err?.response?.data || err.message || String(err),
                     );
                   }
-                  if (courierNumber) {
-                    try {
-                      await metaClient.sendOfferToCourier({
-                        to: courierNumber,
-                        bidId: updated.bidId,
-                        make: updated.make,
-                        model: updated.model,
-                        year: updated.year,
-                        fuelType: updated.fuelType,
-                        chassis: updated.chassis,
-                        buyerName: updated.buyerName,
-                        buyerAddress: updated.buyerAddress,
-                        buyerCity: updated.buyerCity,
-                        buyerPostalCode: updated.buyerPostalCode,
-                        buyerContact: updated.buyerContact,
-                        bidMessage: updated.bidMessage,
-                        sellerNumber: updated.sellerContact,
-                        bidOffer: updated.bidOffer,
-                      });
-                    } catch (err) {
-                      console.error(
-                        "Courier notification failed:",
-                        err?.response?.data || err.message || String(err),
-                      );
-                    }
-                  }
                 }
                 continue;
               }
