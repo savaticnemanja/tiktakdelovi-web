@@ -560,34 +560,6 @@ export const createMetaClient = ({
             { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
           ],
         },
-        {
-          type: "button",
-          sub_type: "quick_reply",
-          index: "0",
-          parameters: [
-            {
-              type: "payload",
-              payload: JSON.stringify({
-                action: "notify_courier",
-                bid_id: sanitizedBidId,
-              }),
-            },
-          ],
-        },
-        {
-          type: "button",
-          sub_type: "quick_reply",
-          index: "1",
-          parameters: [
-            {
-              type: "payload",
-              payload: JSON.stringify({
-                action: "notify_seller",
-                bid_id: sanitizedBidId,
-              }),
-            },
-          ],
-        },
       ],
     });
   };
