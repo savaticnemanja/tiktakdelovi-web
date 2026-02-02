@@ -7,6 +7,7 @@ import { createBidStore } from "./stores/bidStore.js";
 import { createMessageBidMap } from "./stores/messageBidMap.js";
 import { createMetaClient } from "./services/metaWhatsapp.js";
 import { createRequestController } from "./controllers/requestController.js";
+import { createTowRequestController } from "./controllers/towRequestController.js";
 import { createWebhookController } from "./controllers/webhookController.js";
 import { createHealthController } from "./controllers/healthController.js";
 import { createTelegramController } from "./controllers/telegramController.js";
@@ -45,6 +46,10 @@ export const createApp = () => {
     templateBuyerOfferFlowTitle: ENV.META_TEMPLATE_BUYER_OFFER_FLOW_TITLE,
     templateOwnerNotification: ENV.META_TEMPLATE_OWNER_NOTIFICATION,
     templateCourierNotification: ENV.META_TEMPLATE_COURIER_NOTIFICATION,
+    templateTowInquiry: ENV.META_TEMPLATE_TOW_INQUIRY,
+    templateRoadsideInquiry: ENV.META_TEMPLATE_ROADSIDE_INQUIRY,
+    templateTowInquiryFlowTitle: ENV.META_TEMPLATE_TOW_INQUIRY_FLOW_TITLE,
+    templateRoadsideInquiryFlowTitle: ENV.META_TEMPLATE_ROADSIDE_INQUIRY_FLOW_TITLE,
     messageToBid,
     metaLogger: { logError: logMetaError },
   });
@@ -57,6 +62,15 @@ export const createApp = () => {
     bidStore,
     metaClient,
     templateName: ENV.META_TEMPLATE_SELLER_INQUIRY,
+  });
+  const towRequestController = createTowRequestController({
+    towDriverNumbers: ENV.TOW_DRIVER_NUMBERS,
+    bidStore,
+    metaClient,
+    templateTowInquiry: ENV.META_TEMPLATE_TOW_INQUIRY,
+    templateRoadsideInquiry: ENV.META_TEMPLATE_ROADSIDE_INQUIRY,
+    templateTowInquiryFlowTitle: ENV.META_TEMPLATE_TOW_INQUIRY_FLOW_TITLE,
+    templateRoadsideInquiryFlowTitle: ENV.META_TEMPLATE_ROADSIDE_INQUIRY_FLOW_TITLE,
   });
   const healthController = createHealthController();
 
@@ -78,6 +92,7 @@ export const createApp = () => {
 
   app.use("/api", apiLogger, createApiRouter({
     requestController,
+    towRequestController,
     healthController,
   }));
   app.use("/webhook", webhookLogger, createWebhookRouter({ webhookController }));

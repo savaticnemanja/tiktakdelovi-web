@@ -17,6 +17,10 @@ META_PHONE_NUMBER_ID=replace_me
 META_WEBHOOK_VERIFICATION_TOKEN=replace_me
 META_TEMPLATE_SELLER_INQUIRY=seller_inquiry
 META_TEMPLATE_SELLER_NOTIFICATION=seller_notification
+META_TEMPLATE_TOW_INQUIRY=tow_inquiry
+META_TEMPLATE_ROADSIDE_INQUIRY=roadside_inquiry
+META_TEMPLATE_TOW_INQUIRY_FLOW_TITLE=Kreiranje ponude
+META_TEMPLATE_ROADSIDE_INQUIRY_FLOW_TITLE=Kreiranje ponude
 META_TEMPLATE_SELLER_INQUIRY_FLOW_TITLE=Podaci za dostavu
 META_TEMPLATE_LANGUAGE=sr
 META_TEMPLATE_BUYER_OFFER=bid_offer_to_buyer
@@ -30,6 +34,8 @@ BID_ID_START=10001
 
 # Comma-separated seller phone numbers (E.164)
 SELLER_NUMBERS=+15551230001,+15551230002
+# Comma-separated tow driver phone numbers (E.164)
+TOW_DRIVER_NUMBERS=+15551239901,+15551239902
 
 # Ports (HOST_PORT is what the VPS exposes; PORT is what the container listens on)
 HOST_PORT=8081
@@ -59,5 +65,6 @@ Compose reads `.env`, builds via Dockerfile, and exposes http://localhost:${HOST
 ## Endpoints
 - `GET /api/health`
 - `POST /api/request` with `{ name, customerNumber, bidMessage, make, model, year, fuelType, chassis }`
+- `POST /api/tow-request` with `{ name, customerNumber, serviceType, locationFrom, locationTo, details }`
 - `GET /webhook` Meta verification endpoint (uses `META_WEBHOOK_VERIFICATION_TOKEN`)
 - `POST /webhook` Meta inbound messages; expects seller replies in `BID_ID PRICE` format and sends offer templates to buyer + owner

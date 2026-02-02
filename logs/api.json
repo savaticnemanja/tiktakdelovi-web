@@ -308,5 +308,46 @@
       "template": "seller_inquiry",
       "bidId": "10001"
     }
+  },
+  {
+    "at": "2026-02-02T21:08:12.814Z",
+    "type": "api",
+    "method": "POST",
+    "path": "/api/tow-request",
+    "status": 500,
+    "durationMs": 0,
+    "request": {
+      "headers": {
+        "host": "localhost:4000",
+        "connection": "keep-alive",
+        "content-length": "176",
+        "sec-ch-ua-platform": "\"macOS\"",
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+        "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Brave\";v=\"144\"",
+        "content-type": "application/json",
+        "sec-ch-ua-mobile": "?0",
+        "accept": "*/*",
+        "sec-gpc": "1",
+        "accept-language": "en-US,en;q=0.9",
+        "origin": "http://localhost:5173",
+        "sec-fetch-site": "same-site",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-dest": "empty",
+        "referer": "http://localhost:5173/",
+        "accept-encoding": "gzip, deflate, br, zstd"
+      },
+      "query": {},
+      "body": {
+        "name": "Test",
+        "customerNumber": "+381652290662",
+        "serviceType": "pomoc_na_putu",
+        "locationFrom": "test",
+        "locationTo": "",
+        "details": "Ime: Test / Telefon: +381652290662 / Opis: test"
+      }
+    },
+    "response": "{\"error\":\"No tow drivers configured (set TOW_DRIVER_NUMBERS).\"}"
+  }
+]}
   }
 ]
