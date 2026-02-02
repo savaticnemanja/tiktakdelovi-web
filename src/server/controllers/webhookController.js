@@ -32,26 +32,6 @@ export const createWebhookController = ({
         keys
           .map((key) => data?.[key])
           .find((value) => value !== undefined && value !== null && String(value).trim() !== "");
-      const extractBidIdFromResponse = (data) => {
-        const direct =
-          pickValue(data, ["bid_id", "bidId", "screen_0_bid_id_0", "screen_0_Bid_id_0"]);
-        if (direct) {
-          return String(direct).trim();
-        }
-        const payloadRaw = data?.payload;
-        if (payloadRaw) {
-          try {
-            const parsed = typeof payloadRaw === "string" ? JSON.parse(payloadRaw) : payloadRaw;
-            const fromPayload = parsed?.bid_id || parsed?.bidId;
-            if (fromPayload) {
-              return String(fromPayload).trim();
-            }
-          } catch (err) {
-            // ignore payload parse errors
-          }
-        }
-        return "";
-      };
 
       const getMapEntry = (messageId) => {
         const entry = messageId ? messageToBid.get(messageId) : null;
@@ -129,6 +109,9 @@ export const createWebhookController = ({
             if (interactiveType === "nfm_reply") {
               const repliedToId = message?.context?.id;
               const mapEntry = getMapEntry(repliedToId);
+              const bid = mapEntry?.bidId
+                ? bidStore.getBidRequest(mapEntry.bidId)
+                : null;
 
               const responseJsonRaw = message?.interactive?.nfm_reply?.response_json;
               let responseData = null;
@@ -137,24 +120,13 @@ export const createWebhookController = ({
               } catch (err) {
                 responseData = null;
               }
-              const bidIdFromResponse = responseData
-                ? extractBidIdFromResponse(responseData)
-                : "";
-              const mapEntryWithFallback =
-                mapEntry ||
-                (bidIdFromResponse
-                  ? { bidId: bidIdFromResponse, kind: "seller_inquiry" }
-                  : null);
-              const bid = mapEntryWithFallback?.bidId
-                ? bidStore.getBidRequest(mapEntryWithFallback.bidId)
-                : null;
               const price = responseData?.screen_0_Cena_0 || responseData?.price;
               const note =
                 responseData?.screen_0_Napomena_1 ||
                 responseData?.note ||
                 "";
 
-              if (mapEntryWithFallback?.kind === "buyer_review" && bid) {
+              if (mapEntry?.kind === "buyer_review" && bid) {
                 const buyerAdditionalInfoPicked = pickValue(responseData, [
                   "buyer_additional_info",
                   "additional_info",
@@ -182,7 +154,7 @@ export const createWebhookController = ({
                       .join(appendSeparator)
                   : currentMessage;
 
-                const updatedBid = bidStore.updateBid(mapEntryWithFallback.bidId, {
+                const updatedBid = bidStore.updateBid(mapEntry.bidId, {
                   buyerAdditionalInfo: buyerAdditionalInfo || "",
                   bidMessage: appendedMessage,
                 });
@@ -209,7 +181,7 @@ export const createWebhookController = ({
                 continue;
               }
 
-              if (mapEntryWithFallback?.kind === "buyer_offer" && bid) {
+              if (mapEntry?.kind === "buyer_offer" && bid) {
                 const buyerName = pickValue(responseData, [
                   "buyer_name",
                   "name",
@@ -283,7 +255,7 @@ export const createWebhookController = ({
                 continue;
               }
 
-              if (mapEntryWithFallback?.kind === "seller_inquiry") {
+              if (mapEntry?.kind === "seller_inquiry") {
                 const sellerContact = normalizePhone(from);
                 const needsMoreInfoRaw = pickValue(responseData, [
                   "screen_0_Potrebne_dodatne_informacije_2",
@@ -312,11 +284,9 @@ export const createWebhookController = ({
                 })();
 
                 const latestBidDetails =
-                  bid?.bidMessage ||
-                  bidStore.getBidRequest(mapEntryWithFallback.bidId)?.bidMessage ||
-                  "";
+                  bid?.bidMessage || bidStore.getBidRequest(mapEntry.bidId)?.bidMessage || "";
 
-                const updated = bidStore.updateBid(mapEntryWithFallback.bidId, {
+                const updated = bidStore.updateBid(mapEntry.bidId, {
                   sellerContact,
                   bidOffer: price ? String(price) : "",
                   bidNote: note ? String(note) : "",

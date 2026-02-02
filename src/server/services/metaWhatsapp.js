@@ -138,10 +138,7 @@ export const createMetaClient = ({
           parameters: [
             {
               type: "payload",
-              payload: JSON.stringify({
-                screen: templateSellerInquiryFlowTitle,
-                bid_id: sanitizedBidId,
-              }),
+              payload: JSON.stringify({ screen: templateSellerInquiryFlowTitle }),
             },
           ],
         },
