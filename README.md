@@ -9,6 +9,7 @@ React (Vite) frontend + Express backend in one project. The app sends a WhatsApp
 - `npm start` — start Express serving `dist/`
 
 ## Env
+
 Create `.env` at repo root:
 ```
 # Meta WhatsApp Cloud API
