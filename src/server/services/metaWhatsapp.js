@@ -13,6 +13,7 @@ export const createMetaClient = ({
   templateBuyerReview,
   templateBuyerReviewFlowTitle,
   templateBuyerOffer,
+  templateBuyerMechanicOffer,
   templateBuyerOfferFlowTitle,
   templateOwnerNotification,
   templateCourierNotification,
@@ -542,6 +543,87 @@ export const createMetaClient = ({
     return metaResp;
   };
 
+  const sendOfferToBuyerMechanic = async ({
+    to,
+    bidId,
+    bidDetails,
+    bidOffer,
+    bidDate,
+    bidNote,
+  }) => {
+    const sanitizedBidId = sanitize(bidId);
+    const sanitizedBidDetails = sanitizeMasked(bidDetails);
+    const sanitizedBidOffer = sanitize(bidOffer);
+    const sanitizedBidDate = sanitize(bidDate);
+    const sanitizedBidNote = sanitizeMaskedOrDash(bidNote);
+    if (!sanitizedBidId || !sanitizedBidDetails || !sanitizedBidOffer) {
+      throw new Error("bidId, bidDetails and bidOffer are required.");
+    }
+    const metaResp = await sendTemplate({
+      to,
+      template: templateBuyerMechanicOffer,
+      keepPlus: true,
+      components: [
+        {
+          type: "header",
+          parameters: [
+            {
+              type: "text",
+              parameter_name: "bid_id",
+              text: sanitizedBidId,
+            },
+          ],
+        },
+        {
+          type: "body",
+          parameters: [
+            {
+              type: "text",
+              parameter_name: "bid_id",
+              text: sanitizedBidId,
+            },
+            {
+              type: "text",
+              parameter_name: "bid_details",
+              text: sanitizedBidDetails,
+            },
+            {
+              type: "text",
+              parameter_name: "bid_offer",
+              text: sanitizedBidOffer,
+            },
+            {
+              type: "text",
+              parameter_name: "bid_date",
+              text: sanitizedBidDate || "-",
+            },
+            {
+              type: "text",
+              parameter_name: "bid_note",
+              text: sanitizedBidNote || "-",
+            },
+          ],
+        },
+        {
+          type: "button",
+          sub_type: "flow",
+          index: "0",
+          parameters: [
+            {
+              type: "payload",
+              payload: JSON.stringify({ screen: templateBuyerOfferFlowTitle }),
+            },
+          ],
+        },
+      ],
+    });
+    const sentId = metaResp?.data?.messages?.[0]?.id;
+    if (sentId && messageToBid) {
+      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "buyer_mechanic_offer" });
+    }
+    return metaResp;
+  };
+
   const sendOfferToOwner = async ({
     to,
     bidId,
@@ -747,6 +829,7 @@ export const createMetaClient = ({
     sendNotifySeller,
     sendBuyerReview,
     sendOfferToBuyer,
+    sendOfferToBuyerMechanic,
     sendOfferToOwner,
     sendOfferToCourier,
     sendTowInquiry,

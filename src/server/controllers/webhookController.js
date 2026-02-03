@@ -35,6 +35,16 @@ export const createWebhookController = ({
           .map((key) => data?.[key])
           .find((value) => value !== undefined && value !== null && String(value).trim() !== "");
 
+      const formatBidDateTime = ({ dateISO, time }) => {
+        const cleanedDate = String(dateISO || "").trim();
+        const cleanedTime = String(time || "").trim();
+        const match = cleanedDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        const formattedDate = match
+          ? `${match[3]}.${match[2]}.${match[1]}.`
+          : cleanedDate;
+        return [formattedDate, cleanedTime].filter(Boolean).join(" ") || "-";
+      };
+
       const getMapEntry = (messageId) => {
         const entry = messageId ? messageToBid.get(messageId) : null;
         if (!entry) {
@@ -213,11 +223,30 @@ export const createWebhookController = ({
               } catch (err) {
                 responseData = null;
               }
-              const price = responseData?.screen_0_Cena_0 || responseData?.price;
+              const price = pickValue(responseData, [
+                "screen_0_Cena_0",
+                "screen_0_Cena_2",
+                "screen_0_Cena_1",
+                "price",
+                "cena",
+              ]);
               const note =
-                responseData?.screen_0_Napomena_1 ||
-                responseData?.note ||
-                "";
+                pickValue(responseData, [
+                  "screen_0_Napomena_1",
+                  "screen_0_Napomena_3",
+                  "screen_0_Napomena_2",
+                  "note",
+                ]) || "";
+              const dateISO = pickValue(responseData, [
+                "screen_0_Datum_0",
+                "date",
+                "datum",
+              ]);
+              const time = pickValue(responseData, [
+                "screen_0_Vreme_1",
+                "time",
+                "vreme",
+              ]);
 
               if (mapEntry?.kind === "buyer_review" && bid) {
                 const buyerAdditionalInfoPicked = pickValue(responseData, [
@@ -341,6 +370,41 @@ export const createWebhookController = ({
                   } catch (err) {
                     console.error(
                       "Owner notification failed:",
+                      err?.response?.data || err.message || String(err),
+                    );
+                  }
+                }
+                continue;
+              }
+
+              if (mapEntry?.kind === "mechanic_inquiry") {
+                const mechanicContact = normalizePhone(from);
+                const bidDate = formatBidDateTime({ dateISO, time });
+
+                const latestBidDetails =
+                  bid?.bidMessage || bidStore.getBidRequest(mapEntry.bidId)?.bidMessage || "";
+
+                const updated = bidStore.updateBid(mapEntry.bidId, {
+                  sellerContact: mechanicContact,
+                  bidOffer: price ? String(price) : "",
+                  bidNote: note ? String(note) : "",
+                  bidDate,
+                  bidMessage: latestBidDetails || bid?.bidMessage,
+                });
+
+                if (updated && updated.customerNumber && price) {
+                  try {
+                    await metaClient.sendOfferToBuyerMechanic({
+                      to: updated.customerNumber,
+                      bidId: updated.bidId,
+                      bidDetails: updated.bidMessage,
+                      bidOffer: String(price),
+                      bidDate,
+                      bidNote: String(note || "-"),
+                    });
+                  } catch (err) {
+                    console.error(
+                      "Mechanic offer forward failed:",
                       err?.response?.data || err.message || String(err),
                     );
                   }
