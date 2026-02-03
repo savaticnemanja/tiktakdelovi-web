@@ -8,6 +8,8 @@ export const createMetaClient = ({
   templateSellerInquiry,
   templateSellerNotification,
   templateSellerInquiryFlowTitle,
+  templateMechanicInquiry,
+  templateMechanicInquiryFlowTitle,
   templateBuyerReview,
   templateBuyerReviewFlowTitle,
   templateBuyerOffer,
@@ -160,6 +162,99 @@ export const createMetaClient = ({
     const sentId = metaResp?.data?.messages?.[0]?.id;
     if (sentId && messageToBid) {
       messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "seller_inquiry" });
+    }
+
+    return metaResp;
+  };
+
+  const sendInquiryToMechanic = async ({
+    to,
+    bidId,
+    bidMessage,
+    make,
+    model,
+    year,
+    fuelType,
+    chassis,
+  }) => {
+    const sanitizedBidId = sanitize(bidId);
+    const sanitizedBidMessage = sanitizeMasked(bidMessage);
+    const sanitizedMake = sanitizeOrDash(make);
+    const sanitizedModel = sanitizeOrDash(model);
+    const sanitizedYear = sanitizeOrDash(year);
+    const sanitizedFuel = sanitizeOrDash(fuelType);
+    const sanitizedChassis = sanitizeOrDash(chassis);
+    if (!sanitizedBidId || !sanitizedBidMessage) {
+      throw new Error("bidId and bidMessage are required.");
+    }
+    const metaResp = await sendTemplate({
+      to,
+      template: templateMechanicInquiry,
+      components: [
+        {
+          type: "header",
+          parameters: [
+            {
+              type: "text",
+              parameter_name: "bid_id",
+              text: sanitizedBidId,
+            },
+          ],
+        },
+        {
+          type: "body",
+          parameters: [
+            {
+              type: "text",
+              parameter_name: "make",
+              text: sanitizedMake,
+            },
+            {
+              type: "text",
+              parameter_name: "model",
+              text: sanitizedModel,
+            },
+            {
+              type: "text",
+              parameter_name: "year",
+              text: sanitizedYear,
+            },
+            {
+              type: "text",
+              parameter_name: "fuel_type",
+              text: sanitizedFuel,
+            },
+            {
+              type: "text",
+              parameter_name: "chassis",
+              text: sanitizedChassis,
+            },
+            {
+              type: "text",
+              parameter_name: "bid_message",
+              text: sanitizedBidMessage,
+            },
+          ],
+        },
+        {
+          type: "button",
+          sub_type: "flow",
+          index: "0",
+          parameters: [
+            {
+              type: "payload",
+              payload: JSON.stringify({
+                screen: templateMechanicInquiryFlowTitle,
+              }),
+            },
+          ],
+        },
+      ],
+    });
+
+    const sentId = metaResp?.data?.messages?.[0]?.id;
+    if (sentId && messageToBid) {
+      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "mechanic_inquiry" });
     }
 
     return metaResp;
@@ -648,6 +743,7 @@ export const createMetaClient = ({
 
   return {
     sendInquiryToSeller,
+    sendInquiryToMechanic,
     sendNotifySeller,
     sendBuyerReview,
     sendOfferToBuyer,

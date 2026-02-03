@@ -7,6 +7,7 @@ import { createBidStore } from "./stores/bidStore.js";
 import { createMessageBidMap } from "./stores/messageBidMap.js";
 import { createMetaClient } from "./services/metaWhatsapp.js";
 import { createRequestController } from "./controllers/requestController.js";
+import { createMechanicRequestController } from "./controllers/mechanicRequestController.js";
 import { createTowRequestController } from "./controllers/towRequestController.js";
 import { createWebhookController } from "./controllers/webhookController.js";
 import { createHealthController } from "./controllers/healthController.js";
@@ -39,6 +40,8 @@ export const createApp = () => {
     templateSellerInquiry: ENV.META_TEMPLATE_SELLER_INQUIRY,
     templateSellerNotification: ENV.META_TEMPLATE_SELLER_NOTIFICATION,
     templateSellerInquiryFlowTitle: ENV.META_TEMPLATE_SELLER_INQUIRY_FLOW_TITLE,
+    templateMechanicInquiry: ENV.META_TEMPLATE_MECHANIC_INQUIRY,
+    templateMechanicInquiryFlowTitle: ENV.META_TEMPLATE_MECHANIC_INQUIRY_FLOW_TITLE,
     templateBuyerReview: ENV.META_TEMPLATE_BUYER_REVIEW,
     templateBuyerReviewFlowTitle: ENV.META_TEMPLATE_BUYER_REVIEW_FLOW_TITLE,
     templateLanguage: ENV.META_TEMPLATE_LANGUAGE,
@@ -62,6 +65,12 @@ export const createApp = () => {
     bidStore,
     metaClient,
     templateName: ENV.META_TEMPLATE_SELLER_INQUIRY,
+  });
+  const mechanicRequestController = createMechanicRequestController({
+    mechanicNumbers: ENV.MECHANIC_NUMBERS,
+    bidStore,
+    metaClient,
+    templateName: ENV.META_TEMPLATE_MECHANIC_INQUIRY,
   });
   const towRequestController = createTowRequestController({
     towDriverNumbers: ENV.TOW_DRIVER_NUMBERS,
@@ -92,6 +101,7 @@ export const createApp = () => {
 
   app.use("/api", apiLogger, createApiRouter({
     requestController,
+    mechanicRequestController,
     towRequestController,
     healthController,
   }));

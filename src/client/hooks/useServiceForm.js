@@ -3,7 +3,12 @@ import { MAKES, MODELS } from "../data/vehicleData";
 import { YEARS, FUEL_TYPES, CHASSIS_TYPES, firstValue } from "../data/formOptions";
 import { parseJson } from "../utils/api";
 
-export const useServiceForm = ({ apiBase, serviceLabel }) => {
+export const useServiceForm = ({
+  apiBase,
+  serviceLabel,
+  apiPath = "/api/request",
+  recipientLabel = "prodavcu(a)",
+}) => {
   const [customerNumber, setCustomerNumber] = useState("");
   const [bidMessage, setBidMessage] = useState("");
   const [notificationPreference, setNotificationPreference] = useState("whatsapp");
@@ -28,7 +33,7 @@ export const useServiceForm = ({ apiBase, serviceLabel }) => {
       const labeledMessage = serviceLabel
         ? `[${serviceLabel}] ${trimmedMessage}`
         : trimmedMessage;
-      const res = await fetch(`${apiBase}/api/request`, {
+      const res = await fetch(`${apiBase}${apiPath}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -50,7 +55,7 @@ export const useServiceForm = ({ apiBase, serviceLabel }) => {
       setStatus({
         ok: true,
         text: sentCount
-          ? `Poslato ${sentCount} prodavcu(a).${templateLabel}`
+          ? `Poslato ${sentCount} ${recipientLabel}.${templateLabel}`
           : `Poslato.${templateLabel}`,
         bidId: data?.bidId || null,
       });

@@ -14,7 +14,12 @@ export default function App() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
   const partsForm = useServiceForm({ apiBase: API_BASE, serviceLabel: "Auto delovi" });
-  const serviceForm = useServiceForm({ apiBase: API_BASE, serviceLabel: "Servis" });
+  const serviceForm = useServiceForm({
+    apiBase: API_BASE,
+    serviceLabel: "Servis",
+    apiPath: "/api/mechanic-request",
+    recipientLabel: "servisu(a)",
+  });
   const roadsideForm = useRoadsideForm({
     apiBase: API_BASE,
     serviceLabel: "Pomoć na putu / šlep",
