@@ -1,4 +1,5 @@
 import React from "react";
+import { CITY_OPTIONS } from "../../../shared/cities.js";
 
 const RoadsideForm = ({ form }) => {
   const {
@@ -6,6 +7,8 @@ const RoadsideForm = ({ form }) => {
     setCustomerName,
     customerNumber,
     setCustomerNumber,
+    city,
+    setCity,
     location,
     setLocation,
     issueDescription,
@@ -30,6 +33,17 @@ const RoadsideForm = ({ form }) => {
             placeholder="Marko Marković"
             required
           />
+        </label>
+        <label>
+          Grad
+          <select value={city} onChange={(e) => setCity(e.target.value)} required>
+            <option value="">Izaberite grad</option>
+            {CITY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
         </label>
         <label>
           Lokacija

@@ -1,5 +1,6 @@
 export const createMechanicRequestController = ({
   mechanicNumbers,
+  mechanicNumbersByCity,
   bidStore,
   metaClient,
   templateName,
@@ -16,6 +17,7 @@ export const createMechanicRequestController = ({
         year,
         fuelType,
         chassis,
+        city,
       } = req.body || {};
 
       if (!customerNumber || !bidMessage) {
@@ -24,10 +26,20 @@ export const createMechanicRequestController = ({
         });
       }
 
-      if (!mechanicNumbers.length) {
+      const cityNumbers =
+        city && mechanicNumbersByCity ? mechanicNumbersByCity[city] : null;
+      const recipients =
+        Array.isArray(cityNumbers) && cityNumbers.length
+          ? cityNumbers
+          : mechanicNumbers;
+
+      if (!recipients.length) {
         return res
           .status(500)
-          .json({ error: "No mechanics configured (set MECHANIC_NUMBERS)." });
+          .json({
+            error:
+              "No mechanics configured (set CITY_MECHANIC_NUMBERS like BEOGRAD_MECHANIC_NUMBERS).",
+          });
       }
 
       if (!templateName) {
@@ -49,7 +61,7 @@ export const createMechanicRequestController = ({
       });
 
       const results = [];
-      for (const mechanic of mechanicNumbers) {
+      for (const mechanic of recipients) {
         try {
           const result = await metaClient.sendInquiryToMechanic({
             to: mechanic,
@@ -98,4 +110,3 @@ export const createMechanicRequestController = ({
     }
   };
 };
-

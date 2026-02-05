@@ -63,18 +63,21 @@ export const createApp = () => {
 
   const requestController = createRequestController({
     sellerNumbers: ENV.SELLER_NUMBERS,
+    sellerNumbersByCity: ENV.SELLER_NUMBERS_BY_CITY,
     bidStore,
     metaClient,
     templateName: ENV.META_TEMPLATE_SELLER_INQUIRY,
   });
   const mechanicRequestController = createMechanicRequestController({
     mechanicNumbers: ENV.MECHANIC_NUMBERS,
+    mechanicNumbersByCity: ENV.MECHANIC_NUMBERS_BY_CITY,
     bidStore,
     metaClient,
     templateName: ENV.META_TEMPLATE_MECHANIC_INQUIRY,
   });
   const towRequestController = createTowRequestController({
     towDriverNumbers: ENV.TOW_DRIVER_NUMBERS,
+    towDriverNumbersByCity: ENV.TOW_DRIVER_NUMBERS_BY_CITY,
     bidStore,
     metaClient,
     templateTowInquiry: ENV.META_TEMPLATE_TOW_INQUIRY,

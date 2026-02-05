@@ -1,5 +1,6 @@
 export const createTowRequestController = ({
   towDriverNumbers,
+  towDriverNumbersByCity,
   bidStore,
   metaClient,
   templateTowInquiry,
@@ -16,6 +17,7 @@ export const createTowRequestController = ({
         locationFrom,
         locationTo,
         details,
+        city,
       } = req.body || {};
 
       if (!customerNumber || !locationFrom || !details) {
@@ -24,10 +26,20 @@ export const createTowRequestController = ({
         });
       }
 
-      if (!towDriverNumbers.length) {
+      const cityNumbers =
+        city && towDriverNumbersByCity ? towDriverNumbersByCity[city] : null;
+      const recipients =
+        Array.isArray(cityNumbers) && cityNumbers.length
+          ? cityNumbers
+          : towDriverNumbers;
+
+      if (!recipients.length) {
         return res
           .status(500)
-          .json({ error: "No tow drivers configured (set TOW_DRIVER_NUMBERS)." });
+          .json({
+            error:
+              "No tow drivers configured (set CITY_TOW_DRIVER_NUMBERS like BEOGRAD_TOW_DRIVER_NUMBERS).",
+          });
       }
 
       const savedBid = bidStore.saveBidRequest({
@@ -48,7 +60,7 @@ export const createTowRequestController = ({
       }
 
       const results = [];
-      for (const driver of towDriverNumbers) {
+      for (const driver of recipients) {
         try {
           const result = await metaClient.sendTowInquiry({
             to: driver,

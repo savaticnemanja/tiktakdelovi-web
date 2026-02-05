@@ -16,27 +16,24 @@ Create `.env` at repo root:
 META_WHATSAPP_TOKEN=replace_me
 META_PHONE_NUMBER_ID=replace_me
 META_WEBHOOK_VERIFICATION_TOKEN=replace_me
-META_TEMPLATE_SELLER_INQUIRY=seller_inquiry
-META_TEMPLATE_SELLER_NOTIFICATION=seller_notification
-META_TEMPLATE_TOW_INQUIRY=tow_inquiry
-META_TEMPLATE_ROADSIDE_INQUIRY=roadside_inquiry
-META_TEMPLATE_TOW_INQUIRY_FLOW_TITLE=Kreiranje ponude
-META_TEMPLATE_ROADSIDE_INQUIRY_FLOW_TITLE=Kreiranje ponude
-META_TEMPLATE_SELLER_INQUIRY_FLOW_TITLE=Podaci za dostavu
-META_TEMPLATE_LANGUAGE=sr
-META_TEMPLATE_BUYER_OFFER=bid_offer_to_buyer
-META_TEMPLATE_BUYER_OFFER_FLOW_TITLE=Podaci za dostavu
-META_TEMPLATE_OWNER_NOTIFICATION=bid_offer_to_owner
-META_TEMPLATE_COURIER_NOTIFICATION=bid_offer_to_courier
 OWNER_NUMBER=+15551230099
 COURIER_NUMBER=+15551230098
 BID_STORE_TTL_HOURS=72
 BID_ID_START=10001
 
-# Comma-separated seller phone numbers (E.164)
-SELLER_NUMBERS=+15551230001,+15551230002
-# Comma-separated tow driver phone numbers (E.164)
-TOW_DRIVER_NUMBERS=+15551239901,+15551239902
+# City-specific phone numbers (comma-separated E.164)
+# Use CITY keys from src/shared/cities.js, e.g. BEOGRAD, NOVI_SAD, NIS, ...
+# If a selected city has no numbers configured, the server sends to all numbers
+# configured across all cities for that service.
+BEOGRAD_SELLER_NUMBERS=+15551230001,+15551230002
+NOVI_SAD_SELLER_NUMBERS=
+NIS_SELLER_NUMBERS=
+BEOGRAD_TOW_DRIVER_NUMBERS=+15551239901,+15551239902
+NOVI_SAD_TOW_DRIVER_NUMBERS=
+NIS_TOW_DRIVER_NUMBERS=
+BEOGRAD_MECHANIC_NUMBERS=+15551238801,+15551238802
+NOVI_SAD_MECHANIC_NUMBERS=
+NIS_MECHANIC_NUMBERS=
 
 # Ports (HOST_PORT is what the VPS exposes; PORT is what the container listens on)
 HOST_PORT=8081
@@ -65,7 +62,7 @@ Compose reads `.env`, builds via Dockerfile, and exposes http://localhost:${HOST
 
 ## Endpoints
 - `GET /api/health`
-- `POST /api/request` with `{ name, customerNumber, bidMessage, make, model, year, fuelType, chassis }`
-- `POST /api/tow-request` with `{ name, customerNumber, serviceType, locationFrom, locationTo, details }`
+- `POST /api/request` with `{ name, customerNumber, bidMessage, make, model, year, fuelType, chassis, city }`
+- `POST /api/tow-request` with `{ name, customerNumber, serviceType, locationFrom, locationTo, details, city }`
 - `GET /webhook` Meta verification endpoint (uses `META_WEBHOOK_VERIFICATION_TOKEN`)
 - `POST /webhook` Meta inbound messages; expects seller replies in `BID_ID PRICE` format and sends offer templates to buyer + owner

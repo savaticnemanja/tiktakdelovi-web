@@ -10,6 +10,7 @@ export const useServiceForm = ({
   recipientLabel = "prodavcu(a)",
 }) => {
   const [customerNumber, setCustomerNumber] = useState("");
+  const [city, setCity] = useState("");
   const [bidMessage, setBidMessage] = useState("");
   const [notificationPreference, setNotificationPreference] = useState("whatsapp");
   const [make, setMake] = useState(firstValue(MAKES));
@@ -45,6 +46,7 @@ export const useServiceForm = ({
           year,
           fuelType,
           chassis,
+          city,
         }),
       });
 
@@ -77,6 +79,8 @@ export const useServiceForm = ({
   return {
     customerNumber,
     setCustomerNumber,
+    city,
+    setCity,
     bidMessage,
     setBidMessage,
     notificationPreference,

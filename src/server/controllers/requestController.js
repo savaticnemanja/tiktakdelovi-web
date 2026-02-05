@@ -1,5 +1,6 @@
 export const createRequestController = ({
   sellerNumbers,
+  sellerNumbersByCity,
   bidStore,
   metaClient,
   templateName,
@@ -16,6 +17,7 @@ export const createRequestController = ({
         year,
         fuelType,
         chassis,
+        city,
       } = req.body || {};
 
       if (!customerNumber || !bidMessage) {
@@ -24,10 +26,20 @@ export const createRequestController = ({
         });
       }
 
-      if (!sellerNumbers.length) {
+      const cityNumbers =
+        city && sellerNumbersByCity ? sellerNumbersByCity[city] : null;
+      const recipients =
+        Array.isArray(cityNumbers) && cityNumbers.length
+          ? cityNumbers
+          : sellerNumbers;
+
+      if (!recipients.length) {
         return res
           .status(500)
-          .json({ error: "No sellers configured (set SELLER_NUMBERS)." });
+          .json({
+            error:
+              "No sellers configured (set CITY_SELLER_NUMBERS like BEOGRAD_SELLER_NUMBERS).",
+          });
       }
 
       const savedBid = bidStore.saveBidRequest({
@@ -43,7 +55,7 @@ export const createRequestController = ({
       });
 
       const results = [];
-      for (const seller of sellerNumbers) {
+      for (const seller of recipients) {
         try {
           const result = await metaClient.sendInquiryToSeller({
             to: seller,

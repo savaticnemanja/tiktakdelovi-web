@@ -1,59 +1,58 @@
 import dotenv from "dotenv";
+import { CITY_KEYS } from "../../shared/cities.js";
 
 dotenv.config();
 
 const OWNER_NUMBER = process.env.OWNER_NUMBER || "";
 const COURIER_NUMBER = process.env.COURIER_NUMBER || "";
 
-const SELLER_NUMBERS = (process.env.SELLER_NUMBERS || "")
-  .split(",")
-  .map((value) => value.trim())
-  .filter(Boolean);
-const TOW_DRIVER_NUMBERS = (process.env.TOW_DRIVER_NUMBERS || "")
-  .split(",")
-  .map((value) => value.trim())
-  .filter(Boolean);
-const MECHANIC_NUMBERS = (process.env.MECHANIC_NUMBERS || "")
-  .split(",")
-  .map((value) => value.trim())
-  .filter(Boolean);
+const parseNumbers = (value) =>
+  (value || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+
+const buildCityNumbers = (suffix) =>
+  CITY_KEYS.reduce((acc, cityKey) => {
+    const envKey = `${cityKey.toUpperCase()}_${suffix}`;
+    acc[cityKey] = parseNumbers(process.env[envKey]);
+    return acc;
+  }, {});
+
+const mergeCityNumbers = (numbersByCity) => {
+  const merged = Object.values(numbersByCity).flat();
+  return [...new Set(merged.filter(Boolean))];
+};
+
+const SELLER_NUMBERS_BY_CITY = buildCityNumbers("SELLER_NUMBERS");
+const TOW_DRIVER_NUMBERS_BY_CITY = buildCityNumbers("TOW_DRIVER_NUMBERS");
+const MECHANIC_NUMBERS_BY_CITY = buildCityNumbers("MECHANIC_NUMBERS");
+
+const SELLER_NUMBERS = mergeCityNumbers(SELLER_NUMBERS_BY_CITY);
+const TOW_DRIVER_NUMBERS = mergeCityNumbers(TOW_DRIVER_NUMBERS_BY_CITY);
+const MECHANIC_NUMBERS = mergeCityNumbers(MECHANIC_NUMBERS_BY_CITY);
 
 const META_WHATSAPP_TOKEN = process.env.META_WHATSAPP_TOKEN || "";
 const META_PHONE_NUMBER_ID = process.env.META_PHONE_NUMBER_ID || "";
 const META_WEBHOOK_VERIFICATION_TOKEN =
   process.env.META_WEBHOOK_VERIFICATION_TOKEN || "";
-const META_TEMPLATE_SELLER_INQUIRY =
-  process.env.META_TEMPLATE_SELLER_INQUIRY || "";
-const META_TEMPLATE_SELLER_NOTIFICATION =
-  process.env.META_TEMPLATE_SELLER_NOTIFICATION || "";
-const META_TEMPLATE_TOW_INQUIRY =
-  process.env.META_TEMPLATE_TOW_INQUIRY || "";
-const META_TEMPLATE_ROADSIDE_INQUIRY =
-  process.env.META_TEMPLATE_ROADSIDE_INQUIRY || "";
-const META_TEMPLATE_TOW_INQUIRY_FLOW_TITLE =
-  process.env.META_TEMPLATE_TOW_INQUIRY_FLOW_TITLE || "";
-const META_TEMPLATE_ROADSIDE_INQUIRY_FLOW_TITLE =
-  process.env.META_TEMPLATE_ROADSIDE_INQUIRY_FLOW_TITLE || "";
-const META_TEMPLATE_SELLER_INQUIRY_FLOW_TITLE =
-  process.env.META_TEMPLATE_SELLER_INQUIRY_FLOW_TITLE || "";
-const META_TEMPLATE_MECHANIC_INQUIRY =
-  process.env.META_TEMPLATE_MECHANIC_INQUIRY || "";
-const META_TEMPLATE_MECHANIC_INQUIRY_FLOW_TITLE =
-  process.env.META_TEMPLATE_MECHANIC_INQUIRY_FLOW_TITLE || "";
-const META_TEMPLATE_LANGUAGE = process.env.META_TEMPLATE_LANGUAGE || "sr";
-const META_TEMPLATE_BUYER_REVIEW =
-  process.env.META_TEMPLATE_BUYER_REVIEW || "";
-const META_TEMPLATE_BUYER_REVIEW_FLOW_TITLE =
-  process.env.META_TEMPLATE_BUYER_REVIEW_FLOW_TITLE || "";
-const META_TEMPLATE_BUYER_OFFER = process.env.META_TEMPLATE_BUYER_OFFER || "";
-const META_TEMPLATE_BUYER_MECHANIC_OFFER =
-  process.env.META_TEMPLATE_BUYER_MECHANIC_OFFER || "";
-const META_TEMPLATE_BUYER_OFFER_FLOW_TITLE =
-  process.env.META_TEMPLATE_BUYER_OFFER_FLOW_TITLE || "";
-const META_TEMPLATE_OWNER_NOTIFICATION =
-  process.env.META_TEMPLATE_OWNER_NOTIFICATION || "";
-const META_TEMPLATE_COURIER_NOTIFICATION =
-  process.env.META_TEMPLATE_COURIER_NOTIFICATION || "";
+const META_TEMPLATE_SELLER_INQUIRY = "seller_inquiry";
+const META_TEMPLATE_SELLER_NOTIFICATION = "seller_notification";
+const META_TEMPLATE_TOW_INQUIRY = "tow_inquiry";
+const META_TEMPLATE_ROADSIDE_INQUIRY = "roadside_inquiry";
+const META_TEMPLATE_TOW_INQUIRY_FLOW_TITLE = "Kreiranje ponude";
+const META_TEMPLATE_ROADSIDE_INQUIRY_FLOW_TITLE = "Kreiranje ponude";
+const META_TEMPLATE_SELLER_INQUIRY_FLOW_TITLE = "Kreiranje ponude";
+const META_TEMPLATE_MECHANIC_INQUIRY = "mechanic_inquiry";
+const META_TEMPLATE_MECHANIC_INQUIRY_FLOW_TITLE = "Kreiranje ponude";
+const META_TEMPLATE_LANGUAGE = "sr";
+const META_TEMPLATE_BUYER_REVIEW = "buyer_review";
+const META_TEMPLATE_BUYER_REVIEW_FLOW_TITLE = "Dodaj napomenu";
+const META_TEMPLATE_BUYER_OFFER = "buyer_offer";
+const META_TEMPLATE_BUYER_MECHANIC_OFFER = "buyer_mechanic_offer";
+const META_TEMPLATE_BUYER_OFFER_FLOW_TITLE = "Podaci za dostavu";
+const META_TEMPLATE_OWNER_NOTIFICATION = "owner_notification";
+const META_TEMPLATE_COURIER_NOTIFICATION = "courier_notification";
 
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || "";
@@ -72,6 +71,9 @@ export const ENV = {
   SELLER_NUMBERS,
   TOW_DRIVER_NUMBERS,
   MECHANIC_NUMBERS,
+  SELLER_NUMBERS_BY_CITY,
+  TOW_DRIVER_NUMBERS_BY_CITY,
+  MECHANIC_NUMBERS_BY_CITY,
   META_WHATSAPP_TOKEN,
   META_PHONE_NUMBER_ID,
   META_WEBHOOK_VERIFICATION_TOKEN,

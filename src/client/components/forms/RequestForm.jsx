@@ -1,11 +1,14 @@
 import React from "react";
 import { MAKES } from "../../data/vehicleData";
 import { YEARS, FUEL_TYPES, CHASSIS_TYPES } from "../../data/formOptions";
+import { CITY_OPTIONS } from "../../../shared/cities.js";
 
 const RequestForm = ({ form, formKey, messagePlaceholder }) => {
   const {
     customerNumber,
     setCustomerNumber,
+    city,
+    setCity,
     bidMessage,
     setBidMessage,
     notificationPreference,
@@ -30,6 +33,18 @@ const RequestForm = ({ form, formKey, messagePlaceholder }) => {
   return (
     <form className="form-card stagger" data-reveal="stagger" onSubmit={send}>
       <div className="field-grid">
+        <label>
+          Grad
+          <select value={city} onChange={(e) => setCity(e.target.value)} required>
+            <option value="">Izaberite grad</option>
+            {CITY_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+
         <label>
           Marka vozila
           <select

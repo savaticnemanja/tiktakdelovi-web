@@ -4,6 +4,7 @@ import { parseJson } from "../utils/api";
 export const useRoadsideForm = ({ apiBase, serviceLabel }) => {
   const [customerName, setCustomerName] = useState("");
   const [customerNumber, setCustomerNumber] = useState("");
+  const [city, setCity] = useState("");
   const [location, setLocation] = useState("");
   const [issueDescription, setIssueDescription] = useState("");
   const [serviceType, setServiceType] = useState("pomoc_na_putu");
@@ -30,6 +31,7 @@ export const useRoadsideForm = ({ apiBase, serviceLabel }) => {
         body: JSON.stringify({
           name: customerName,
           customerNumber: normalizedCustomer,
+          city,
           serviceType,
           locationFrom: location,
           locationTo: serviceType === "slep_sluzba" ? destination : "",
@@ -60,6 +62,8 @@ export const useRoadsideForm = ({ apiBase, serviceLabel }) => {
     setCustomerName,
     customerNumber,
     setCustomerNumber,
+    city,
+    setCity,
     location,
     setLocation,
     issueDescription,
