@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { CITY_KEYS } from "../../shared/cities.js";
+import fs from "fs";
 
 dotenv.config();
 
@@ -7,15 +7,25 @@ const OWNER_NUMBER = process.env.OWNER_NUMBER || "";
 const COURIER_NUMBER = process.env.COURIER_NUMBER || "";
 
 const parseNumbers = (value) =>
-  (value || "")
-    .split(",")
-    .map((entry) => entry.trim())
+  (value || [])
+    .map((entry) => String(entry).trim())
     .filter(Boolean);
 
-const buildCityNumbers = (suffix) =>
-  CITY_KEYS.reduce((acc, cityKey) => {
-    const envKey = `${cityKey.toUpperCase()}_${suffix}`;
-    acc[cityKey] = parseNumbers(process.env[envKey]);
+const loadPhoneNumbers = () => {
+  try {
+    const jsonPath = new URL("../../shared/phoneNumbers.json", import.meta.url);
+    const raw = fs.readFileSync(jsonPath, "utf8");
+    return JSON.parse(raw) || {};
+  } catch (err) {
+    console.error("Failed to load phoneNumbers.json:", err?.message || err);
+    return {};
+  }
+};
+
+const buildCityNumbers = (phoneData, field) =>
+  Object.keys(phoneData || {}).reduce((acc, cityKey) => {
+    const entry = phoneData?.[cityKey];
+    acc[cityKey] = parseNumbers(entry?.[field]);
     return acc;
   }, {});
 
@@ -24,9 +34,11 @@ const mergeCityNumbers = (numbersByCity) => {
   return [...new Set(merged.filter(Boolean))];
 };
 
-const SELLER_NUMBERS_BY_CITY = buildCityNumbers("SELLER_NUMBERS");
-const TOW_DRIVER_NUMBERS_BY_CITY = buildCityNumbers("TOW_DRIVER_NUMBERS");
-const MECHANIC_NUMBERS_BY_CITY = buildCityNumbers("MECHANIC_NUMBERS");
+const phoneData = loadPhoneNumbers();
+
+const SELLER_NUMBERS_BY_CITY = buildCityNumbers(phoneData, "sellers");
+const TOW_DRIVER_NUMBERS_BY_CITY = buildCityNumbers(phoneData, "towDrivers");
+const MECHANIC_NUMBERS_BY_CITY = buildCityNumbers(phoneData, "mechanics");
 
 const SELLER_NUMBERS = mergeCityNumbers(SELLER_NUMBERS_BY_CITY);
 const TOW_DRIVER_NUMBERS = mergeCityNumbers(TOW_DRIVER_NUMBERS_BY_CITY);

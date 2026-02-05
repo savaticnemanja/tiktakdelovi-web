@@ -21,19 +21,20 @@ COURIER_NUMBER=+15551230098
 BID_STORE_TTL_HOURS=72
 BID_ID_START=10001
 
-# City-specific phone numbers (comma-separated E.164)
-# Use CITY keys from src/shared/cities.js, e.g. BEOGRAD, NOVI_SAD, NIS, ...
+# City-specific phone numbers live in `src/shared/phoneNumbers.json`.
+# Add cities there to appear in the form dropdowns.
 # If a selected city has no numbers configured, the server sends to all numbers
 # configured across all cities for that service.
-BEOGRAD_SELLER_NUMBERS=+15551230001,+15551230002
-NOVI_SAD_SELLER_NUMBERS=
-NIS_SELLER_NUMBERS=
-BEOGRAD_TOW_DRIVER_NUMBERS=+15551239901,+15551239902
-NOVI_SAD_TOW_DRIVER_NUMBERS=
-NIS_TOW_DRIVER_NUMBERS=
-BEOGRAD_MECHANIC_NUMBERS=+15551238801,+15551238802
-NOVI_SAD_MECHANIC_NUMBERS=
-NIS_MECHANIC_NUMBERS=
+#
+# Example structure:
+# {
+#   "beograd": {
+#     "label": "Beograd",
+#     "sellers": ["+381..."],
+#     "towDrivers": [],
+#     "mechanics": []
+#   }
+# }
 
 # Ports (HOST_PORT is what the VPS exposes; PORT is what the container listens on)
 HOST_PORT=8081

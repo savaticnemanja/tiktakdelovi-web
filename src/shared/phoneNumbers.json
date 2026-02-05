@@ -1,0 +1,35 @@
+{
+  "beograd": {
+    "label": "Beograd",
+    "sellers": ["+38166092964", "+381652290662", "+381669035854", "+381643344581"],
+    "towDrivers": ["+38166092964", "+381652290662", "+381669035854", "+381643344581"],
+    "mechanics": ["+38166092964", "+381652290662", "+381669035854", "+381643344581"]
+  },
+  "novi_sad": {
+    "label": "Novi Sad",
+    "sellers": ["+38166092964", "+381652290662", "+381669035854", "+381643344581"],
+    "towDrivers": ["+38166092964", "+381652290662", "+381669035854", "+381643344581"],
+    "mechanics": ["+38166092964", "+381652290662", "+381669035854", "+381643344581"]
+  },
+  "nis": {
+    "label": "Niš",
+    "sellers": ["+38166092964", "+381652290662", "+381669035854", "+381643344581"],
+    "towDrivers": ["+38166092964", "+381652290662", "+381669035854", "+381643344581"],
+    "mechanics": ["+38166092964", "+381652290662", "+381669035854", "+381643344581"]
+  },
+  "kragujevac": { "label": "Kragujevac", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "novi_pazar": { "label": "Novi Pazar", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "subotica": { "label": "Subotica", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "zrenjanin": { "label": "Zrenjanin", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "pancevo": { "label": "Pančevo", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "sremska_mitrovica": { "label": "Sremska Mitrovica", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "cacak": { "label": "Čačak", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "kraljevo": { "label": "Kraljevo", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "smederevo": { "label": "Smederevo", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "leskovac": { "label": "Leskovac", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "valjevo": { "label": "Valjevo", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "krusevac": { "label": "Kruševac", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "vranje": { "label": "Vranje", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "sabac": { "label": "Šabac", "sellers": [], "towDrivers": [], "mechanics": [] },
+  "uzice": { "label": "Užice", "sellers": [], "towDrivers": [], "mechanics": [] }
+}
