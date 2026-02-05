@@ -43,6 +43,7 @@ export const createBidStore = ({ ttlMs, idStart }) => {
       chassis: cleanedChassis,
       sellerContact: "",
       bidOffer: "",
+      bidOfferRaw: "",
       bidNote: "",
       needsMoreInfo: "",
       buyerAdditionalInfo: "",

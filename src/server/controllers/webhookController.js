@@ -1,5 +1,6 @@
 import { parseOfferMessage } from "../utils/parseOffer.js";
 import { normalizePhone } from "../utils/phone.js";
+import { applyMarkup } from "../utils/price.js";
 import {
   formatBuyerOfferMessage,
   formatBuyerReviewMessage,
@@ -14,6 +15,7 @@ export const createWebhookController = ({
   ownerNumber,
   courierNumber,
   sellerNumbers,
+  sellerMarkupPercent,
   verifyToken,
 }) => {
   const verifyWebhook = (req, res) => {
@@ -230,6 +232,10 @@ export const createWebhookController = ({
                 "price",
                 "cena",
               ]);
+              const markedPrice = price
+                ? applyMarkup(price, sellerMarkupPercent)
+                : null;
+              const priceForBuyer = markedPrice || (price ? String(price) : "");
               const note =
                 pickValue(responseData, [
                   "screen_0_Napomena_1",
@@ -445,7 +451,8 @@ export const createWebhookController = ({
 
                 const updated = bidStore.updateBid(mapEntry.bidId, {
                   sellerContact,
-                  bidOffer: price ? String(price) : "",
+                  bidOffer: priceForBuyer,
+                  bidOfferRaw: price ? String(price) : "",
                   bidNote: note ? String(note) : "",
                   needsMoreInfo,
                   bidMessage: latestBidDetails || bid?.bidMessage,
@@ -482,7 +489,7 @@ export const createWebhookController = ({
                 }
                 continue;
               }
-              if (updated && updated.customerNumber && price) {
+              if (updated && updated.customerNumber && priceForBuyer) {
                 try {
                   if (
                     updated.notificationPreference === "telegram" &&
@@ -494,7 +501,7 @@ export const createWebhookController = ({
                       text: formatBuyerOfferMessage({
                         bidId: updated.bidId,
                         bidDetails: updated.bidMessage,
-                        bidOffer: String(price),
+                        bidOffer: String(priceForBuyer),
                         bidNote: String(note || "-"),
                       }),
                       mask: true,
@@ -504,7 +511,7 @@ export const createWebhookController = ({
                       to: updated.customerNumber,
                       bidId: updated.bidId,
                       bidDetails: updated.bidMessage,
-                      bidOffer: String(price),
+                      bidOffer: String(priceForBuyer),
                       bidNote: String(note || "-"),
                     });
                   }
@@ -533,9 +540,12 @@ export const createWebhookController = ({
               continue;
             }
 
+            const markedOffer = applyMarkup(parsed.bidOffer, sellerMarkupPercent);
+            const offerForBuyer = markedOffer || parsed.bidOffer;
             const updatedBid = bidStore.updateBid(parsed.bidId, {
               sellerContact: normalizePhone(from),
-              bidOffer: parsed.bidOffer,
+              bidOffer: offerForBuyer,
+              bidOfferRaw: parsed.bidOffer,
             });
 
             try {
@@ -543,7 +553,7 @@ export const createWebhookController = ({
                 to: updatedBid?.customerNumber || bid.customerNumber,
                 bidId: updatedBid?.bidId || bid.bidId,
                 bidDetails: updatedBid?.bidMessage || bid.bidMessage,
-                bidOffer: parsed.bidOffer,
+                bidOffer: offerForBuyer,
               });
             } catch (err) {
               console.error(

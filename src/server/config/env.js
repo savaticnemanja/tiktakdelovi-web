@@ -69,6 +69,10 @@ const META_TEMPLATE_COURIER_NOTIFICATION = "courier_notification";
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || "";
 const TELEGRAM_WEBHOOK_SECRET = process.env.TELEGRAM_WEBHOOK_SECRET || "";
 
+const SELLER_MARKUP_PERCENT = Number.isFinite(Number(process.env.SELLER_MARKUP_PERCENT))
+  ? Number(process.env.SELLER_MARKUP_PERCENT)
+  : 5;
+
 const BID_ID_START = Number.isFinite(Number(process.env.BID_ID_START))
   ? Number(process.env.BID_ID_START)
   : 10001;
@@ -108,6 +112,7 @@ export const ENV = {
   META_TEMPLATE_COURIER_NOTIFICATION,
   TELEGRAM_BOT_TOKEN,
   TELEGRAM_WEBHOOK_SECRET,
+  SELLER_MARKUP_PERCENT,
   BID_ID_START,
   BID_STORE_TTL_MS,
 };
