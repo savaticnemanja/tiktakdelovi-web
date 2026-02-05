@@ -241,8 +241,24 @@ export const createWebhookController = ({
                   "screen_0_Napomena_1",
                   "screen_0_Napomena_3",
                   "screen_0_Napomena_2",
+                  "screen_0_Napomena_0",
+                  "screen_0_Dodatna_napomena_0",
+                  "screen_0_Dodatna_napomena_1",
+                  "screen_0_Dodatna_napomena_2",
                   "note",
-                ]) || "";
+                  "napomena",
+                ]) ||
+                Object.entries(responseData || {})
+                  .filter(([key, value]) => {
+                    if (key === "flow_token") return false;
+                    if (value === null || value === undefined) return false;
+                    if (typeof value !== "string") return false;
+                    const k = key.toLowerCase();
+                    return k.includes("napomena") || k.includes("note");
+                  })
+                  .map(([, value]) => value.trim())
+                  .find((value) => value) ||
+                "";
               const dateISO = pickValue(responseData, [
                 "screen_0_Datum_0",
                 "date",
