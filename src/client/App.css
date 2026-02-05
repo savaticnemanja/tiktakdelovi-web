@@ -497,8 +497,8 @@ label {
 }
 
 .radio-icon {
-  width: 22px;
-  height: 22px;
+  width: 25px;
+  height: 25px;
   display: inline-flex;
 }
 
@@ -512,9 +512,6 @@ label {
   color: #25d366;
 }
 
-.radio-icon.viber {
-  color: #7360f2;
-}
 
 .radio-icon.telegram {
   color: #2aabee;
@@ -628,6 +625,11 @@ button {
   width: 100%;
   text-align: left;
   flex-wrap: wrap;
+}
+
+.whatsapp-icon {
+  font-size: 26px;
+  color: #25d366;
 }
 
 .footer {

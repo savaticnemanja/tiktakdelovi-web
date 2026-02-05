@@ -9,6 +9,7 @@ export const useRoadsideForm = ({ apiBase, serviceLabel }) => {
   const [issueDescription, setIssueDescription] = useState("");
   const [serviceType, setServiceType] = useState("pomoc_na_putu");
   const [destination, setDestination] = useState("");
+  const [notificationPreference, setNotificationPreference] = useState("whatsapp");
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState(null);
 
@@ -49,6 +50,7 @@ export const useRoadsideForm = ({ apiBase, serviceLabel }) => {
           locationFrom: location,
           locationTo: serviceType === "slep_sluzba" ? destination : "",
           details,
+          notificationPreference,
         }),
       });
 
@@ -85,6 +87,8 @@ export const useRoadsideForm = ({ apiBase, serviceLabel }) => {
     setServiceType,
     destination,
     setDestination,
+    notificationPreference,
+    setNotificationPreference,
     sending,
     status,
     send,
