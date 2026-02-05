@@ -37,14 +37,10 @@ export const createWebhookController = ({
           .map((key) => data?.[key])
           .find((value) => value !== undefined && value !== null && String(value).trim() !== "");
 
-      const formatBidDateTime = ({ dateISO, time }) => {
+      const formatBidDate = (dateISO) => {
         const cleanedDate = String(dateISO || "").trim();
-        const cleanedTime = String(time || "").trim();
         const match = cleanedDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-        const formattedDate = match
-          ? `${match[3]}.${match[2]}.${match[1]}.`
-          : cleanedDate;
-        return [formattedDate, cleanedTime].filter(Boolean).join(" ") || "-";
+        return match ? `${match[3]}.${match[2]}.${match[1]}.` : cleanedDate;
       };
 
       const getMapEntry = (messageId) => {
@@ -241,24 +237,8 @@ export const createWebhookController = ({
                   "screen_0_Napomena_1",
                   "screen_0_Napomena_3",
                   "screen_0_Napomena_2",
-                  "screen_0_Napomena_0",
-                  "screen_0_Dodatna_napomena_0",
-                  "screen_0_Dodatna_napomena_1",
-                  "screen_0_Dodatna_napomena_2",
                   "note",
-                  "napomena",
-                ]) ||
-                Object.entries(responseData || {})
-                  .filter(([key, value]) => {
-                    if (key === "flow_token") return false;
-                    if (value === null || value === undefined) return false;
-                    if (typeof value !== "string") return false;
-                    const k = key.toLowerCase();
-                    return k.includes("napomena") || k.includes("note");
-                  })
-                  .map(([, value]) => value.trim())
-                  .find((value) => value) ||
-                "";
+                ]) || "";
               const dateISO = pickValue(responseData, [
                 "screen_0_Datum_0",
                 "date",
@@ -399,9 +379,84 @@ export const createWebhookController = ({
                 continue;
               }
 
+              if (mapEntry?.kind === "buyer_mechanic_offer" && bid) {
+                const buyerName = pickValue(responseData, [
+                  "buyer_name",
+                  "name",
+                  "screen_0_Ime_i_prezime_1",
+                  "screen_0_Ime_0",
+                ]);
+                const buyerContact = pickValue(responseData, [
+                  "buyer_contact",
+                  "contact",
+                  "phone",
+                  "screen_0_Kontakt_telefon_2",
+                  "screen_0_Kontakt_0",
+                ]);
+                const acceptRaw = pickValue(responseData, [
+                  "accept",
+                  "screen_0_Prihvatam_0",
+                  "screen_0_Prihvatam_1",
+                ]);
+                const accepted = (() => {
+                  const normalized = String(acceptRaw || "").toLowerCase();
+                  if (
+                    normalized.startsWith("0_") ||
+                    normalized.endsWith("_da") ||
+                    normalized.includes("da") ||
+                    normalized === "yes"
+                  ) {
+                    return true;
+                  }
+                  if (
+                    normalized.startsWith("1_") ||
+                    normalized.endsWith("_ne") ||
+                    normalized.includes("ne") ||
+                    normalized === "no"
+                  ) {
+                    return false;
+                  }
+                  return false;
+                })();
+
+                const updated = bidStore.updateBid(bid.bidId, {
+                  buyerName,
+                  buyerContact,
+                });
+
+                if (accepted && updated?.sellerContact && updated?.bidOffer) {
+                  try {
+                    await metaClient.sendOfferToOwnerMechanic({
+                      to: ownerNumber,
+                      bidId: updated.bidId,
+                      make: updated.make,
+                      model: updated.model,
+                      year: updated.year,
+                      fuelType: updated.fuelType,
+                      chassis: updated.chassis,
+                      buyerName: updated.buyerName,
+                      buyerContact: updated.buyerContact,
+                      bidDetails: updated.bidMessage,
+                      mechanicContact: updated.sellerContact,
+                      bidOffer: updated.bidOffer,
+                      bidDate: updated.bidDate,
+                      bidTime: updated.bidTime,
+                      bidNote: updated.bidNote || "-",
+                    });
+                  } catch (err) {
+                    console.error(
+                      "Owner mechanic notification failed:",
+                      err?.response?.data || err.message || String(err),
+                    );
+                  }
+                }
+                continue;
+              }
+
               if (mapEntry?.kind === "mechanic_inquiry") {
                 const mechanicContact = normalizePhone(from);
-                const bidDate = formatBidDateTime({ dateISO, time });
+                const bidDate = formatBidDate(dateISO);
+                const bidTime = String(time || "").trim();
 
                 const latestBidDetails =
                   bid?.bidMessage || bidStore.getBidRequest(mapEntry.bidId)?.bidMessage || "";
@@ -411,6 +466,7 @@ export const createWebhookController = ({
                   bidOffer: price ? String(price) : "",
                   bidNote: note ? String(note) : "",
                   bidDate,
+                  bidTime,
                   bidMessage: latestBidDetails || bid?.bidMessage,
                 });
 
@@ -421,7 +477,7 @@ export const createWebhookController = ({
                       bidId: updated.bidId,
                       bidDetails: updated.bidMessage,
                       bidOffer: String(price),
-                      bidDate,
+                      bidDate: [bidDate, bidTime].filter(Boolean).join(" ") || "-",
                       bidNote: String(note || "-"),
                     });
                   } catch (err) {

@@ -45,6 +45,8 @@ export const createBidStore = ({ ttlMs, idStart }) => {
       bidOffer: "",
       bidOfferRaw: "",
       bidNote: "",
+      bidDate: "",
+      bidTime: "",
       needsMoreInfo: "",
       buyerAdditionalInfo: "",
       notificationPreference: notificationPreference || "whatsapp",

@@ -17,6 +17,7 @@ export const createMetaClient = ({
   templateBuyerOfferFlowTitle,
   templateOwnerNotification,
   templateCourierNotification,
+  templateOwnerNotificationMechanic,
   templateTowInquiry,
   templateRoadsideInquiry,
   templateTowInquiryFlowTitle,
@@ -823,6 +824,79 @@ export const createMetaClient = ({
     });
   };
 
+  const sendOfferToOwnerMechanic = async ({
+    to,
+    bidId,
+    make,
+    model,
+    year,
+    fuelType,
+    chassis,
+    buyerName,
+    buyerContact,
+    bidDetails,
+    mechanicContact,
+    bidOffer,
+    bidDate,
+    bidTime,
+    bidNote,
+  }) => {
+    if (!templateOwnerNotificationMechanic || !to) {
+      return null;
+    }
+    const sanitizedBidId = sanitize(bidId);
+    const sanitizedMake = sanitizeOrDash(make);
+    const sanitizedModel = sanitizeOrDash(model);
+    const sanitizedYear = sanitizeOrDash(year);
+    const sanitizedFuel = sanitizeOrDash(fuelType);
+    const sanitizedChassis = sanitizeOrDash(chassis);
+    const sanitizedBuyerName = sanitizeOrDash(buyerName);
+    const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
+    const sanitizedBidDetails = sanitizeOrDash(bidDetails);
+    const sanitizedMechanicContact = sanitizeOrDash(mechanicContact);
+    const sanitizedBidOffer = sanitize(bidOffer);
+    const sanitizedBidDate = sanitizeOrDash(bidDate);
+    const sanitizedBidTime = sanitizeOrDash(bidTime);
+    const sanitizedBidNote = sanitizeOrDash(bidNote);
+    if (!sanitizedBidId || !sanitizedBidOffer || !sanitizedMechanicContact) {
+      throw new Error("bidId, bidOffer and mechanicContact are required.");
+    }
+    return sendTemplate({
+      to,
+      template: templateOwnerNotificationMechanic,
+      components: [
+        {
+          type: "header",
+          parameters: [
+            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+          ],
+        },
+        {
+          type: "body",
+          parameters: [
+            { type: "text", parameter_name: "make", text: sanitizedMake },
+            { type: "text", parameter_name: "model", text: sanitizedModel },
+            { type: "text", parameter_name: "year", text: sanitizedYear },
+            { type: "text", parameter_name: "fuel_type", text: sanitizedFuel },
+            { type: "text", parameter_name: "chassis", text: sanitizedChassis },
+            { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
+            { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
+            { type: "text", parameter_name: "bid_details", text: sanitizedBidDetails },
+            {
+              type: "text",
+              parameter_name: "mechanic_contact",
+              text: sanitizedMechanicContact,
+            },
+            { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
+            { type: "text", parameter_name: "bid_date", text: sanitizedBidDate },
+            { type: "text", parameter_name: "bid_time", text: sanitizedBidTime },
+            { type: "text", parameter_name: "bid_note", text: sanitizedBidNote },
+          ],
+        },
+      ],
+    });
+  };
+
   return {
     sendInquiryToSeller,
     sendInquiryToMechanic,
@@ -831,6 +905,7 @@ export const createMetaClient = ({
     sendOfferToBuyer,
     sendOfferToBuyerMechanic,
     sendOfferToOwner,
+    sendOfferToOwnerMechanic,
     sendOfferToCourier,
     sendTowInquiry,
     sendImageMessage,
