@@ -681,6 +681,7 @@ export const createMetaClient = ({
         {
           type: "body",
           parameters: [
+            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
             { type: "text", parameter_name: "make", text: sanitizedMake },
             { type: "text", parameter_name: "model", text: sanitizedModel },
             { type: "text", parameter_name: "year", text: sanitizedYear },
