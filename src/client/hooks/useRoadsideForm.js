@@ -14,6 +14,19 @@ export const useRoadsideForm = ({ apiBase, serviceLabel }) => {
 
   const send = async (e) => {
     e.preventDefault();
+    const form = e?.currentTarget;
+    if (form && !form.checkValidity()) {
+      const firstInvalid = form.querySelector(":invalid");
+      if (firstInvalid) {
+        firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+        firstInvalid.focus({ preventScroll: true });
+      }
+      if (form.reportValidity) {
+        form.reportValidity();
+      }
+      return;
+    }
+
     setSending(true);
     setStatus(null);
 

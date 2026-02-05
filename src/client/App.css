@@ -623,6 +623,13 @@ button {
   width: 100%;
 }
 
+.whatsapp-install {
+  justify-content: flex-start;
+  width: 100%;
+  text-align: left;
+  flex-wrap: wrap;
+}
+
 .footer {
   background: #121212;
   color: #f2eee9;
