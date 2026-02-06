@@ -312,7 +312,10 @@ export const createMetaClient = ({
     }
     const sanitizedBidId = sanitize(bidId);
     const sanitizedLocationFrom = sanitizeMasked(locationFrom);
-    const sanitizedLocationTo = sanitizeMasked(locationTo) || "-";
+    const sanitizedLocationTo = sanitizeMasked(locationTo) || "";
+    const sanitizedLocation = sanitizedLocationTo
+      ? `${sanitizedLocationFrom} - ${sanitizedLocationTo}`
+      : sanitizedLocationFrom;
     const sanitizedDetails = sanitizeMasked(details);
     if (!sanitizedBidId || !sanitizedLocationFrom || !sanitizedDetails) {
       throw new Error("bidId, locationFrom and details are required.");
@@ -336,13 +339,8 @@ export const createMetaClient = ({
           parameters: [
             {
               type: "text",
-              parameter_name: "location_form",
-              text: sanitizedLocationFrom,
-            },
-            {
-              type: "text",
-              parameter_name: "location_to",
-              text: sanitizedLocationTo,
+              parameter_name: "location",
+              text: sanitizedLocation,
             },
             {
               type: "text",
