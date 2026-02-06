@@ -48,16 +48,18 @@ export const createTowRequestController = ({
         name,
       });
 
-      const isTow = serviceType === "slep_sluzba";
-      const templateName = isTow ? templateTowInquiry : templateRoadsideInquiry;
-      const flowTitle = isTow
-        ? templateTowInquiryFlowTitle
-        : templateRoadsideInquiryFlowTitle;
+      const templateName = templateRoadsideInquiry;
+      const flowTitle = templateRoadsideInquiryFlowTitle;
       if (!templateName) {
         return res.status(500).json({
           error: "Tow inquiry template not configured.",
         });
       }
+
+      const combinedLocation =
+        locationFrom && locationTo
+          ? `${locationFrom} - ${locationTo}`
+          : locationFrom;
 
       const results = [];
       for (const driver of recipients) {
@@ -65,8 +67,8 @@ export const createTowRequestController = ({
           const result = await metaClient.sendTowInquiry({
             to: driver,
             bidId: savedBid.bidId,
-            locationFrom,
-            locationTo,
+            locationFrom: combinedLocation,
+            locationTo: "",
             details,
             templateName,
             flowTitle,

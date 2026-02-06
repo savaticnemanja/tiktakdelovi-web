@@ -44,9 +44,7 @@ export const useServiceForm = ({
     try {
       const normalizedCustomer = `+381${customerNumber.replace(/\s+/g, "")}`;
       const trimmedMessage = String(bidMessage || "").trim();
-      const labeledMessage = serviceLabel
-        ? `[${serviceLabel}] ${trimmedMessage}`
-        : trimmedMessage;
+      const labeledMessage = trimmedMessage;
       const res = await fetch(`${apiBase}${apiPath}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
