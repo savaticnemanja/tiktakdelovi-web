@@ -43,6 +43,12 @@ export const createWebhookController = ({
         return match ? `${match[3]}.${match[2]}.${match[1]}.` : cleanedDate;
       };
 
+      const normalizeButtonPayload = (value) =>
+        String(value || "")
+          .toLowerCase()
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "");
+
       const getMapEntry = (messageId) => {
         const entry = messageId ? messageToBid.get(messageId) : null;
         if (!entry) {
@@ -143,12 +149,17 @@ export const createWebhookController = ({
                 actionFromPayload = "";
                 bidIdFromPayload = "";
               }
+              const normalizedPayload = normalizeButtonPayload(buttonPayload);
+              const inferredKind =
+                actionFromPayload === "notify_buyer" ||
+                actionFromPayload === "notify_mechanic" ||
+                normalizedPayload.includes("kupca") ||
+                normalizedPayload.includes("mehanicar")
+                  ? "owner_notification_mechanic"
+                  : "owner_notification";
               const mapEntryWithFallback =
-                mapEntry ||
-                (bidIdFromPayload
-                  ? { bidId: bidIdFromPayload, kind: "owner_notification" }
-                  : null);
-              if (!mapEntryWithFallback || mapEntryWithFallback.kind !== "owner_notification") {
+                mapEntry || (bidIdFromPayload ? { bidId: bidIdFromPayload, kind: inferredKind } : null);
+              if (!mapEntryWithFallback) {
                 continue;
               }
               const bid = mapEntryWithFallback?.bidId
@@ -158,8 +169,19 @@ export const createWebhookController = ({
                 continue;
               }
 
-              const normalizedPayload = String(buttonPayload).toLowerCase();
-              if (actionFromPayload === "notify_courier" || normalizedPayload.includes("dostavlja")) {
+              const wantsCourier =
+                actionFromPayload === "notify_courier" || normalizedPayload.includes("dostavlja");
+              const wantsSeller =
+                actionFromPayload === "notify_seller" || normalizedPayload.includes("prodav");
+              const wantsBuyer =
+                actionFromPayload === "notify_buyer" || normalizedPayload.includes("kupca");
+              const wantsMechanic =
+                actionFromPayload === "notify_mechanic" || normalizedPayload.includes("mehanicar");
+
+              if (
+                wantsCourier &&
+                mapEntryWithFallback.kind === "owner_notification"
+              ) {
                 if (courierNumber && bid.sellerContact && bid.bidOffer) {
                   try {
                     await metaClient.sendOfferToCourier({
@@ -189,7 +211,10 @@ export const createWebhookController = ({
                 continue;
               }
 
-              if (actionFromPayload === "notify_seller" || normalizedPayload.includes("prodav")) {
+              if (
+                wantsSeller &&
+                mapEntryWithFallback.kind === "owner_notification"
+              ) {
                 if (bid.sellerContact) {
                   try {
                     await metaClient.sendNotifySeller({
@@ -199,6 +224,58 @@ export const createWebhookController = ({
                   } catch (err) {
                     console.error(
                       "Seller notify failed:",
+                      err?.response?.data || err.message || String(err),
+                    );
+                  }
+                }
+                continue;
+              }
+
+              if (
+                wantsBuyer &&
+                mapEntryWithFallback.kind === "owner_notification_mechanic"
+              ) {
+                if (bid.customerNumber && bid.sellerContact && bid.bidOffer) {
+                  try {
+                    await metaClient.sendBuyerMechanicNotification({
+                      to: bid.customerNumber,
+                      bidId: bid.bidId,
+                      make: bid.make,
+                      model: bid.model,
+                      year: bid.year,
+                      fuelType: bid.fuelType,
+                      mechanicContact: bid.sellerContact,
+                      bidOffer: bid.bidOffer,
+                      bidDate: bid.bidDate || "-",
+                      bidTime: bid.bidTime || "-",
+                      bidNote: bid.bidNote || "-",
+                    });
+                  } catch (err) {
+                    console.error(
+                      "Buyer mechanic notification failed:",
+                      err?.response?.data || err.message || String(err),
+                    );
+                  }
+                }
+                continue;
+              }
+
+              if (
+                wantsMechanic &&
+                mapEntryWithFallback.kind === "owner_notification_mechanic"
+              ) {
+                if (bid.sellerContact && bid.buyerContact) {
+                  try {
+                    await metaClient.sendMechanicNotification({
+                      to: bid.sellerContact,
+                      bidId: bid.bidId,
+                      buyerName: bid.buyerName || "-",
+                      buyerContact: bid.buyerContact,
+                      bidDetails: bid.bidMessage || "-",
+                    });
+                  } catch (err) {
+                    console.error(
+                      "Mechanic notification failed:",
                       err?.response?.data || err.message || String(err),
                     );
                   }

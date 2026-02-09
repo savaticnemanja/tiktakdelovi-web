@@ -18,6 +18,8 @@ export const createMetaClient = ({
   templateOwnerNotification,
   templateCourierNotification,
   templateOwnerNotificationMechanic,
+  templateMechanicNotification,
+  templateBuyerMechanicNotification,
   templateTowInquiry,
   templateRoadsideInquiry,
   templateTowInquiryFlowTitle,
@@ -860,15 +862,14 @@ export const createMetaClient = ({
     if (!sanitizedBidId || !sanitizedBidOffer || !sanitizedMechanicContact) {
       throw new Error("bidId, bidOffer and mechanicContact are required.");
     }
-    return sendTemplate({
+    const metaResp = await sendTemplate({
       to,
       template: templateOwnerNotificationMechanic,
       components: [
         {
           type: "header",
           parameters: [
-            // TODO
-            // { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
           ],
         },
         {
@@ -893,6 +894,140 @@ export const createMetaClient = ({
             { type: "text", parameter_name: "bid_note", text: sanitizedBidNote },
           ],
         },
+        {
+          type: "button",
+          sub_type: "quick_reply",
+          index: "0",
+          parameters: [
+            {
+              type: "payload",
+              payload: JSON.stringify({
+                action: "notify_buyer",
+                bid_id: sanitizedBidId,
+              }),
+            },
+          ],
+        },
+        {
+          type: "button",
+          sub_type: "quick_reply",
+          index: "1",
+          parameters: [
+            {
+              type: "payload",
+              payload: JSON.stringify({
+                action: "notify_mechanic",
+                bid_id: sanitizedBidId,
+              }),
+            },
+          ],
+        },
+      ],
+    });
+    const sentId = metaResp?.data?.messages?.[0]?.id;
+    if (sentId && messageToBid) {
+      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "owner_notification_mechanic" });
+    }
+    return metaResp;
+  };
+
+  const sendMechanicNotification = async ({
+    to,
+    bidId,
+    buyerName,
+    buyerContact,
+    bidDetails,
+  }) => {
+    if (!templateMechanicNotification || !to) {
+      return null;
+    }
+    const sanitizedBidId = sanitize(bidId);
+    const sanitizedBuyerName = sanitizeOrDash(buyerName);
+    const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
+    const sanitizedBidDetails = sanitizeOrDash(bidDetails);
+    if (!sanitizedBidId || !sanitizedBuyerContact) {
+      throw new Error("bidId and buyerContact are required.");
+    }
+    return sendTemplate({
+      to,
+      template: templateMechanicNotification,
+      components: [
+        {
+          type: "header",
+          parameters: [
+            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+          ],
+        },
+        {
+          type: "body",
+          parameters: [
+            { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
+            { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
+            { type: "text", parameter_name: "bid_details", text: sanitizedBidDetails },
+          ],
+        },
+      ],
+    });
+  };
+
+  const sendBuyerMechanicNotification = async ({
+    to,
+    bidId,
+    make,
+    model,
+    year,
+    fuelType,
+    mechanicContact,
+    bidOffer,
+    bidDate,
+    bidTime,
+    bidNote,
+  }) => {
+    if (!templateBuyerMechanicNotification || !to) {
+      return null;
+    }
+    const sanitizedBidId = sanitize(bidId);
+    const sanitizedMake = sanitizeOrDash(make);
+    const sanitizedModel = sanitizeOrDash(model);
+    const sanitizedYear = sanitizeOrDash(year);
+    const sanitizedFuel = sanitizeOrDash(fuelType);
+    const sanitizedMechanicContact = sanitizeOrDash(mechanicContact);
+    const sanitizedBidOffer = sanitize(bidOffer);
+    const sanitizedBidDate = sanitizeOrDash(bidDate);
+    const sanitizedBidTime = sanitizeOrDash(bidTime);
+    const sanitizedBidNote = sanitizeOrDash(bidNote);
+    if (!sanitizedBidId || !sanitizedBidOffer || !sanitizedMechanicContact) {
+      throw new Error("bidId, bidOffer and mechanicContact are required.");
+    }
+    return sendTemplate({
+      to,
+      template: templateBuyerMechanicNotification,
+      keepPlus: true,
+      components: [
+        {
+          type: "header",
+          parameters: [
+            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+          ],
+        },
+        {
+          type: "body",
+          parameters: [
+            { type: "text", parameter_name: "make", text: sanitizedMake },
+            { type: "text", parameter_name: "model", text: sanitizedModel },
+            { type: "text", parameter_name: "year", text: sanitizedYear },
+            { type: "text", parameter_name: "fuel_type", text: sanitizedFuel },
+            {
+              type: "text",
+              parameter_name: "mechanic_contact",
+              text: sanitizedMechanicContact,
+            },
+            { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
+            { type: "text", parameter_name: "bid_date", text: sanitizedBidDate },
+            { type: "text", parameter_name: "bid_time", text: sanitizedBidTime },
+            { type: "text", parameter_name: "bid_note", text: sanitizedBidNote },
+          ],
+        },
       ],
     });
   };
@@ -906,6 +1041,8 @@ export const createMetaClient = ({
     sendOfferToBuyerMechanic,
     sendOfferToOwner,
     sendOfferToOwnerMechanic,
+    sendMechanicNotification,
+    sendBuyerMechanicNotification,
     sendOfferToCourier,
     sendTowInquiry,
     sendImageMessage,

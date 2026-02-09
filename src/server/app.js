@@ -52,6 +52,8 @@ export const createApp = () => {
     templateCourierNotification: ENV.META_TEMPLATE_COURIER_NOTIFICATION,
     templateOwnerNotificationMechanic:
       ENV.META_TEMPLATE_OWNER_NOTIFICATION_MECHANIC,
+    templateMechanicNotification: ENV.META_TEMPLATE_MECHANIC_NOTIFICATION,
+    templateBuyerMechanicNotification: ENV.META_TEMPLATE_BUYER_MECHANIC_NOTIFICATION,
     templateTowInquiry: ENV.META_TEMPLATE_TOW_INQUIRY,
     templateRoadsideInquiry: ENV.META_TEMPLATE_ROADSIDE_INQUIRY,
     templateTowInquiryFlowTitle: ENV.META_TEMPLATE_TOW_INQUIRY_FLOW_TITLE,
