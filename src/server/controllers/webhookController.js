@@ -631,6 +631,7 @@ export const createWebhookController = ({
                     const location = buildLocation(updated);
                     await metaClient.sendOwnerRoadsideNotification({
                       to: ownerNumber,
+                      bidId: updated.bidId,
                       roadsideOrTow: labels.roadsideOrTow,
                       location,
                       buyerName: updated.buyerName || updated.name || "-",

@@ -1005,6 +1005,7 @@ export const createMetaClient = ({
 
   const sendOwnerRoadsideNotification = async ({
     to,
+    bidId,
     roadsideOrTow,
     location,
     buyerName,
@@ -1017,6 +1018,7 @@ export const createMetaClient = ({
     if (!templateOwnerRoadsideNotification || !to) {
       return null;
     }
+    const sanitizedBidId = sanitize(bidId);
     const sanitizedRoadsideOrTow = sanitizeOrDash(roadsideOrTow);
     const sanitizedLocation = sanitizeOrDash(location);
     const sanitizedBuyerName = sanitizeOrDash(buyerName);
@@ -1025,26 +1027,18 @@ export const createMetaClient = ({
     const sanitizedBidDetails = sanitizeOrDash(bidDetails);
     const sanitizedRoadsideContact = sanitizeOrDash(roadsideContact);
     const sanitizedBidOffer = sanitizeOrDash(bidOffer);
-    if (!sanitizedRoadsideOrTow || !sanitizedBuyerContact || !sanitizedRoadsideContact) {
-      throw new Error("roadsideOrTow, buyerContact and roadsideContact are required.");
+    if (!sanitizedBidId || !sanitizedRoadsideOrTow || !sanitizedBuyerContact || !sanitizedRoadsideContact) {
+      throw new Error("bidId, roadsideOrTow, buyerContact and roadsideContact are required.");
     }
     return sendTemplate({
       to,
       template: templateOwnerRoadsideNotification,
       components: [
         {
-          type: "header",
-          parameters: [
-            {
-              type: "text",
-              parameter_name: "roadsideOrTow",
-              text: sanitizedRoadsideOrTow,
-            },
-          ],
-        },
-        {
           type: "body",
           parameters: [
+            { type: "text", parameter_name: "roadsideOrTow", text: sanitizedRoadsideOrTow },
+            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
             { type: "text", parameter_name: "location", text: sanitizedLocation },
             {
               type: "text",
@@ -1094,6 +1088,7 @@ export const createMetaClient = ({
           parameters: [
             { type: "text", parameter_name: "roadsideOrTow", text: sanitizedRoadsideOrTow },
             { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
             { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
             { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
             { type: "text", parameter_name: "location", text: sanitizedLocation },
@@ -1129,14 +1124,10 @@ export const createMetaClient = ({
       template: templateBuyerRoadsideNotification,
       components: [
         {
-          type: "header",
-          parameters: [
-            { type: "text", parameter_name: "roadside_or_tow", text: sanitizedRoadsideOrTow },
-          ],
-        },
-        {
           type: "body",
           parameters: [
+            { type: "text", parameter_name: "roadsideOrTow", text: sanitizedRoadsideOrTow },
+            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
             {
               type: "text",
               parameter_name: "roadside_or_tow_data",
