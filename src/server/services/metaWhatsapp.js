@@ -1007,10 +1007,10 @@ export const createMetaClient = ({
     to,
     roadsideOrTow,
     location,
-    issueDescription,
     buyerName,
     buyerContact,
-    buyerNote,
+    details,
+    bidDetails,
     roadsideContact,
     bidOffer,
   }) => {
@@ -1019,10 +1019,10 @@ export const createMetaClient = ({
     }
     const sanitizedRoadsideOrTow = sanitizeOrDash(roadsideOrTow);
     const sanitizedLocation = sanitizeOrDash(location);
-    const sanitizedIssueDescription = sanitizeOrDash(issueDescription);
     const sanitizedBuyerName = sanitizeOrDash(buyerName);
     const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
-    const sanitizedBuyerNote = sanitizeOrDash(buyerNote);
+    const sanitizedDetails = sanitizeOrDash(details);
+    const sanitizedBidDetails = sanitizeOrDash(bidDetails);
     const sanitizedRoadsideContact = sanitizeOrDash(roadsideContact);
     const sanitizedBidOffer = sanitizeOrDash(bidOffer);
     if (!sanitizedRoadsideOrTow || !sanitizedBuyerContact || !sanitizedRoadsideContact) {
@@ -1048,12 +1048,12 @@ export const createMetaClient = ({
             { type: "text", parameter_name: "location", text: sanitizedLocation },
             {
               type: "text",
-              parameter_name: "issue_description",
-              text: sanitizedIssueDescription,
+              parameter_name: "details",
+              text: sanitizedDetails,
             },
             { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
             { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
-            { type: "text", parameter_name: "buyer_note", text: sanitizedBuyerNote },
+            { type: "text", parameter_name: "bid_details", text: sanitizedBidDetails },
             {
               type: "text",
               parameter_name: "roadside_contact",

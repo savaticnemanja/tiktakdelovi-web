@@ -633,10 +633,10 @@ export const createWebhookController = ({
                       to: ownerNumber,
                       roadsideOrTow: labels.roadsideOrTow,
                       location,
-                      issueDescription: updated.bidMessage || "-",
                       buyerName: updated.buyerName || updated.name || "-",
                       buyerContact: updated.buyerContact || updated.customerNumber,
-                      buyerNote: updated.buyerNote || "-",
+                      details: updated.bidMessage || "-",
+                      bidDetails: updated.buyerNote || "-",
                       roadsideContact: updated.sellerContact,
                       bidOffer: updated.bidOffer,
                     });
