@@ -50,6 +50,28 @@ export const createWebhookController = ({
           .normalize("NFD")
           .replace(/[\u0300-\u036f]/g, "");
 
+      const getRoadsideLabels = (serviceType) => {
+        if (serviceType === "slep_sluzba") {
+          return {
+            roadsideOrTow: "ŠLEP SLUŽBA",
+            roadsideOrTowData: "ŠLEP SLUŽBI",
+          };
+        }
+        return {
+          roadsideOrTow: "POMOĆ NA PUTU",
+          roadsideOrTowData: "POMOĆI NA PUTU",
+        };
+      };
+
+      const buildLocation = (bid) => {
+        const from = String(bid?.locationFrom || "").trim();
+        const to = String(bid?.locationTo || "").trim();
+        if (from && to) {
+          return `${from} - ${to}`;
+        }
+        return from || "-";
+      };
+
       const getMapEntry = (messageId) => {
         const entry = messageId ? messageToBid.get(messageId) : null;
         if (!entry) {
@@ -532,6 +554,32 @@ export const createWebhookController = ({
               }
 
               if (mapEntry?.kind === "buyer_roadside_offer" && bid) {
+                const acceptRaw = pickValue(responseData, [
+                  "accept",
+                  "screen_0_Prihvatate_0",
+                  "screen_0_Prihvatam_0",
+                  "screen_0_Prihvatam_1",
+                ]);
+                const accepted = (() => {
+                  const normalized = String(acceptRaw || "").toLowerCase();
+                  if (
+                    normalized.startsWith("0_") ||
+                    normalized.endsWith("_da") ||
+                    normalized.includes("da") ||
+                    normalized === "yes"
+                  ) {
+                    return true;
+                  }
+                  if (
+                    normalized.startsWith("1_") ||
+                    normalized.endsWith("_ne") ||
+                    normalized.includes("ne") ||
+                    normalized === "no"
+                  ) {
+                    return false;
+                  }
+                  return false;
+                })();
                 const buyerName = pickValue(responseData, [
                   "buyer_name",
                   "name",
@@ -575,29 +623,43 @@ export const createWebhookController = ({
                   buyerCity,
                   buyerPostalCode,
                   buyerContact,
+                  buyerNote: note ? String(note) : "",
                 });
-                if (updated?.sellerContact && updated?.bidOffer) {
+                if (accepted && updated?.sellerContact && updated?.bidOffer) {
                   try {
-                    await metaClient.sendOfferToOwner({
+                    const labels = getRoadsideLabels(updated.serviceType);
+                    const location = buildLocation(updated);
+                    await metaClient.sendOwnerRoadsideNotification({
                       to: ownerNumber,
-                      bidId: updated.bidId,
-                      make: updated.make,
-                      model: updated.model,
-                      year: updated.year,
-                      fuelType: updated.fuelType,
-                      chassis: updated.chassis,
-                      buyerName: updated.buyerName,
-                      buyerAddress: updated.buyerAddress,
-                      buyerCity: updated.buyerCity,
-                      buyerPostalCode: updated.buyerPostalCode,
-                      buyerContact: updated.buyerContact,
-                      bidMessage: updated.bidMessage,
-                      sellerNumber: updated.sellerContact,
+                      roadsideOrTow: labels.roadsideOrTow,
+                      location,
+                      issueDescription: updated.bidMessage || "-",
+                      buyerName: updated.buyerName || updated.name || "-",
+                      buyerContact: updated.buyerContact || updated.customerNumber,
+                      buyerNote: updated.buyerNote || "-",
+                      roadsideContact: updated.sellerContact,
                       bidOffer: updated.bidOffer,
+                    });
+                    await metaClient.sendRoadsideNotification({
+                      to: updated.sellerContact,
+                      bidId: updated.bidId,
+                      roadsideOrTow: labels.roadsideOrTow,
+                      buyerName: updated.buyerName || updated.name || "-",
+                      buyerContact: updated.buyerContact || updated.customerNumber,
+                      location,
+                    });
+                    await metaClient.sendBuyerRoadsideNotification({
+                      to: updated.customerNumber,
+                      bidId: updated.bidId,
+                      roadsideOrTow: labels.roadsideOrTow,
+                      roadsideOrTowData: labels.roadsideOrTowData,
+                      roadsideContact: updated.sellerContact,
+                      bidOffer: updated.bidOffer,
+                      bidNote: updated.bidNote || "-",
                     });
                   } catch (err) {
                     console.error(
-                      "Owner notification failed:",
+                      "Roadside acceptance notifications failed:",
                       err?.response?.data || err.message || String(err),
                     );
                   }

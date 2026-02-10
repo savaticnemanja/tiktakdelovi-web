@@ -16,10 +16,14 @@ export const createMetaClient = ({
   templateBuyerRoadsideOffer,
   templateBuyerMechanicOffer,
   templateBuyerOfferFlowTitle,
+  templateBuyerRoadsideOfferFlowTitle,
   templateOwnerNotification,
+  templateOwnerRoadsideNotification,
   templateCourierNotification,
   templateOwnerNotificationMechanic,
   templateMechanicNotification,
+  templateRoadsideNotification,
+  templateBuyerRoadsideNotification,
   templateBuyerMechanicNotification,
   templateTowInquiry,
   templateRoadsideInquiry,
@@ -532,7 +536,7 @@ export const createMetaClient = ({
           parameters: [
             {
               type: "payload",
-              payload: JSON.stringify({ screen: templateBuyerOfferFlowTitle }),
+              payload: JSON.stringify({ screen: templateBuyerRoadsideOfferFlowTitle }),
             },
           ],
         },
@@ -999,6 +1003,159 @@ export const createMetaClient = ({
     return metaResp;
   };
 
+  const sendOwnerRoadsideNotification = async ({
+    to,
+    roadsideOrTow,
+    location,
+    issueDescription,
+    buyerName,
+    buyerContact,
+    buyerNote,
+    roadsideContact,
+    bidOffer,
+  }) => {
+    if (!templateOwnerRoadsideNotification || !to) {
+      return null;
+    }
+    const sanitizedRoadsideOrTow = sanitizeOrDash(roadsideOrTow);
+    const sanitizedLocation = sanitizeOrDash(location);
+    const sanitizedIssueDescription = sanitizeOrDash(issueDescription);
+    const sanitizedBuyerName = sanitizeOrDash(buyerName);
+    const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
+    const sanitizedBuyerNote = sanitizeOrDash(buyerNote);
+    const sanitizedRoadsideContact = sanitizeOrDash(roadsideContact);
+    const sanitizedBidOffer = sanitizeOrDash(bidOffer);
+    if (!sanitizedRoadsideOrTow || !sanitizedBuyerContact || !sanitizedRoadsideContact) {
+      throw new Error("roadsideOrTow, buyerContact and roadsideContact are required.");
+    }
+    return sendTemplate({
+      to,
+      template: templateOwnerRoadsideNotification,
+      components: [
+        {
+          type: "header",
+          parameters: [
+            {
+              type: "text",
+              parameter_name: "roadsideOrTow",
+              text: sanitizedRoadsideOrTow,
+            },
+          ],
+        },
+        {
+          type: "body",
+          parameters: [
+            { type: "text", parameter_name: "location", text: sanitizedLocation },
+            {
+              type: "text",
+              parameter_name: "issue_description",
+              text: sanitizedIssueDescription,
+            },
+            { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
+            { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
+            { type: "text", parameter_name: "buyer_note", text: sanitizedBuyerNote },
+            {
+              type: "text",
+              parameter_name: "roadside_contact",
+              text: sanitizedRoadsideContact,
+            },
+            { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
+          ],
+        },
+      ],
+    });
+  };
+
+  const sendRoadsideNotification = async ({
+    to,
+    bidId,
+    roadsideOrTow,
+    buyerName,
+    buyerContact,
+    location,
+  }) => {
+    if (!templateRoadsideNotification || !to) {
+      return null;
+    }
+    const sanitizedBidId = sanitize(bidId);
+    const sanitizedRoadsideOrTow = sanitizeOrDash(roadsideOrTow);
+    const sanitizedBuyerName = sanitizeOrDash(buyerName);
+    const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
+    const sanitizedLocation = sanitizeOrDash(location);
+    if (!sanitizedBidId || !sanitizedBuyerContact) {
+      throw new Error("bidId and buyerContact are required.");
+    }
+    return sendTemplate({
+      to,
+      template: templateRoadsideNotification,
+      components: [
+        {
+          type: "body",
+          parameters: [
+            { type: "text", parameter_name: "roadsideOrTow", text: sanitizedRoadsideOrTow },
+            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+            { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
+            { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
+            { type: "text", parameter_name: "location", text: sanitizedLocation },
+          ],
+        },
+      ],
+    });
+  };
+
+  const sendBuyerRoadsideNotification = async ({
+    to,
+    bidId,
+    roadsideOrTow,
+    roadsideOrTowData,
+    roadsideContact,
+    bidOffer,
+    bidNote,
+  }) => {
+    if (!templateBuyerRoadsideNotification || !to) {
+      return null;
+    }
+    const sanitizedBidId = sanitize(bidId);
+    const sanitizedRoadsideOrTow = sanitizeOrDash(roadsideOrTow);
+    const sanitizedRoadsideOrTowData = sanitizeOrDash(roadsideOrTowData);
+    const sanitizedRoadsideContact = sanitizeOrDash(roadsideContact);
+    const sanitizedBidOffer = sanitizeOrDash(bidOffer);
+    const sanitizedBidNote = sanitizeOrDash(bidNote);
+    if (!sanitizedBidId || !sanitizedRoadsideContact) {
+      throw new Error("bidId and roadsideContact are required.");
+    }
+    return sendTemplate({
+      to,
+      template: templateBuyerRoadsideNotification,
+      components: [
+        {
+          type: "header",
+          parameters: [
+            { type: "text", parameter_name: "roadside_or_tow", text: sanitizedRoadsideOrTow },
+          ],
+        },
+        {
+          type: "body",
+          parameters: [
+            {
+              type: "text",
+              parameter_name: "roadside_or_tow_data",
+              text: sanitizedRoadsideOrTowData,
+            },
+            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+            {
+              type: "text",
+              parameter_name: "roadside_contact",
+              text: sanitizedRoadsideContact,
+            },
+            { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
+            { type: "text", parameter_name: "bid_note", text: sanitizedBidNote },
+          ],
+        },
+      ],
+    });
+  };
+
   const sendMechanicNotification = async ({
     to,
     bidId,
@@ -1111,9 +1268,12 @@ export const createMetaClient = ({
     sendOfferToBuyerMechanic,
     sendOfferToOwner,
     sendOfferToOwnerMechanic,
+    sendOwnerRoadsideNotification,
     sendMechanicNotification,
     sendBuyerMechanicNotification,
     sendOfferToCourier,
+    sendRoadsideNotification,
+    sendBuyerRoadsideNotification,
     sendTowInquiry,
     sendImageMessage,
     getMediaUrl: async (mediaId) => {

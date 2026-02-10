@@ -48,6 +48,9 @@ export const createTowRequestController = ({
         customerNumber,
         name,
         notificationPreference,
+        locationFrom,
+        locationTo,
+        serviceType,
       });
 
       const templateName = templateRoadsideInquiry;

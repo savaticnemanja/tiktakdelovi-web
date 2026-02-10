@@ -49,11 +49,16 @@ export const createApp = () => {
     templateBuyerRoadsideOffer: ENV.META_TEMPLATE_BUYER_ROADSIDE_OFFER,
     templateBuyerMechanicOffer: ENV.META_TEMPLATE_BUYER_MECHANIC_OFFER,
     templateBuyerOfferFlowTitle: ENV.META_TEMPLATE_BUYER_OFFER_FLOW_TITLE,
+    templateBuyerRoadsideOfferFlowTitle:
+      ENV.META_TEMPLATE_BUYER_ROADSIDE_OFFER_FLOW_TITLE,
     templateOwnerNotification: ENV.META_TEMPLATE_OWNER_NOTIFICATION,
+    templateOwnerRoadsideNotification: ENV.META_TEMPLATE_OWNER_ROADSIDE_NOTIFICATION,
     templateCourierNotification: ENV.META_TEMPLATE_COURIER_NOTIFICATION,
     templateOwnerNotificationMechanic:
       ENV.META_TEMPLATE_OWNER_NOTIFICATION_MECHANIC,
     templateMechanicNotification: ENV.META_TEMPLATE_MECHANIC_NOTIFICATION,
+    templateRoadsideNotification: ENV.META_TEMPLATE_ROADSIDE_NOTIFICATION,
+    templateBuyerRoadsideNotification: ENV.META_TEMPLATE_BUYER_ROADSIDE_NOTIFICATION,
     templateBuyerMechanicNotification: ENV.META_TEMPLATE_BUYER_MECHANIC_NOTIFICATION,
     templateTowInquiry: ENV.META_TEMPLATE_TOW_INQUIRY,
     templateRoadsideInquiry: ENV.META_TEMPLATE_ROADSIDE_INQUIRY,

@@ -18,6 +18,9 @@ export const createBidStore = ({ ttlMs, idStart }) => {
     year,
     fuelType,
     chassis,
+    locationFrom,
+    locationTo,
+    serviceType,
   }) => {
     const cleanedBidId = sanitizeTemplateText(bidId || allocateBidId());
     const cleanedBidMessage = sanitizeTemplateText(bidMessage);
@@ -28,6 +31,9 @@ export const createBidStore = ({ ttlMs, idStart }) => {
     const cleanedYear = sanitizeTemplateText(year);
     const cleanedFuelType = sanitizeTemplateText(fuelType);
     const cleanedChassis = sanitizeTemplateText(chassis);
+    const cleanedLocationFrom = sanitizeTemplateText(locationFrom);
+    const cleanedLocationTo = sanitizeTemplateText(locationTo);
+    const cleanedServiceType = sanitizeTemplateText(serviceType);
     if (!cleanedBidId || !cleanedBidMessage || !cleanedCustomerNumber) {
       throw new Error("bidId, bidMessage and customerNumber are required.");
     }
@@ -41,6 +47,9 @@ export const createBidStore = ({ ttlMs, idStart }) => {
       year: cleanedYear,
       fuelType: cleanedFuelType,
       chassis: cleanedChassis,
+      locationFrom: cleanedLocationFrom,
+      locationTo: cleanedLocationTo,
+      serviceType: cleanedServiceType,
       sellerContact: "",
       bidOffer: "",
       bidOfferRaw: "",
@@ -49,6 +58,7 @@ export const createBidStore = ({ ttlMs, idStart }) => {
       bidTime: "",
       needsMoreInfo: "",
       buyerAdditionalInfo: "",
+      buyerNote: "",
       notificationPreference: notificationPreference || "whatsapp",
       telegramChatId: "",
       buyerName: "",
