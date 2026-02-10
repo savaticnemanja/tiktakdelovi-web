@@ -1,3 +1,5 @@
+import { resolveRecipients } from "./helpers/recipients.js";
+
 export const createRequestController = ({
   sellerNumbers,
   sellerNumbersByCity,
@@ -26,12 +28,11 @@ export const createRequestController = ({
         });
       }
 
-      const cityNumbers =
-        city && sellerNumbersByCity ? sellerNumbersByCity[city] : null;
-      const recipients =
-        Array.isArray(cityNumbers) && cityNumbers.length
-          ? cityNumbers
-          : sellerNumbers;
+      const recipients = resolveRecipients({
+        city,
+        numbersByCity: sellerNumbersByCity,
+        fallbackNumbers: sellerNumbers,
+      });
 
       if (!recipients.length) {
         return res

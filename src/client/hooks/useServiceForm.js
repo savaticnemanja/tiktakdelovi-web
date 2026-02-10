@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { MAKES, MODELS } from "../data/vehicleData";
 import { YEARS, FUEL_TYPES, CHASSIS_TYPES, firstValue } from "../data/formOptions";
 import { parseJson } from "../utils/api";
+import { ensureFormValid, normalizeSerbianPhoneNumber } from "../utils/form";
 
 export const useServiceForm = ({
   apiBase,
-  serviceLabel,
   apiPath = "/api/request",
   recipientLabel = "prodavcu(a)",
 }) => {
@@ -24,33 +24,20 @@ export const useServiceForm = ({
   const [status, setStatus] = useState(null);
 
   const send = async (e) => {
-    e.preventDefault();
-    const form = e?.currentTarget;
-    if (form && !form.checkValidity()) {
-      const firstInvalid = form.querySelector(":invalid");
-      if (firstInvalid) {
-        firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
-        firstInvalid.focus({ preventScroll: true });
-      }
-      if (form.reportValidity) {
-        form.reportValidity();
-      }
-      return;
-    }
+    if (!ensureFormValid(e)) return;
 
     setSending(true);
     setStatus(null);
 
     try {
-      const normalizedCustomer = `+381${customerNumber.replace(/\s+/g, "")}`;
+      const normalizedCustomer = normalizeSerbianPhoneNumber(customerNumber);
       const trimmedMessage = String(bidMessage || "").trim();
-      const labeledMessage = trimmedMessage;
       const res = await fetch(`${apiBase}${apiPath}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerNumber: normalizedCustomer,
-          bidMessage: labeledMessage,
+          bidMessage: trimmedMessage,
           notificationPreference,
           make,
           model,

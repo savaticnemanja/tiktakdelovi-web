@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { parseJson } from "../utils/api";
+import { ensureFormValid, normalizeSerbianPhoneNumber } from "../utils/form";
 
-export const useRoadsideForm = ({ apiBase, serviceLabel }) => {
+export const useRoadsideForm = ({ apiBase }) => {
   const [customerName, setCustomerName] = useState("");
   const [customerNumber, setCustomerNumber] = useState("");
   const [city, setCity] = useState("");
@@ -14,25 +15,13 @@ export const useRoadsideForm = ({ apiBase, serviceLabel }) => {
   const [status, setStatus] = useState(null);
 
   const send = async (e) => {
-    e.preventDefault();
-    const form = e?.currentTarget;
-    if (form && !form.checkValidity()) {
-      const firstInvalid = form.querySelector(":invalid");
-      if (firstInvalid) {
-        firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
-        firstInvalid.focus({ preventScroll: true });
-      }
-      if (form.reportValidity) {
-        form.reportValidity();
-      }
-      return;
-    }
+    if (!ensureFormValid(e)) return;
 
     setSending(true);
     setStatus(null);
 
     try {
-      const normalizedCustomer = `+381${customerNumber.replace(/\s+/g, "")}`;
+      const normalizedCustomer = normalizeSerbianPhoneNumber(customerNumber);
       const details = issueDescription ? issueDescription.trim() : "";
       const res = await fetch(`${apiBase}/api/tow-request`, {
         method: "POST",

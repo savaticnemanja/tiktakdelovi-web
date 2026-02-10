@@ -1,3 +1,5 @@
+import { resolveRecipients } from "./helpers/recipients.js";
+
 export const createMechanicRequestController = ({
   mechanicNumbers,
   mechanicNumbersByCity,
@@ -26,12 +28,11 @@ export const createMechanicRequestController = ({
         });
       }
 
-      const cityNumbers =
-        city && mechanicNumbersByCity ? mechanicNumbersByCity[city] : null;
-      const recipients =
-        Array.isArray(cityNumbers) && cityNumbers.length
-          ? cityNumbers
-          : mechanicNumbers;
+      const recipients = resolveRecipients({
+        city,
+        numbersByCity: mechanicNumbersByCity,
+        fallbackNumbers: mechanicNumbers,
+      });
 
       if (!recipients.length) {
         return res

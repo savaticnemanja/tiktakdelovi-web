@@ -1,3 +1,5 @@
+import { resolveRecipients } from "./helpers/recipients.js";
+
 export const createTowRequestController = ({
   towDriverNumbers,
   towDriverNumbersByCity,
@@ -27,12 +29,11 @@ export const createTowRequestController = ({
         });
       }
 
-      const cityNumbers =
-        city && towDriverNumbersByCity ? towDriverNumbersByCity[city] : null;
-      const recipients =
-        Array.isArray(cityNumbers) && cityNumbers.length
-          ? cityNumbers
-          : towDriverNumbers;
+      const recipients = resolveRecipients({
+        city,
+        numbersByCity: towDriverNumbersByCity,
+        fallbackNumbers: towDriverNumbers,
+      });
 
       if (!recipients.length) {
         return res
