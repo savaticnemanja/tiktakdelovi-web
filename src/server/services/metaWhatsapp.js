@@ -1087,6 +1087,12 @@ export const createMetaClient = ({
       template: templateRoadsideNotification,
       components: [
         {
+          type: "header",
+          parameters: [
+            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+          ],
+        },
+        {
           type: "body",
           parameters: [
             { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
