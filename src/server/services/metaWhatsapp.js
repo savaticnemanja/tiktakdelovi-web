@@ -1054,9 +1054,10 @@ export const createMetaClient = ({
             { type: "text", parameter_name: "bid_details", text: sanitizedBidDetails },
             {
               type: "text",
-              parameter_name: "roadside_contact",
-              text: sanitizedRoadsideContact,
+              parameter_name: "roadside_or_tow",
+              text: sanitizedRoadsideOrTow,
             },
+            { type: "text", parameter_name: "roadside_contact", text: sanitizedRoadsideContact },
             { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
           ],
         },
@@ -1067,7 +1068,6 @@ export const createMetaClient = ({
   const sendRoadsideNotification = async ({
     to,
     bidId,
-    roadsideOrTow,
     buyerName,
     buyerContact,
     location,
@@ -1076,7 +1076,6 @@ export const createMetaClient = ({
       return null;
     }
     const sanitizedBidId = sanitize(bidId);
-    const sanitizedRoadsideOrTow = sanitizeOrDash(roadsideOrTow);
     const sanitizedBuyerName = sanitizeOrDash(buyerName);
     const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
     const sanitizedLocation = sanitizeOrDash(location);
@@ -1090,8 +1089,6 @@ export const createMetaClient = ({
         {
           type: "body",
           parameters: [
-            { type: "text", parameter_name: "roadsideOrTow", text: sanitizedRoadsideOrTow },
-            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
             { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
             { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
             { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
@@ -1105,7 +1102,6 @@ export const createMetaClient = ({
   const sendBuyerRoadsideNotification = async ({
     to,
     bidId,
-    roadsideOrTow,
     roadsideOrTowData,
     roadsideContact,
     bidOffer,
@@ -1115,7 +1111,6 @@ export const createMetaClient = ({
       return null;
     }
     const sanitizedBidId = sanitize(bidId);
-    const sanitizedRoadsideOrTow = sanitizeOrDash(roadsideOrTow);
     const sanitizedRoadsideOrTowData = sanitizeOrDash(roadsideOrTowData);
     const sanitizedRoadsideContact = sanitizeOrDash(roadsideContact);
     const sanitizedBidOffer = sanitizeOrDash(bidOffer);
@@ -1128,10 +1123,14 @@ export const createMetaClient = ({
       template: templateBuyerRoadsideNotification,
       components: [
         {
+          type: "header",
+          parameters: [
+            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+          ],
+        },
+        {
           type: "body",
           parameters: [
-            { type: "text", parameter_name: "roadsideOrTow", text: sanitizedRoadsideOrTow },
-            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
             {
               type: "text",
               parameter_name: "roadside_or_tow_data",

@@ -53,12 +53,12 @@ export const createWebhookController = ({
       const getRoadsideLabels = (serviceType) => {
         if (serviceType === "slep_sluzba") {
           return {
-            roadsideOrTow: "ŠLEP SLUŽBA",
+            roadsideOrTow: "ZA ŠLEP SLUŽBU",
             roadsideOrTowData: "ŠLEP SLUŽBI",
           };
         }
         return {
-          roadsideOrTow: "POMOĆ NA PUTU",
+          roadsideOrTow: "ZA POMOĆ NA PUTU",
           roadsideOrTowData: "POMOĆI NA PUTU",
         };
       };
@@ -652,7 +652,6 @@ export const createWebhookController = ({
                     await metaClient.sendBuyerRoadsideNotification({
                       to: updated.customerNumber,
                       bidId: updated.bidId,
-                      roadsideOrTow: labels.roadsideOrTow,
                       roadsideOrTowData: labels.roadsideOrTowData,
                       roadsideContact: updated.sellerContact,
                       bidOffer: updated.bidOffer,
