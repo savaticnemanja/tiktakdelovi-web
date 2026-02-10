@@ -33,12 +33,7 @@ export const useRoadsideForm = ({ apiBase, serviceLabel }) => {
 
     try {
       const normalizedCustomer = `+381${customerNumber.replace(/\s+/g, "")}`;
-      const detailsParts = [
-        customerName ? `Ime: ${customerName.trim()}` : "",
-        customerNumber ? `Telefon: +381${customerNumber.replace(/\s+/g, "")}` : "",
-        issueDescription ? `Opis: ${issueDescription.trim()}` : "",
-      ].filter(Boolean);
-      const details = detailsParts.join(" / ");
+      const details = issueDescription ? issueDescription.trim() : "";
       const res = await fetch(`${apiBase}/api/tow-request`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
