@@ -1011,7 +1011,6 @@ export const createMetaClient = ({
     buyerName,
     buyerContact,
     details,
-    bidDetails,
     roadsideContact,
     bidOffer,
   }) => {
@@ -1024,7 +1023,6 @@ export const createMetaClient = ({
     const sanitizedBuyerName = sanitizeOrDash(buyerName);
     const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
     const sanitizedDetails = sanitizeOrDash(details);
-    const sanitizedBidDetails = sanitizeOrDash(bidDetails);
     const sanitizedRoadsideContact = sanitizeOrDash(roadsideContact);
     const sanitizedBidOffer = sanitizeOrDash(bidOffer);
     if (!sanitizedBidId || !sanitizedRoadsideOrTow || !sanitizedBuyerContact || !sanitizedRoadsideContact) {
@@ -1051,7 +1049,6 @@ export const createMetaClient = ({
             },
             { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
             { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
-            { type: "text", parameter_name: "bid_details", text: sanitizedBidDetails },
             {
               type: "text",
               parameter_name: "roadside_or_tow",
@@ -1111,7 +1108,6 @@ export const createMetaClient = ({
     roadsideOrTowData,
     roadsideContact,
     bidOffer,
-    bidNote,
   }) => {
     if (!templateBuyerRoadsideNotification || !to) {
       return null;
@@ -1120,7 +1116,6 @@ export const createMetaClient = ({
     const sanitizedRoadsideOrTowData = sanitizeOrDash(roadsideOrTowData);
     const sanitizedRoadsideContact = sanitizeOrDash(roadsideContact);
     const sanitizedBidOffer = sanitizeOrDash(bidOffer);
-    const sanitizedBidNote = sanitizeOrDash(bidNote);
     if (!sanitizedBidId || !sanitizedRoadsideContact) {
       throw new Error("bidId and roadsideContact are required.");
     }
@@ -1149,7 +1144,6 @@ export const createMetaClient = ({
               text: sanitizedRoadsideContact,
             },
             { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
-            { type: "text", parameter_name: "bid_note", text: sanitizedBidNote },
           ],
         },
       ],

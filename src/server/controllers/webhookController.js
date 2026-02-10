@@ -637,7 +637,6 @@ export const createWebhookController = ({
                       buyerName: updated.buyerName || updated.name || "-",
                       buyerContact: updated.buyerContact || updated.customerNumber,
                       details: updated.bidMessage || "-",
-                      bidDetails: updated.buyerNote || "-",
                       roadsideContact: updated.sellerContact,
                       bidOffer: updated.bidOffer,
                     });
@@ -655,7 +654,6 @@ export const createWebhookController = ({
                       roadsideOrTowData: labels.roadsideOrTowData,
                       roadsideContact: updated.sellerContact,
                       bidOffer: updated.bidOffer,
-                      bidNote: updated.bidNote || "-",
                     });
                   } catch (err) {
                     console.error(
