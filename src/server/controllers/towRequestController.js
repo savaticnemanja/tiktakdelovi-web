@@ -18,6 +18,7 @@ export const createTowRequestController = ({
         locationTo,
         details,
         city,
+        notificationPreference,
       } = req.body || {};
 
       if (!customerNumber || !locationFrom || !details) {
@@ -46,6 +47,7 @@ export const createTowRequestController = ({
         bidMessage: details,
         customerNumber,
         name,
+        notificationPreference,
       });
 
       const templateName = templateRoadsideInquiry;

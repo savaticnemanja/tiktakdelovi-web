@@ -46,6 +46,7 @@ export const createApp = () => {
     templateBuyerReviewFlowTitle: ENV.META_TEMPLATE_BUYER_REVIEW_FLOW_TITLE,
     templateLanguage: ENV.META_TEMPLATE_LANGUAGE,
     templateBuyerOffer: ENV.META_TEMPLATE_BUYER_OFFER,
+    templateBuyerRoadsideOffer: ENV.META_TEMPLATE_BUYER_ROADSIDE_OFFER,
     templateBuyerMechanicOffer: ENV.META_TEMPLATE_BUYER_MECHANIC_OFFER,
     templateBuyerOfferFlowTitle: ENV.META_TEMPLATE_BUYER_OFFER_FLOW_TITLE,
     templateOwnerNotification: ENV.META_TEMPLATE_OWNER_NOTIFICATION,

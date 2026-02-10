@@ -13,6 +13,7 @@ export const createMetaClient = ({
   templateBuyerReview,
   templateBuyerReviewFlowTitle,
   templateBuyerOffer,
+  templateBuyerRoadsideOffer,
   templateBuyerMechanicOffer,
   templateBuyerOfferFlowTitle,
   templateOwnerNotification,
@@ -544,6 +545,73 @@ export const createMetaClient = ({
     return metaResp;
   };
 
+  const sendRoadsideOfferToBuyer = async ({
+    to,
+    bidId,
+    bidDetails,
+    bidOffer,
+  }) => {
+    const sanitizedBidId = sanitize(bidId);
+    const sanitizedBidDetails = sanitizeMasked(bidDetails);
+    const sanitizedBidOffer = sanitize(bidOffer);
+    if (!sanitizedBidId || !sanitizedBidDetails || !sanitizedBidOffer) {
+      throw new Error("bidId, bidDetails and bidOffer are required.");
+    }
+    const metaResp = await sendTemplate({
+      to,
+      template: templateBuyerRoadsideOffer,
+      keepPlus: true,
+      components: [
+        {
+          type: "header",
+          parameters: [
+            {
+              type: "text",
+              parameter_name: "bid_id",
+              text: sanitizedBidId,
+            },
+          ],
+        },
+        {
+          type: "body",
+          parameters: [
+            {
+              type: "text",
+              parameter_name: "bid_id",
+              text: sanitizedBidId,
+            },
+            {
+              type: "text",
+              parameter_name: "bid_details",
+              text: sanitizedBidDetails,
+            },
+            {
+              type: "text",
+              parameter_name: "bid_offer",
+              text: sanitizedBidOffer,
+            },
+          ],
+        },
+        {
+          type: "button",
+          sub_type: "flow",
+          index: "0",
+          parameters: [
+            {
+              type: "payload",
+              payload: JSON.stringify({ screen: templateBuyerOfferFlowTitle }),
+            },
+          ],
+        },
+      ],
+    });
+    const sentId = metaResp?.data?.messages?.[0]?.id;
+    if (sentId && messageToBid) {
+      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "buyer_roadside_offer" });
+    }
+    return metaResp;
+  };
+
   const sendOfferToBuyerMechanic = async ({
     to,
     bidId,
@@ -1039,6 +1107,7 @@ export const createMetaClient = ({
     sendNotifySeller,
     sendBuyerReview,
     sendOfferToBuyer,
+    sendRoadsideOfferToBuyer,
     sendOfferToBuyerMechanic,
     sendOfferToOwner,
     sendOfferToOwnerMechanic,

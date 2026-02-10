@@ -3,6 +3,7 @@ import { normalizePhone } from "../utils/phone.js";
 import { applyMarkup } from "../utils/price.js";
 import {
   formatBuyerOfferMessage,
+  formatBuyerRoadsideOfferMessage,
   formatBuyerReviewMessage,
   formatBuyerImageCaption,
 } from "../services/telegramMessages.js";
@@ -530,6 +531,80 @@ export const createWebhookController = ({
                 continue;
               }
 
+              if (mapEntry?.kind === "buyer_roadside_offer" && bid) {
+                const buyerName = pickValue(responseData, [
+                  "buyer_name",
+                  "name",
+                  "screen_0_Ime_i_prezime_0",
+                  "screen_0_Ime_0",
+                  "screen_0_Ime_1",
+                ]);
+                const buyerAddress = pickValue(responseData, [
+                  "buyer_address",
+                  "address",
+                  "screen_0_Adresa_1",
+                  "screen_0_Adresa_0",
+                ]);
+                const buyerCity = pickValue(responseData, [
+                  "buyer_city",
+                  "city",
+                  "screen_0_Grad_2",
+                  "screen_0_Grad_0",
+                  "screen_0_Grad_1",
+                ]);
+                const buyerPostalCode = pickValue(responseData, [
+                  "buyer_postal_code",
+                  "postal_code",
+                  "zip",
+                  "screen_0_Potanski_broj_3",
+                  "screen_0_Postanski_broj_0",
+                  "screen_0_Postanski_broj_1",
+                ]);
+                const buyerContact = pickValue(responseData, [
+                  "buyer_contact",
+                  "contact",
+                  "phone",
+                  "screen_0_Kontakt_telefon_4",
+                  "screen_0_Kontakt_0",
+                  "screen_0_Kontakt_1",
+                ]);
+
+                const updated = bidStore.updateBid(bid.bidId, {
+                  buyerName,
+                  buyerAddress,
+                  buyerCity,
+                  buyerPostalCode,
+                  buyerContact,
+                });
+                if (updated?.sellerContact && updated?.bidOffer) {
+                  try {
+                    await metaClient.sendOfferToOwner({
+                      to: ownerNumber,
+                      bidId: updated.bidId,
+                      make: updated.make,
+                      model: updated.model,
+                      year: updated.year,
+                      fuelType: updated.fuelType,
+                      chassis: updated.chassis,
+                      buyerName: updated.buyerName,
+                      buyerAddress: updated.buyerAddress,
+                      buyerCity: updated.buyerCity,
+                      buyerPostalCode: updated.buyerPostalCode,
+                      buyerContact: updated.buyerContact,
+                      bidMessage: updated.bidMessage,
+                      sellerNumber: updated.sellerContact,
+                      bidOffer: updated.bidOffer,
+                    });
+                  } catch (err) {
+                    console.error(
+                      "Owner notification failed:",
+                      err?.response?.data || err.message || String(err),
+                    );
+                  }
+                }
+                continue;
+              }
+
               if (mapEntry?.kind === "mechanic_inquiry") {
                 const mechanicContact = normalizePhone(from);
                 const bidDate = formatBidDate(dateISO);
@@ -560,6 +635,51 @@ export const createWebhookController = ({
                   } catch (err) {
                     console.error(
                       "Mechanic offer forward failed:",
+                      err?.response?.data || err.message || String(err),
+                    );
+                  }
+                }
+                continue;
+              }
+
+              if (mapEntry?.kind === "tow_inquiry") {
+                const driverContact = normalizePhone(from);
+                const latestBidDetails =
+                  bid?.bidMessage || bidStore.getBidRequest(mapEntry.bidId)?.bidMessage || "";
+                const updated = bidStore.updateBid(mapEntry.bidId, {
+                  sellerContact: driverContact,
+                  bidOffer: priceForBuyer,
+                  bidOfferRaw: price ? String(price) : "",
+                  bidNote: note ? String(note) : "",
+                  bidMessage: latestBidDetails || bid?.bidMessage,
+                });
+                if (updated && updated.customerNumber && priceForBuyer) {
+                  try {
+                    if (
+                      updated.notificationPreference === "telegram" &&
+                      telegramClient &&
+                      updated.telegramChatId
+                    ) {
+                      await telegramClient.sendMessage({
+                        chatId: updated.telegramChatId,
+                        text: formatBuyerRoadsideOfferMessage({
+                          bidId: updated.bidId,
+                          bidDetails: updated.bidMessage,
+                          bidOffer: String(priceForBuyer),
+                        }),
+                        mask: true,
+                      });
+                    } else {
+                      await metaClient.sendRoadsideOfferToBuyer({
+                        to: updated.customerNumber,
+                        bidId: updated.bidId,
+                        bidDetails: updated.bidMessage,
+                        bidOffer: String(priceForBuyer),
+                      });
+                    }
+                  } catch (err) {
+                    console.error(
+                      "Tow offer forward failed:",
                       err?.response?.data || err.message || String(err),
                     );
                   }
