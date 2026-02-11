@@ -9,7 +9,12 @@ export const createTelegramClient = ({ token }) => {
   const sanitize = (value) => sanitizeTelegramText(value);
   const sanitizeMasked = (value) => sanitize(maskPhoneNumbers(value));
 
-  const sendMessage = async ({ chatId, text, mask = false }) => {
+  const sendMessage = async ({
+    chatId,
+    text,
+    mask = false,
+    replyMarkup = null,
+  }) => {
     if (!chatId || !text) {
       throw new Error("chatId and text are required.");
     }
@@ -17,6 +22,9 @@ export const createTelegramClient = ({ token }) => {
       chat_id: chatId,
       text: mask ? sanitizeMasked(text) : sanitize(text),
     };
+    if (replyMarkup && typeof replyMarkup === "object") {
+      payload.reply_markup = replyMarkup;
+    }
     const resp = await fetch(`${apiBase}/sendMessage`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -58,8 +66,34 @@ export const createTelegramClient = ({ token }) => {
     return resp.json();
   };
 
+  const answerCallbackQuery = async ({
+    callbackQueryId,
+    text = "",
+    showAlert = false,
+  }) => {
+    if (!callbackQueryId) {
+      throw new Error("callbackQueryId is required.");
+    }
+    const payload = {
+      callback_query_id: callbackQueryId,
+      text: sanitize(text),
+      show_alert: Boolean(showAlert),
+    };
+    const resp = await fetch(`${apiBase}/answerCallbackQuery`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!resp.ok) {
+      const errBody = await resp.text();
+      throw new Error(`Telegram answerCallbackQuery failed: ${errBody}`);
+    }
+    return resp.json();
+  };
+
   return {
     sendMessage,
     sendPhoto,
+    answerCallbackQuery,
   };
 };

@@ -54,6 +54,7 @@ export const createMechanicRequestController = ({
         customerNumber,
         name,
         notificationPreference,
+        requestType: "mechanic",
         make,
         model,
         year,

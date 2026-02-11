@@ -41,7 +41,7 @@ const SiteFooter = () => {
               vaš email klijent sa pripremljenom porukom.
             </p>
             <form
-              className="stagger seller-form"
+              className="form-card stagger seller-form"
               data-reveal="stagger"
               onSubmit={registerSeller}
             >

@@ -3,6 +3,7 @@ import { normalizePhone } from "../../utils/phone.js";
 import { applyMarkup } from "../../utils/price.js";
 import {
   formatBuyerOfferMessage,
+  formatBuyerMechanicOfferMessage,
   formatBuyerRoadsideOfferMessage,
   formatBuyerReviewMessage,
   formatBuyerImageCaption,
@@ -572,14 +573,40 @@ export const createWebhookHandlers = ({
 
       if (updated && updated.customerNumber && price) {
         try {
-          await metaClient.sendOfferToBuyerMechanic({
-            to: updated.customerNumber,
-            bidId: updated.bidId,
-            bidDetails: updated.bidMessage,
-            bidOffer: String(price),
-            bidDate: [bidDate, bidTime].filter(Boolean).join(" ") || "-",
-            bidNote: String(note || "-"),
-          });
+          if (
+            updated.notificationPreference === "telegram" &&
+            telegramClient &&
+            updated.telegramChatId
+          ) {
+            await telegramClient.sendMessage({
+              chatId: updated.telegramChatId,
+              text: formatBuyerMechanicOfferMessage({
+                bidId: updated.bidId,
+                bidDetails: updated.bidMessage,
+                bidOffer: String(price),
+                bidDate: [bidDate, bidTime].filter(Boolean).join(" ") || "-",
+                bidNote: String(note || "-"),
+              }),
+              mask: true,
+              replyMarkup: {
+                inline_keyboard: [
+                  [
+                    { text: "Prihvati", callback_data: `tg:mech:accept:${updated.bidId}` },
+                    { text: "Odbij", callback_data: `tg:mech:decline:${updated.bidId}` },
+                  ],
+                ],
+              },
+            });
+          } else {
+            await metaClient.sendOfferToBuyerMechanic({
+              to: updated.customerNumber,
+              bidId: updated.bidId,
+              bidDetails: updated.bidMessage,
+              bidOffer: String(price),
+              bidDate: [bidDate, bidTime].filter(Boolean).join(" ") || "-",
+              bidNote: String(note || "-"),
+            });
+          }
         } catch (err) {
           console.error(
             "Mechanic offer forward failed:",
@@ -616,6 +643,14 @@ export const createWebhookHandlers = ({
                 bidOffer: String(priceForBuyer),
               }),
               mask: true,
+              replyMarkup: {
+                inline_keyboard: [
+                  [
+                    { text: "Prihvati", callback_data: `tg:road:accept:${updated.bidId}` },
+                    { text: "Odbij", callback_data: `tg:road:decline:${updated.bidId}` },
+                  ],
+                ],
+              },
             });
           } else {
             await metaClient.sendRoadsideOfferToBuyer({
@@ -670,6 +705,16 @@ export const createWebhookHandlers = ({
                 bidNote: String(note || "-"),
               }),
               mask: true,
+              replyMarkup: {
+                inline_keyboard: [
+                  [
+                    {
+                      text: "Pošalji dodatne informacije",
+                      callback_data: `tg:review:start:${updated.bidId}`,
+                    },
+                  ],
+                ],
+              },
             });
           } else {
             await metaClient.sendBuyerReview({
@@ -703,6 +748,14 @@ export const createWebhookHandlers = ({
                 bidNote: String(note || "-"),
               }),
               mask: true,
+              replyMarkup: {
+                inline_keyboard: [
+                  [
+                    { text: "Prihvati", callback_data: `tg:parts:accept:${updated.bidId}` },
+                    { text: "Odbij", callback_data: `tg:parts:decline:${updated.bidId}` },
+                  ],
+                ],
+              },
             });
           } else {
             await metaClient.sendOfferToBuyer({

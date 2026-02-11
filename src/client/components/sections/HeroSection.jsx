@@ -18,10 +18,13 @@ const HeroSection = () => (
         </p>
         <div className="hero-actions">
           <a className="btn primary" href="#buyer-form">
-            Traži deo
+            Polovni delovi
           </a>
-          <a className="btn ghost" href="#seller-form">
-            Registrujte se kao prodavac
+          <a className="btn ghost" href="#servis-form">
+            Zakaži servis
+          </a>
+          <a className="btn light" href="#roadside-form">
+            Pozovi šlep
           </a>
         </div>
       </div>

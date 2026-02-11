@@ -49,6 +49,7 @@ export const createTowRequestController = ({
         customerNumber,
         name,
         notificationPreference,
+        requestType: "roadside",
         locationFrom,
         locationTo,
         serviceType,

@@ -13,6 +13,7 @@ export const createBidStore = ({ ttlMs, idStart }) => {
     customerNumber,
     name,
     notificationPreference,
+    requestType,
     make,
     model,
     year,
@@ -26,6 +27,7 @@ export const createBidStore = ({ ttlMs, idStart }) => {
     const cleanedBidMessage = sanitizeTemplateText(bidMessage);
     const cleanedCustomerNumber = normalizePhone(customerNumber);
     const cleanedName = sanitizeTemplateText(name);
+    const cleanedRequestType = sanitizeTemplateText(requestType);
     const cleanedMake = sanitizeTemplateText(make);
     const cleanedModel = sanitizeTemplateText(model);
     const cleanedYear = sanitizeTemplateText(year);
@@ -60,7 +62,9 @@ export const createBidStore = ({ ttlMs, idStart }) => {
       buyerAdditionalInfo: "",
       buyerNote: "",
       notificationPreference: notificationPreference || "whatsapp",
+      requestType: cleanedRequestType || "",
       telegramChatId: "",
+      telegramFlow: null,
       buyerName: "",
       buyerAddress: "",
       buyerCity: "",

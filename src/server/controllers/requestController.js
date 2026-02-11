@@ -48,6 +48,7 @@ export const createRequestController = ({
         customerNumber,
         name,
         notificationPreference,
+        requestType: "parts",
         make,
         model,
         year,

@@ -10,7 +10,8 @@ Detalji zahteva: ${bidDetails}
 
 Napomena od prodavca: ${bidNote}
 
-Da odgovorite kliknite na dugme ispod i ostavite potrebne informacije.`;
+Odgovor pošaljite ovako:
+/info Vaše dodatne informacije`;
 
 export const formatBuyerOfferMessage = ({
   bidId,
@@ -26,7 +27,13 @@ Detalji zahteva: ${bidDetails}
 Cena: ${bidOffer}
 Napomena: ${bidNote}
 
-Da prihvatite ponudu kliknite na dugme ispod i ostavite detalje za isporuku.`;
+Pošaljite podatke ovako:
+/odgovor
+ime: Ime Prezime
+kontakt: +3816...
+adresa: Ulica 1
+grad: Beograd
+postanski_broj: 11000`;
 
 export const formatBuyerRoadsideOfferMessage = ({
   bidId,
@@ -40,7 +47,32 @@ Detalji zahteva: ${bidDetails}
 
 Cena: ${bidOffer}
 
-Da prihvatite ponudu kliknite na dugme ispod i ostavite detalje za isporuku.`;
+Pošaljite odgovor ovako:
+/odgovor
+prihvatam: da
+ime: Ime Prezime
+kontakt: +3816...
+adresa: Ulica 1
+grad: Beograd
+postanski_broj: 11000`;
+
+export const formatBuyerMechanicOfferMessage = ({
+  bidId,
+  bidDetails,
+  bidOffer,
+  bidDate,
+  bidNote,
+}) => `PONUDA ZA SERVIS #${bidId}
+
+Poštovani, mehaničar je poslao ponudu za zahtev #${bidId}
+
+Detalji zahteva: ${bidDetails}
+
+Cena: ${bidOffer}
+Termin: ${bidDate}
+Napomena: ${bidNote}
+
+Kliknite na dugme ispod za prihvatanje ili odbijanje ponude.`;
 
 export const formatBuyerImageCaption = ({ bidId, bidOffer }) => {
   const priceLine = bidOffer ? `\n\nCena - ${bidOffer}` : "";

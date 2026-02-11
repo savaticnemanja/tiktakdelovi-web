@@ -112,6 +112,7 @@ export const createApp = () => {
     bidStore,
     telegramClient,
     metaClient,
+    ownerNumber: ENV.OWNER_NUMBER,
   });
 
   app.use("/api", apiLogger, createApiRouter({
