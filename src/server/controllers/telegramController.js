@@ -94,7 +94,8 @@ export const createTelegramController = ({
   const buildBidListText = (bids) => {
     const lines = bids.map((bid) => {
       const offer = bid.bidOffer ? ` | ponuda: ${bid.bidOffer}` : "";
-      return `#${bid.bidId}${offer}`;
+      const status = ` | status: ${String(bid?.buyerDecisionStatus || "pending")}`;
+      return `#${bid.bidId}${offer}${status}`;
     });
     return `Imate više zahteva u Telegram-u.\nOdaberite jedan: /bid #<id>\n${lines.join("\n")}`;
   };
@@ -117,7 +118,22 @@ export const createTelegramController = ({
 
   const clearFlow = (bidId) => bidStore.updateBid(bidId, { telegramFlow: null });
 
+  const getDecisionStatus = (bid) => String(bid?.buyerDecisionStatus || "pending");
+  const decisionLabel = (status) => (status === "accepted" ? "prihvaćen" : "odbijen");
+  const sendAlreadyFinalDecision = async (chatId, bid) => {
+    await telegramClient.sendMessage({
+      chatId,
+      text: `Zahtev #${bid.bidId} je već ${decisionLabel(getDecisionStatus(bid))}.`,
+    });
+  };
+
   const sendActionKeyboard = async (chatId, bid) => {
+    const decisionStatus = getDecisionStatus(bid);
+    if (decisionStatus === "accepted" || decisionStatus === "declined") {
+      await sendAlreadyFinalDecision(chatId, bid);
+      return;
+    }
+
     const requestType = inferRequestType(bid);
     if (bid?.needsMoreInfo === "yes") {
       await telegramClient.sendMessage({
@@ -370,12 +386,23 @@ export const createTelegramController = ({
   };
 
   const finalizeParts = async (bid, flowData, chatId) => {
-    const updatedBid = bidStore.updateBid(bid.bidId, {
-      buyerName: flowData.name || bid.buyerName || bid.name || "",
-      buyerAddress: flowData.address || bid.buyerAddress || "",
-      buyerCity: flowData.city || bid.buyerCity || "",
-      buyerPostalCode: flowData.postalCode || bid.buyerPostalCode || "",
-      buyerContact: normalizePhone(flowData.contact || bid.buyerContact || ""),
+    const decision = bidStore.setBuyerDecision(bid.bidId, {
+      status: "accepted",
+      source: "telegram_parts_offer",
+    });
+    if (!decision?.applied || !decision?.bid) {
+      clearFlow(bid.bidId);
+      await sendAlreadyFinalDecision(chatId, decision?.bid || bid);
+      return;
+    }
+
+    const decisionBid = decision.bid;
+    const updatedBid = bidStore.updateBid(decisionBid.bidId, {
+      buyerName: flowData.name || decisionBid.buyerName || decisionBid.name || "",
+      buyerAddress: flowData.address || decisionBid.buyerAddress || "",
+      buyerCity: flowData.city || decisionBid.buyerCity || "",
+      buyerPostalCode: flowData.postalCode || decisionBid.buyerPostalCode || "",
+      buyerContact: normalizePhone(flowData.contact || decisionBid.buyerContact || ""),
     });
 
     try {
@@ -395,9 +422,20 @@ export const createTelegramController = ({
   };
 
   const finalizeMechanic = async (bid, flowData, chatId) => {
-    const updatedBid = bidStore.updateBid(bid.bidId, {
-      buyerName: flowData.name || bid.buyerName || bid.name || "",
-      buyerContact: normalizePhone(flowData.contact || bid.buyerContact || ""),
+    const decision = bidStore.setBuyerDecision(bid.bidId, {
+      status: "accepted",
+      source: "telegram_mechanic_offer",
+    });
+    if (!decision?.applied || !decision?.bid) {
+      clearFlow(bid.bidId);
+      await sendAlreadyFinalDecision(chatId, decision?.bid || bid);
+      return;
+    }
+
+    const decisionBid = decision.bid;
+    const updatedBid = bidStore.updateBid(decisionBid.bidId, {
+      buyerName: flowData.name || decisionBid.buyerName || decisionBid.name || "",
+      buyerContact: normalizePhone(flowData.contact || decisionBid.buyerContact || ""),
     });
 
     try {
@@ -417,12 +455,23 @@ export const createTelegramController = ({
   };
 
   const finalizeRoadside = async (bid, flowData, chatId) => {
-    const updatedBid = bidStore.updateBid(bid.bidId, {
-      buyerName: flowData.name || bid.buyerName || bid.name || "",
-      buyerAddress: flowData.address || bid.buyerAddress || "",
-      buyerCity: flowData.city || bid.buyerCity || "",
-      buyerPostalCode: flowData.postalCode || bid.buyerPostalCode || "",
-      buyerContact: normalizePhone(flowData.contact || bid.buyerContact || ""),
+    const decision = bidStore.setBuyerDecision(bid.bidId, {
+      status: "accepted",
+      source: "telegram_roadside_offer",
+    });
+    if (!decision?.applied || !decision?.bid) {
+      clearFlow(bid.bidId);
+      await sendAlreadyFinalDecision(chatId, decision?.bid || bid);
+      return;
+    }
+
+    const decisionBid = decision.bid;
+    const updatedBid = bidStore.updateBid(decisionBid.bidId, {
+      buyerName: flowData.name || decisionBid.buyerName || decisionBid.name || "",
+      buyerAddress: flowData.address || decisionBid.buyerAddress || "",
+      buyerCity: flowData.city || decisionBid.buyerCity || "",
+      buyerPostalCode: flowData.postalCode || decisionBid.buyerPostalCode || "",
+      buyerContact: normalizePhone(flowData.contact || decisionBid.buyerContact || ""),
       buyerNote: flowData.note || "",
     });
 
@@ -606,6 +655,14 @@ export const createTelegramController = ({
     setSelectedBid(chatId, bid.bidId);
 
     if (mode === "review" && action === "start") {
+      if (getDecisionStatus(bid) !== "pending") {
+        await telegramClient.answerCallbackQuery({
+          callbackQueryId,
+          text: `Već ${decisionLabel(getDecisionStatus(bid))}.`,
+        });
+        await sendAlreadyFinalDecision(chatId, bid);
+        return true;
+      }
       bidStore.clearTelegramFlowsForChat(chatId, bid.bidId);
       setFlow(bid.bidId, { mode: "review", step: "info", data: {} });
       await telegramClient.answerCallbackQuery({ callbackQueryId, text: "Unesite informacije." });
@@ -614,6 +671,14 @@ export const createTelegramController = ({
     }
 
     if (mode === "parts" && action === "accept") {
+      if (getDecisionStatus(bid) !== "pending") {
+        await telegramClient.answerCallbackQuery({
+          callbackQueryId,
+          text: `Već ${decisionLabel(getDecisionStatus(bid))}.`,
+        });
+        await sendAlreadyFinalDecision(chatId, bid);
+        return true;
+      }
       const flow = { mode: "parts", step: "name", data: {} };
       bidStore.clearTelegramFlowsForChat(chatId, bid.bidId);
       setFlow(bid.bidId, flow);
@@ -623,16 +688,36 @@ export const createTelegramController = ({
     }
 
     if (mode === "parts" && action === "decline") {
-      clearFlow(bid.bidId);
-      await telegramClient.answerCallbackQuery({ callbackQueryId, text: "Ponuda odbijena." });
-      await telegramClient.sendMessage({
-        chatId,
-        text: `Ponuda je odbijena za zahtev #${bid.bidId}.`,
+      const decision = bidStore.setBuyerDecision(bid.bidId, {
+        status: "declined",
+        source: "telegram_parts_decline",
       });
+      clearFlow(bid.bidId);
+      if (!decision?.applied || !decision?.bid) {
+        await telegramClient.answerCallbackQuery({
+          callbackQueryId,
+          text: `Već ${decisionLabel(getDecisionStatus(decision?.bid || bid))}.`,
+        });
+        await sendAlreadyFinalDecision(chatId, decision?.bid || bid);
+      } else {
+        await telegramClient.answerCallbackQuery({ callbackQueryId, text: "Ponuda odbijena." });
+        await telegramClient.sendMessage({
+          chatId,
+          text: `Ponuda je odbijena za zahtev #${bid.bidId}.`,
+        });
+      }
       return true;
     }
 
     if (mode === "mech" && action === "accept") {
+      if (getDecisionStatus(bid) !== "pending") {
+        await telegramClient.answerCallbackQuery({
+          callbackQueryId,
+          text: `Već ${decisionLabel(getDecisionStatus(bid))}.`,
+        });
+        await sendAlreadyFinalDecision(chatId, bid);
+        return true;
+      }
       const flow = { mode: "mechanic", step: "name", data: {} };
       bidStore.clearTelegramFlowsForChat(chatId, bid.bidId);
       setFlow(bid.bidId, flow);
@@ -642,16 +727,36 @@ export const createTelegramController = ({
     }
 
     if (mode === "mech" && action === "decline") {
-      clearFlow(bid.bidId);
-      await telegramClient.answerCallbackQuery({ callbackQueryId, text: "Ponuda odbijena." });
-      await telegramClient.sendMessage({
-        chatId,
-        text: `Ponuda je odbijena za zahtev #${bid.bidId}.`,
+      const decision = bidStore.setBuyerDecision(bid.bidId, {
+        status: "declined",
+        source: "telegram_mechanic_decline",
       });
+      clearFlow(bid.bidId);
+      if (!decision?.applied || !decision?.bid) {
+        await telegramClient.answerCallbackQuery({
+          callbackQueryId,
+          text: `Već ${decisionLabel(getDecisionStatus(decision?.bid || bid))}.`,
+        });
+        await sendAlreadyFinalDecision(chatId, decision?.bid || bid);
+      } else {
+        await telegramClient.answerCallbackQuery({ callbackQueryId, text: "Ponuda odbijena." });
+        await telegramClient.sendMessage({
+          chatId,
+          text: `Ponuda je odbijena za zahtev #${bid.bidId}.`,
+        });
+      }
       return true;
     }
 
     if (mode === "road" && action === "accept") {
+      if (getDecisionStatus(bid) !== "pending") {
+        await telegramClient.answerCallbackQuery({
+          callbackQueryId,
+          text: `Već ${decisionLabel(getDecisionStatus(bid))}.`,
+        });
+        await sendAlreadyFinalDecision(chatId, bid);
+        return true;
+      }
       const flow = { mode: "roadside", step: "name", data: {} };
       bidStore.clearTelegramFlowsForChat(chatId, bid.bidId);
       setFlow(bid.bidId, flow);
@@ -661,12 +766,24 @@ export const createTelegramController = ({
     }
 
     if (mode === "road" && action === "decline") {
-      clearFlow(bid.bidId);
-      await telegramClient.answerCallbackQuery({ callbackQueryId, text: "Ponuda odbijena." });
-      await telegramClient.sendMessage({
-        chatId,
-        text: `Ponuda je odbijena za zahtev #${bid.bidId}.`,
+      const decision = bidStore.setBuyerDecision(bid.bidId, {
+        status: "declined",
+        source: "telegram_roadside_decline",
       });
+      clearFlow(bid.bidId);
+      if (!decision?.applied || !decision?.bid) {
+        await telegramClient.answerCallbackQuery({
+          callbackQueryId,
+          text: `Već ${decisionLabel(getDecisionStatus(decision?.bid || bid))}.`,
+        });
+        await sendAlreadyFinalDecision(chatId, decision?.bid || bid);
+      } else {
+        await telegramClient.answerCallbackQuery({ callbackQueryId, text: "Ponuda odbijena." });
+        await telegramClient.sendMessage({
+          chatId,
+          text: `Ponuda je odbijena za zahtev #${bid.bidId}.`,
+        });
+      }
       return true;
     }
 
@@ -912,11 +1029,19 @@ export const createTelegramController = ({
         if (requestType === "mechanic") {
           const accepted = parseYesNoFlag(fields.accept || "da");
           if (accepted === false) {
-            clearFlow(bid.bidId);
-            await telegramClient.sendMessage({
-              chatId,
-              text: `Ponuda je odbijena za zahtev #${bid.bidId}.`,
+            const decision = bidStore.setBuyerDecision(bid.bidId, {
+              status: "declined",
+              source: "telegram_mechanic_decline_text",
             });
+            clearFlow(bid.bidId);
+            if (!decision?.applied || !decision?.bid) {
+              await sendAlreadyFinalDecision(chatId, decision?.bid || bid);
+            } else {
+              await telegramClient.sendMessage({
+                chatId,
+                text: `Ponuda je odbijena za zahtev #${bid.bidId}.`,
+              });
+            }
             return res.sendStatus(200);
           }
           if (accepted === null) {
@@ -937,11 +1062,19 @@ export const createTelegramController = ({
 
         const accepted = parseYesNoFlag(fields.accept || "da");
         if (accepted === false) {
-          clearFlow(bid.bidId);
-          await telegramClient.sendMessage({
-            chatId,
-            text: `Ponuda je odbijena za zahtev #${bid.bidId}.`,
+          const decision = bidStore.setBuyerDecision(bid.bidId, {
+            status: "declined",
+            source: "telegram_roadside_decline_text",
           });
+          clearFlow(bid.bidId);
+          if (!decision?.applied || !decision?.bid) {
+            await sendAlreadyFinalDecision(chatId, decision?.bid || bid);
+          } else {
+            await telegramClient.sendMessage({
+              chatId,
+              text: `Ponuda je odbijena za zahtev #${bid.bidId}.`,
+            });
+          }
           return res.sendStatus(200);
         }
         if (accepted === null) {

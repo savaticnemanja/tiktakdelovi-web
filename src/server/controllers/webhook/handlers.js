@@ -334,6 +334,14 @@ export const createWebhookHandlers = ({
     }
 
     if (mapEntry?.kind === "buyer_offer" && bid) {
+      const decision = bidStore.setBuyerDecision(bid.bidId, {
+        status: "accepted",
+        source: "whatsapp_buyer_offer",
+      });
+      if (!decision?.applied) {
+        return true;
+      }
+
       const buyerName = pickValue(responseData, [
         "buyer_name",
         "name",
@@ -427,6 +435,13 @@ export const createWebhookHandlers = ({
         "screen_0_Prihvatam_1",
       ]);
       const accepted = parseYesNoFlag(acceptRaw) ?? false;
+      const decision = bidStore.setBuyerDecision(bid.bidId, {
+        status: accepted ? "accepted" : "declined",
+        source: "whatsapp_buyer_mechanic_offer",
+      });
+      if (!decision?.applied) {
+        return true;
+      }
 
       const updated = bidStore.updateBid(bid.bidId, {
         buyerName,
@@ -470,6 +485,14 @@ export const createWebhookHandlers = ({
         "screen_0_Prihvatam_1",
       ]);
       const accepted = parseYesNoFlag(acceptRaw) ?? false;
+      const decision = bidStore.setBuyerDecision(bid.bidId, {
+        status: accepted ? "accepted" : "declined",
+        source: "whatsapp_buyer_roadside_offer",
+      });
+      if (!decision?.applied) {
+        return true;
+      }
+
       const buyerName = pickValue(responseData, [
         "buyer_name",
         "name",

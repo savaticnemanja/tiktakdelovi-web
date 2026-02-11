@@ -5,6 +5,7 @@ export const createBidStore = ({ ttlMs, idStart }) => {
   const store = new Map();
   const customerToTelegramChat = new Map();
   let nextBidId = Number.isFinite(idStart) ? idStart : 10001;
+  const finalDecisionStatuses = new Set(["accepted", "declined"]);
 
   const allocateBidId = () => String(nextBidId++);
   const now = () => Date.now();
@@ -104,6 +105,9 @@ export const createBidStore = ({ ttlMs, idStart }) => {
       buyerCity: "",
       buyerPostalCode: "",
       buyerContact: "",
+      buyerDecisionStatus: "pending",
+      buyerDecisionAt: "",
+      buyerDecisionSource: "",
       createdAt: Date.now(),
     });
     return store.get(cleanedBidId);
@@ -234,6 +238,29 @@ export const createBidStore = ({ ttlMs, idStart }) => {
       const next = { ...bid, ...updates };
       store.set(next.bidId, next);
       return next;
+    },
+    setBuyerDecision: (bidId, { status, source }) => {
+      const bid = getBidRequest(bidId);
+      if (!bid) {
+        return { applied: false, reason: "bid_not_found", bid: null };
+      }
+
+      const currentStatus = String(bid.buyerDecisionStatus || "pending");
+      if (!["accepted", "declined"].includes(status)) {
+        return { applied: false, reason: "invalid_status", bid };
+      }
+      if (finalDecisionStatuses.has(currentStatus)) {
+        return { applied: false, reason: "already_final", bid };
+      }
+
+      const next = {
+        ...bid,
+        buyerDecisionStatus: status,
+        buyerDecisionAt: new Date().toISOString(),
+        buyerDecisionSource: sanitizeTemplateText(source || ""),
+      };
+      store.set(next.bidId, next);
+      return { applied: true, reason: "ok", bid: next };
     },
   };
 };
