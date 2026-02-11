@@ -81,6 +81,24 @@ export const createTelegramController = ({
     };
   };
 
+  const selectedBidByChat = new Map();
+  const setSelectedBid = (chatId, bidId) =>
+    selectedBidByChat.set(String(chatId), String(bidId || ""));
+  const getSelectedBid = (chatId) => String(selectedBidByChat.get(String(chatId)) || "");
+
+  const parseBidIdFromArg = (raw) => {
+    const match = String(raw || "").match(/#?(\d+)/);
+    return match ? match[1] : "";
+  };
+
+  const buildBidListText = (bids) => {
+    const lines = bids.map((bid) => {
+      const offer = bid.bidOffer ? ` | ponuda: ${bid.bidOffer}` : "";
+      return `#${bid.bidId}${offer}`;
+    });
+    return `Imate više zahteva u Telegram-u.\nOdaberite jedan: /bid #<id>\n${lines.join("\n")}`;
+  };
+
   const inferRequestType = (bid) => {
     if (["parts", "mechanic", "roadside"].includes(bid?.requestType)) {
       return bid.requestType;
@@ -142,18 +160,21 @@ export const createTelegramController = ({
   };
 
   const buildHelpText = (bid) => {
+    const selectionHint = "\nAko imate više zahteva koristite: /list i /bid #<id>";
+    const subscribeHint =
+      "\nPretplata po broju kupca: /subscribe +3816... (svi aktivni i budući zahtevi).";
     const requestType = inferRequestType(bid);
     if (bid?.needsMoreInfo === "yes") {
       return `Koristite dugme "Pošalji dodatne informacije" ili pošaljite:
-/info Vaše dodatne informacije`;
+/info Vaše dodatne informacije${selectionHint}${subscribeHint}`;
     }
     if (requestType === "mechanic") {
-      return "Kliknite na dugme Prihvati/Odbij ispod poruke sa ponudom.";
+      return `Kliknite na dugme Prihvati/Odbij ispod poruke sa ponudom.${selectionHint}${subscribeHint}`;
     }
     if (requestType === "roadside") {
-      return "Kliknite na dugme Prihvati/Odbij ispod poruke sa ponudom.";
+      return `Kliknite na dugme Prihvati/Odbij ispod poruke sa ponudom.${selectionHint}${subscribeHint}`;
     }
-    return "Kliknite na dugme Prihvati/Odbij ispod poruke sa ponudom.";
+    return `Kliknite na dugme Prihvati/Odbij ispod poruke sa ponudom.${selectionHint}${subscribeHint}`;
   };
 
   const sendFlowPrompt = async (chatId, bid, flow) => {
@@ -571,9 +592,10 @@ export const createTelegramController = ({
 
     const [, mode, action, bidIdRaw] = data.split(":");
     const bidId = String(bidIdRaw || "").trim();
-    const bid = (bidId && bidStore.getBidRequest(bidId)) || bidStore.findLatestByTelegramChatId(chatId);
+    const bidsForChat = bidStore.findByTelegramChatId(chatId);
+    const bid = bidsForChat.find((item) => String(item.bidId) === String(bidId)) || null;
 
-    if (!bid || String(bid.telegramChatId || "") !== String(chatId)) {
+    if (!bid) {
       await telegramClient.answerCallbackQuery({
         callbackQueryId,
         text: "Zahtev nije pronađen za ovaj chat.",
@@ -581,8 +603,10 @@ export const createTelegramController = ({
       });
       return true;
     }
+    setSelectedBid(chatId, bid.bidId);
 
     if (mode === "review" && action === "start") {
+      bidStore.clearTelegramFlowsForChat(chatId, bid.bidId);
       setFlow(bid.bidId, { mode: "review", step: "info", data: {} });
       await telegramClient.answerCallbackQuery({ callbackQueryId, text: "Unesite informacije." });
       await sendFlowPrompt(chatId, bid, { mode: "review", step: "info", data: {} });
@@ -591,6 +615,7 @@ export const createTelegramController = ({
 
     if (mode === "parts" && action === "accept") {
       const flow = { mode: "parts", step: "name", data: {} };
+      bidStore.clearTelegramFlowsForChat(chatId, bid.bidId);
       setFlow(bid.bidId, flow);
       await telegramClient.answerCallbackQuery({ callbackQueryId, text: "Krećemo." });
       await sendFlowPrompt(chatId, bid, flow);
@@ -609,6 +634,7 @@ export const createTelegramController = ({
 
     if (mode === "mech" && action === "accept") {
       const flow = { mode: "mechanic", step: "name", data: {} };
+      bidStore.clearTelegramFlowsForChat(chatId, bid.bidId);
       setFlow(bid.bidId, flow);
       await telegramClient.answerCallbackQuery({ callbackQueryId, text: "Krećemo." });
       await sendFlowPrompt(chatId, bid, flow);
@@ -627,6 +653,7 @@ export const createTelegramController = ({
 
     if (mode === "road" && action === "accept") {
       const flow = { mode: "roadside", step: "name", data: {} };
+      bidStore.clearTelegramFlowsForChat(chatId, bid.bidId);
       setFlow(bid.bidId, flow);
       await telegramClient.answerCallbackQuery({ callbackQueryId, text: "Krećemo." });
       await sendFlowPrompt(chatId, bid, flow);
@@ -699,16 +726,20 @@ export const createTelegramController = ({
           });
           return res.sendStatus(200);
         }
-        bidStore.updateBid(bidId, {
-          telegramChatId: String(chatId),
-          notificationPreference: "telegram",
-          telegramFlow: null,
-        });
+        const linkedBid = bidStore.linkTelegramChatToBid(bidId, chatId);
+        if (!linkedBid) {
+          await telegramClient.sendMessage({
+            chatId,
+            text: `Povezivanje nije uspelo za zahtev #${bidId}.`,
+          });
+          return res.sendStatus(200);
+        }
+        setSelectedBid(chatId, linkedBid.bidId);
         await telegramClient.sendMessage({
           chatId,
-          text: `Telegram je povezan za zahtev #${bidId}.`,
+          text: `Telegram je povezan za zahtev #${bidId}. Budući zahtevi sa istog broja biće dostupni u ovom chatu.`,
         });
-        await sendActionKeyboard(chatId, bidStore.getBidRequest(bidId));
+        await sendActionKeyboard(chatId, bidStore.getBidRequest(linkedBid.bidId));
         return res.sendStatus(200);
       }
 
@@ -716,16 +747,129 @@ export const createTelegramController = ({
         return res.sendStatus(200);
       }
 
-      const bid = bidStore.findLatestByTelegramChatId(chatId) || null;
-      if (!bid) {
-        return res.sendStatus(200);
-      }
-
-      if (await consumeFlowMessage(bid, text, chatId)) {
-        return res.sendStatus(200);
-      }
-
       const { command, args } = parseCommand(text);
+      if (command === "/subscribe") {
+        const customerNumber = normalizePhone(args);
+        if (!customerNumber) {
+          await telegramClient.sendMessage({
+            chatId,
+            text: "Upotreba: /subscribe +3816...",
+          });
+          return res.sendStatus(200);
+        }
+        const subscription = bidStore.subscribeTelegramChatByCustomer(
+          chatId,
+          customerNumber,
+        );
+        const linkedCount = subscription.linked.length;
+        if (linkedCount) {
+          setSelectedBid(chatId, subscription.linked[0].bidId);
+          await telegramClient.sendMessage({
+            chatId,
+            text:
+              `Pretplata je aktivna za broj ${subscription.customerNumber}. ` +
+              `Povezano aktivnih zahteva: ${linkedCount}.`,
+          });
+          await telegramClient.sendMessage({
+            chatId,
+            text: buildBidListText(subscription.linked),
+          });
+          await sendActionKeyboard(chatId, subscription.linked[0]);
+        } else {
+          await telegramClient.sendMessage({
+            chatId,
+            text:
+              `Pretplata je aktivna za broj ${subscription.customerNumber}. ` +
+              "Nema aktivnih zahteva trenutno, ali novi će stizati u ovaj chat.",
+          });
+        }
+        return res.sendStatus(200);
+      }
+
+      if (command === "/unsubscribe") {
+        bidStore.unsubscribeTelegramChat(chatId);
+        setSelectedBid(chatId, "");
+        await telegramClient.sendMessage({
+          chatId,
+          text: "Pretplata je uklonjena za ovaj chat.",
+        });
+        return res.sendStatus(200);
+      }
+
+      const bidsForChat = bidStore.findByTelegramChatId(chatId);
+      if (!bidsForChat.length) {
+        if (command === "/help") {
+          await telegramClient.sendMessage({
+            chatId,
+            text:
+              "Nema povezanih zahteva. Koristite /start #<bidId> ili /subscribe +3816...",
+          });
+        }
+        return res.sendStatus(200);
+      }
+
+      if (command === "/list") {
+        await telegramClient.sendMessage({
+          chatId,
+          text: buildBidListText(bidsForChat),
+        });
+        return res.sendStatus(200);
+      }
+
+      if (command === "/bid") {
+        const requestedBidId = parseBidIdFromArg(args);
+        const chosenBid = bidsForChat.find(
+          (candidate) => String(candidate.bidId) === String(requestedBidId),
+        );
+        if (!chosenBid) {
+          await telegramClient.sendMessage({
+            chatId,
+            text: buildBidListText(bidsForChat),
+          });
+          return res.sendStatus(200);
+        }
+        setSelectedBid(chatId, chosenBid.bidId);
+        await telegramClient.sendMessage({
+          chatId,
+          text: `Aktivan zahtev je #${chosenBid.bidId}.`,
+        });
+        await sendActionKeyboard(chatId, chosenBid);
+        return res.sendStatus(200);
+      }
+
+      const selectedBidId = getSelectedBid(chatId);
+      const selectedBid = bidsForChat.find(
+        (candidate) => String(candidate.bidId) === String(selectedBidId),
+      );
+      const bidsWithFlow = bidsForChat.filter((candidate) => getFlow(candidate));
+      const flowBid =
+        (selectedBid && getFlow(selectedBid) ? selectedBid : null) ||
+        (bidsWithFlow.length === 1 ? bidsWithFlow[0] : null);
+
+      if (!flowBid && bidsWithFlow.length > 1) {
+        await telegramClient.sendMessage({
+          chatId,
+          text: `Više zahteva čeka unos podataka.\n${buildBidListText(bidsForChat)}`,
+        });
+        return res.sendStatus(200);
+      }
+
+      if (flowBid) {
+        setSelectedBid(chatId, flowBid.bidId);
+        if (await consumeFlowMessage(flowBid, text, chatId)) {
+          return res.sendStatus(200);
+        }
+      }
+
+      const bid = selectedBid || (bidsForChat.length === 1 ? bidsForChat[0] : null);
+      if (!bid) {
+        await telegramClient.sendMessage({
+          chatId,
+          text: buildBidListText(bidsForChat),
+        });
+        return res.sendStatus(200);
+      }
+      setSelectedBid(chatId, bid.bidId);
 
       if (command === "/help") {
         await telegramClient.sendMessage({ chatId, text: buildHelpText(bid) });
