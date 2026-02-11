@@ -13,11 +13,6 @@ const ServicesStack = ({ partsForm, serviceForm, roadsideForm }) => (
             Pošaljite tačne podatke o vozilu i delu, a mi ćemo odmah proslediti upit
             prodavcima iz mreže.
           </p>
-          <ul>
-            <li>Tačan opis dela i broj komada.</li>
-            <li>Napomena o hitnosti i isporuci.</li>
-            <li>Kontakt broj u međunarodnom formatu.</li>
-          </ul>
         </div>
         <RequestForm
           form={partsForm}

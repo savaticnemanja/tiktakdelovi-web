@@ -36,7 +36,7 @@ const RequestForm = ({ form, formKey, messagePlaceholder }) => {
 
   return (
     <form className="form-card stagger" data-reveal="stagger" onSubmit={send}>
-      <div className="field-grid">
+      <div className="field-grid two">
         <label>
           Grad
           <select value={city} onChange={(e) => setCity(e.target.value)} required>
@@ -198,15 +198,17 @@ const RequestForm = ({ form, formKey, messagePlaceholder }) => {
         {sending ? "Slanje..." : "Pošalji upit"}
       </button>
 
-      <a
-        className="btn ghost whatsapp-install"
-        href={whatsappStoreUrl}
-        target="_blank"
-        rel="noreferrer"
-      >
-        <FaWhatsapp className="whatsapp-icon" aria-hidden="true" />
-        Ako nemate WhatsApp nalog, kreirajte ga
-      </a>
+      {status && (
+        <a
+          className="btn ghost whatsapp-install"
+          href={whatsappStoreUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <FaWhatsapp className="whatsapp-icon" aria-hidden="true" />
+          Ako nemate WhatsApp nalog, kreirajte ga
+        </a>
+      )}
 
       {status && (
         <div className={`status ${status.ok ? "ok" : "err"}`} role="status" aria-live="polite">
