@@ -56,14 +56,13 @@ export const createBidStore = ({ ttlMs, idStart }) => {
     if (!cleanedBidId || !cleanedBidMessage || !cleanedCustomerNumber) {
       throw new Error("bidId, bidMessage and customerNumber are required.");
     }
-    let cleanedNotificationPreference = notificationPreference || "whatsapp";
+    const cleanedNotificationPreference = notificationPreference || "whatsapp";
     const subscribedChatId = String(
       customerToTelegramChat.get(cleanedCustomerNumber) || "",
     );
     let inheritedTelegramChatId = "";
     if (subscribedChatId) {
       inheritedTelegramChatId = subscribedChatId;
-      cleanedNotificationPreference = "telegram";
     } else if (cleanedNotificationPreference === "telegram") {
       const latestForCustomer = getAllActiveBids()
         .filter(
@@ -146,7 +145,6 @@ export const createBidStore = ({ ttlMs, idStart }) => {
         const next = {
           ...activeBid,
           telegramChatId: String(chatId),
-          notificationPreference: "telegram",
         };
         store.set(next.bidId, next);
         linked.push(next);
@@ -176,7 +174,6 @@ export const createBidStore = ({ ttlMs, idStart }) => {
           ...activeBid,
           telegramChatId: "",
           telegramFlow: null,
-          notificationPreference: "whatsapp",
         };
         store.set(next.bidId, next);
       }
@@ -192,7 +189,6 @@ export const createBidStore = ({ ttlMs, idStart }) => {
         const next = {
           ...activeBid,
           telegramChatId: String(chatId),
-          notificationPreference: "telegram",
         };
         store.set(next.bidId, next);
         if (next.bidId === bid.bidId) linked = next;
