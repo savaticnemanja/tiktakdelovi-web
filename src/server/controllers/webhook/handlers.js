@@ -3,6 +3,7 @@ import { normalizePhone } from "../../utils/phone.js";
 import { applyMarkup } from "../../utils/price.js";
 import {
   formatBuyerOfferMessage,
+  formatBuyerMechanicNotificationMessage,
   formatBuyerMechanicOfferMessage,
   formatBuyerRoadsideOfferMessage,
   formatBuyerReviewMessage,
@@ -191,19 +192,41 @@ export const createWebhookHandlers = ({
     if (wantsBuyer && mapEntryWithFallback.kind === "owner_notification_mechanic") {
       if (bid.customerNumber && bid.sellerContact && bid.bidOffer) {
         try {
-          await metaClient.sendBuyerMechanicNotification({
-            to: bid.customerNumber,
-            bidId: bid.bidId,
-            make: bid.make,
-            model: bid.model,
-            year: bid.year,
-            fuelType: bid.fuelType,
-            mechanicContact: bid.sellerContact,
-            bidOffer: bid.bidOffer,
-            bidDate: bid.bidDate || "-",
-            bidTime: bid.bidTime || "-",
-            bidNote: bid.bidNote || "-",
-          });
+          if (
+            bid.notificationPreference === "telegram" &&
+            telegramClient &&
+            bid.telegramChatId
+          ) {
+            await telegramClient.sendMessage({
+              chatId: bid.telegramChatId,
+              text: formatBuyerMechanicNotificationMessage({
+                bidId: bid.bidId,
+                make: bid.make || "-",
+                model: bid.model || "-",
+                year: bid.year || "-",
+                fuelType: bid.fuelType || "-",
+                mechanicContact: bid.sellerContact || "-",
+                bidOffer: bid.bidOffer || "-",
+                bidDate: bid.bidDate || "-",
+                bidTime: bid.bidTime || "-",
+                bidNote: bid.bidNote || "-",
+              }),
+            });
+          } else {
+            await metaClient.sendBuyerMechanicNotification({
+              to: bid.customerNumber,
+              bidId: bid.bidId,
+              make: bid.make,
+              model: bid.model,
+              year: bid.year,
+              fuelType: bid.fuelType,
+              mechanicContact: bid.sellerContact,
+              bidOffer: bid.bidOffer,
+              bidDate: bid.bidDate || "-",
+              bidTime: bid.bidTime || "-",
+              bidNote: bid.bidNote || "-",
+            });
+          }
         } catch (err) {
           console.error(
             "Buyer mechanic notification failed:",

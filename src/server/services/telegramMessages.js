@@ -10,8 +10,7 @@ Detalji zahteva: ${bidDetails}
 
 Napomena od prodavca: ${bidNote}
 
-Odgovor pošaljite ovako:
-/info Vaše dodatne informacije`;
+Pošaljite dodatne informacije kao odgovor na ovu poruku.`;
 
 export const formatBuyerOfferMessage = ({
   bidId,
@@ -27,13 +26,7 @@ Detalji zahteva: ${bidDetails}
 Cena: ${bidOffer}
 Napomena: ${bidNote}
 
-Pošaljite podatke ovako:
-/odgovor
-ime: Ime Prezime
-kontakt: +3816...
-adresa: Ulica 1
-grad: Beograd
-postanski_broj: 11000`;
+Kliknite na dugme ispod i unesite podatke kroz korake.`;
 
 export const formatBuyerRoadsideOfferMessage = ({
   bidId,
@@ -47,14 +40,7 @@ Detalji zahteva: ${bidDetails}
 
 Cena: ${bidOffer}
 
-Pošaljite odgovor ovako:
-/odgovor
-prihvatam: da
-ime: Ime Prezime
-kontakt: +3816...
-adresa: Ulica 1
-grad: Beograd
-postanski_broj: 11000`;
+Kliknite na dugme ispod i unesite podatke kroz korake.`;
 
 export const formatBuyerMechanicOfferMessage = ({
   bidId,
@@ -73,6 +59,26 @@ Termin: ${bidDate}
 Napomena: ${bidNote}
 
 Kliknite na dugme ispod za prihvatanje ili odbijanje ponude.`;
+
+export const formatBuyerMechanicNotificationMessage = ({
+  bidId,
+  make,
+  model,
+  year,
+  fuelType,
+  mechanicContact,
+  bidOffer,
+  bidDate,
+  bidTime,
+  bidNote,
+}) => `KONTAKT MEHANIČARA ZA ZAHTEV #${bidId}
+
+Vozilo: ${make} ${model}, ${year}, ${fuelType}
+Kontakt mehaničara: ${mechanicContact}
+Cena: ${bidOffer}
+Datum: ${bidDate}
+Vreme: ${bidTime}
+Napomena: ${bidNote}`;
 
 export const formatBuyerImageCaption = ({ bidId, bidOffer }) => {
   const priceLine = bidOffer ? `\n\nCena - ${bidOffer}` : "";

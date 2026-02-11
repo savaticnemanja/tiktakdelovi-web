@@ -97,7 +97,7 @@ export const createTelegramController = ({
       const status = ` | status: ${String(bid?.buyerDecisionStatus || "pending")}`;
       return `#${bid.bidId}${offer}${status}`;
     });
-    return `Imate više zahteva u Telegram-u.\nOdaberite jedan: /bid #<id>\n${lines.join("\n")}`;
+    return `Imate više zahteva u Telegram-u.\nOdaberite jedan po broju zahteva.\n${lines.join("\n")}`;
   };
 
   const inferRequestType = (bid) => {
@@ -176,13 +176,12 @@ export const createTelegramController = ({
   };
 
   const buildHelpText = (bid) => {
-    const selectionHint = "\nAko imate više zahteva koristite: /list i /bid #<id>";
+    const selectionHint = "\nAko imate više zahteva, prvo odaberite aktivan broj zahteva.";
     const subscribeHint =
-      "\nPretplata po broju kupca: /subscribe +3816... (svi aktivni i budući zahtevi).";
+      "\nMoguća je i pretplata po broju kupca za sve aktivne i buduće zahteve.";
     const requestType = inferRequestType(bid);
     if (bid?.needsMoreInfo === "yes") {
-      return `Koristite dugme "Pošalji dodatne informacije" ili pošaljite:
-/info Vaše dodatne informacije${selectionHint}${subscribeHint}`;
+      return `Koristite dugme "Pošalji dodatne informacije" ili pošaljite dodatne informacije kao poruku.${selectionHint}${subscribeHint}`;
     }
     if (requestType === "mechanic") {
       return `Kliknite na dugme Prihvati/Odbij ispod poruke sa ponudom.${selectionHint}${subscribeHint}`;
@@ -831,7 +830,7 @@ export const createTelegramController = ({
         if (!bidId) {
           await telegramClient.sendMessage({
             chatId,
-            text: "Pošaljite: /start #<broj zahteva> da povežete razgovor.",
+            text: "Pošaljite broj zahteva (npr. #10001) da povežete razgovor.",
           });
           return res.sendStatus(200);
         }
@@ -870,7 +869,7 @@ export const createTelegramController = ({
         if (!customerNumber) {
           await telegramClient.sendMessage({
             chatId,
-            text: "Upotreba: /subscribe +3816...",
+            text: "Dodajte broj kupca u formatu +3816...",
           });
           return res.sendStatus(200);
         }
@@ -919,7 +918,7 @@ export const createTelegramController = ({
           await telegramClient.sendMessage({
             chatId,
             text:
-              "Nema povezanih zahteva. Koristite /start #<bidId> ili /subscribe +3816...",
+              "Nema povezanih zahteva. Povežite broj zahteva ili aktivirajte pretplatu po broju kupca.",
           });
         }
         return res.sendStatus(200);
