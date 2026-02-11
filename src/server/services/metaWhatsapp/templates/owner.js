@@ -1,7 +1,15 @@
+import {
+  quickReplyButton,
+  textParam,
+  trackSent,
+  requireFields,
+  sanitizeFields,
+  validateInput,
+} from "./_helpers.js";
+
 export const createOwnerTemplates = ({
   sendTemplate,
   sanitize,
-  sanitizeMasked,
   sanitizeOrDash,
   templateOwnerNotification,
   templateCourierNotification,
@@ -29,29 +37,54 @@ export const createOwnerTemplates = ({
     if (!templateOwnerNotification || !to) {
       return null;
     }
-    const sanitizedBidId = sanitize(bidId);
-    const sanitizedMake = sanitizeOrDash(make);
-    const sanitizedModel = sanitizeOrDash(model);
-    const sanitizedYear = sanitizeOrDash(year);
-    const sanitizedFuel = sanitizeOrDash(fuelType);
-    const sanitizedChassis = sanitizeOrDash(chassis);
-    const sanitizedBuyerName = sanitizeOrDash(buyerName);
-    const sanitizedBuyerAddress = sanitizeOrDash(buyerAddress);
-    const sanitizedBuyerCity = sanitizeOrDash(buyerCity);
-    const sanitizedBuyerPostalCode = sanitizeOrDash(buyerPostalCode);
-    const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
-    const sanitizedBidMessage = sanitizeOrDash(bidMessage);
-    const sanitizedBidOffer = sanitize(bidOffer);
-    const sanitizedSellerNumber = sanitize(sellerNumber);
-    if (
-      !sanitizedBidId ||
-      !sanitizedBidOffer ||
-      !sanitizedSellerNumber
-    ) {
-      throw new Error(
-        "bidId, bidOffer and sellerNumber are required.",
-      );
-    }
+    validateInput(
+      "sendOfferToOwner",
+      { bidId, bidOffer, sellerNumber },
+      {
+        bidId: { required: true, types: ["string", "number"] },
+        bidOffer: { required: true, types: ["string", "number"] },
+        sellerNumber: { required: true, types: ["string", "number"] },
+      },
+    );
+    const sanitized = sanitizeFields(
+      {
+        bidId,
+        make,
+        model,
+        year,
+        fuelType,
+        chassis,
+        buyerName,
+        buyerAddress,
+        buyerCity,
+        buyerPostalCode,
+        buyerContact,
+        bidMessage,
+        sellerNumber,
+        bidOffer,
+      },
+      {
+        bidId: sanitize,
+        make: sanitizeOrDash,
+        model: sanitizeOrDash,
+        year: sanitizeOrDash,
+        fuelType: sanitizeOrDash,
+        chassis: sanitizeOrDash,
+        buyerName: sanitizeOrDash,
+        buyerAddress: sanitizeOrDash,
+        buyerCity: sanitizeOrDash,
+        buyerPostalCode: sanitizeOrDash,
+        buyerContact: sanitizeOrDash,
+        bidMessage: sanitizeOrDash,
+        sellerNumber: sanitize,
+        bidOffer: sanitize,
+      },
+    );
+    requireFields("sendOfferToOwner", {
+      bidId: sanitized.bidId,
+      bidOffer: sanitized.bidOffer,
+      sellerNumber: sanitized.sellerNumber,
+    });
     const metaResp = await sendTemplate({
       to,
       template: templateOwnerNotification,
@@ -59,61 +92,32 @@ export const createOwnerTemplates = ({
         {
           type: "header",
           parameters: [
-            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+            textParam("bid_id", sanitized.bidId),
           ],
         },
         {
           type: "body",
           parameters: [
-            { type: "text", parameter_name: "make", text: sanitizedMake },
-            { type: "text", parameter_name: "model", text: sanitizedModel },
-            { type: "text", parameter_name: "year", text: sanitizedYear },
-            { type: "text", parameter_name: "fuel_type", text: sanitizedFuel },
-            { type: "text", parameter_name: "chassis", text: sanitizedChassis },
-            { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
-            { type: "text", parameter_name: "buyer_address", text: sanitizedBuyerAddress },
-            { type: "text", parameter_name: "buyer_city", text: sanitizedBuyerCity },
-            { type: "text", parameter_name: "buyer_postal_code", text: sanitizedBuyerPostalCode },
-            { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
-            { type: "text", parameter_name: "bid_message", text: sanitizedBidMessage },
-            { type: "text", parameter_name: "seller_contact", text: sanitizedSellerNumber },
-            { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
+            textParam("make", sanitized.make),
+            textParam("model", sanitized.model),
+            textParam("year", sanitized.year),
+            textParam("fuel_type", sanitized.fuelType),
+            textParam("chassis", sanitized.chassis),
+            textParam("buyer_name", sanitized.buyerName),
+            textParam("buyer_address", sanitized.buyerAddress),
+            textParam("buyer_city", sanitized.buyerCity),
+            textParam("buyer_postal_code", sanitized.buyerPostalCode),
+            textParam("buyer_contact", sanitized.buyerContact),
+            textParam("bid_message", sanitized.bidMessage),
+            textParam("seller_contact", sanitized.sellerNumber),
+            textParam("bid_offer", sanitized.bidOffer),
           ],
         },
-        {
-          type: "button",
-          sub_type: "quick_reply",
-          index: "0",
-          parameters: [
-            {
-              type: "payload",
-              payload: JSON.stringify({
-                action: "notify_courier",
-                bid_id: sanitizedBidId,
-              }),
-            },
-          ],
-        },
-        {
-          type: "button",
-          sub_type: "quick_reply",
-          index: "1",
-          parameters: [
-            {
-              type: "payload",
-              payload: JSON.stringify({
-                action: "notify_seller",
-                bid_id: sanitizedBidId,
-              }),
-            },
-          ],
-        },
+        quickReplyButton(0, { action: "notify_courier", bid_id: sanitized.bidId }),
+        quickReplyButton(1, { action: "notify_seller", bid_id: sanitized.bidId }),
       ],
     });
-    const sentId = metaResp?.data?.messages?.[0]?.id;
-    if (sentId && messageToBid) {
-      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "owner_notification" });
-    }
+    trackSent(messageToBid, metaResp, sanitized.bidId, "owner_notification");
     return metaResp;
   };
 
@@ -137,29 +141,54 @@ export const createOwnerTemplates = ({
     if (!templateCourierNotification || !to) {
       return null;
     }
-    const sanitizedBidId = sanitize(bidId);
-    const sanitizedMake = sanitizeOrDash(make);
-    const sanitizedModel = sanitizeOrDash(model);
-    const sanitizedYear = sanitizeOrDash(year);
-    const sanitizedFuel = sanitizeOrDash(fuelType);
-    const sanitizedChassis = sanitizeOrDash(chassis);
-    const sanitizedBuyerName = sanitizeOrDash(buyerName);
-    const sanitizedBuyerAddress = sanitizeOrDash(buyerAddress);
-    const sanitizedBuyerCity = sanitizeOrDash(buyerCity);
-    const sanitizedBuyerPostalCode = sanitizeOrDash(buyerPostalCode);
-    const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
-    const sanitizedBidMessage = sanitizeOrDash(bidMessage);
-    const sanitizedBidOffer = sanitize(bidOffer);
-    const sanitizedSellerNumber = sanitize(sellerNumber);
-    if (
-      !sanitizedBidId ||
-      !sanitizedBidOffer ||
-      !sanitizedSellerNumber
-    ) {
-      throw new Error(
-        "bidId, bidOffer and sellerNumber are required.",
-      );
-    }
+    validateInput(
+      "sendOfferToCourier",
+      { bidId, bidOffer, sellerNumber },
+      {
+        bidId: { required: true, types: ["string", "number"] },
+        bidOffer: { required: true, types: ["string", "number"] },
+        sellerNumber: { required: true, types: ["string", "number"] },
+      },
+    );
+    const sanitized = sanitizeFields(
+      {
+        bidId,
+        make,
+        model,
+        year,
+        fuelType,
+        chassis,
+        buyerName,
+        buyerAddress,
+        buyerCity,
+        buyerPostalCode,
+        buyerContact,
+        bidMessage,
+        bidOffer,
+        sellerNumber,
+      },
+      {
+        bidId: sanitize,
+        make: sanitizeOrDash,
+        model: sanitizeOrDash,
+        year: sanitizeOrDash,
+        fuelType: sanitizeOrDash,
+        chassis: sanitizeOrDash,
+        buyerName: sanitizeOrDash,
+        buyerAddress: sanitizeOrDash,
+        buyerCity: sanitizeOrDash,
+        buyerPostalCode: sanitizeOrDash,
+        buyerContact: sanitizeOrDash,
+        bidMessage: sanitizeOrDash,
+        bidOffer: sanitize,
+        sellerNumber: sanitize,
+      },
+    );
+    requireFields("sendOfferToCourier", {
+      bidId: sanitized.bidId,
+      bidOffer: sanitized.bidOffer,
+      sellerNumber: sanitized.sellerNumber,
+    });
     return sendTemplate({
       to,
       template: templateCourierNotification,
@@ -167,25 +196,25 @@ export const createOwnerTemplates = ({
         {
           type: "header",
           parameters: [
-            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+            textParam("bid_id", sanitized.bidId),
           ],
         },
         {
           type: "body",
           parameters: [
-            { type: "text", parameter_name: "make", text: sanitizedMake },
-            { type: "text", parameter_name: "model", text: sanitizedModel },
-            { type: "text", parameter_name: "year", text: sanitizedYear },
-            { type: "text", parameter_name: "fuel_type", text: sanitizedFuel },
-            { type: "text", parameter_name: "chassis", text: sanitizedChassis },
-            { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
-            { type: "text", parameter_name: "buyer_address", text: sanitizedBuyerAddress },
-            { type: "text", parameter_name: "buyer_city", text: sanitizedBuyerCity },
-            { type: "text", parameter_name: "buyer_postal_code", text: sanitizedBuyerPostalCode },
-            { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
-            { type: "text", parameter_name: "bid_message", text: sanitizedBidMessage },
-            { type: "text", parameter_name: "seller_contact", text: sanitizedSellerNumber },
-            { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
+            textParam("make", sanitized.make),
+            textParam("model", sanitized.model),
+            textParam("year", sanitized.year),
+            textParam("fuel_type", sanitized.fuelType),
+            textParam("chassis", sanitized.chassis),
+            textParam("buyer_name", sanitized.buyerName),
+            textParam("buyer_address", sanitized.buyerAddress),
+            textParam("buyer_city", sanitized.buyerCity),
+            textParam("buyer_postal_code", sanitized.buyerPostalCode),
+            textParam("buyer_contact", sanitized.buyerContact),
+            textParam("bid_message", sanitized.bidMessage),
+            textParam("seller_contact", sanitized.sellerNumber),
+            textParam("bid_offer", sanitized.bidOffer),
           ],
         },
       ],
@@ -212,23 +241,54 @@ export const createOwnerTemplates = ({
     if (!templateOwnerNotificationMechanic || !to) {
       return null;
     }
-    const sanitizedBidId = sanitize(bidId);
-    const sanitizedMake = sanitizeOrDash(make);
-    const sanitizedModel = sanitizeOrDash(model);
-    const sanitizedYear = sanitizeOrDash(year);
-    const sanitizedFuel = sanitizeOrDash(fuelType);
-    const sanitizedChassis = sanitizeOrDash(chassis);
-    const sanitizedBuyerName = sanitizeOrDash(buyerName);
-    const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
-    const sanitizedBidDetails = sanitizeOrDash(bidDetails);
-    const sanitizedMechanicContact = sanitizeOrDash(mechanicContact);
-    const sanitizedBidOffer = sanitize(bidOffer);
-    const sanitizedBidDate = sanitizeOrDash(bidDate);
-    const sanitizedBidTime = sanitizeOrDash(bidTime);
-    const sanitizedBidNote = sanitizeOrDash(bidNote);
-    if (!sanitizedBidId || !sanitizedBidOffer || !sanitizedMechanicContact) {
-      throw new Error("bidId, bidOffer and mechanicContact are required.");
-    }
+    validateInput(
+      "sendOfferToOwnerMechanic",
+      { bidId, bidOffer, mechanicContact },
+      {
+        bidId: { required: true, types: ["string", "number"] },
+        bidOffer: { required: true, types: ["string", "number"] },
+        mechanicContact: { required: true, types: ["string", "number"] },
+      },
+    );
+    const sanitized = sanitizeFields(
+      {
+        bidId,
+        make,
+        model,
+        year,
+        fuelType,
+        chassis,
+        buyerName,
+        buyerContact,
+        bidDetails,
+        mechanicContact,
+        bidOffer,
+        bidDate,
+        bidTime,
+        bidNote,
+      },
+      {
+        bidId: sanitize,
+        make: sanitizeOrDash,
+        model: sanitizeOrDash,
+        year: sanitizeOrDash,
+        fuelType: sanitizeOrDash,
+        chassis: sanitizeOrDash,
+        buyerName: sanitizeOrDash,
+        buyerContact: sanitizeOrDash,
+        bidDetails: sanitizeOrDash,
+        mechanicContact: sanitizeOrDash,
+        bidOffer: sanitize,
+        bidDate: sanitizeOrDash,
+        bidTime: sanitizeOrDash,
+        bidNote: sanitizeOrDash,
+      },
+    );
+    requireFields("sendOfferToOwnerMechanic", {
+      bidId: sanitized.bidId,
+      bidOffer: sanitized.bidOffer,
+      mechanicContact: sanitized.mechanicContact,
+    });
     const metaResp = await sendTemplate({
       to,
       template: templateOwnerNotificationMechanic,
@@ -236,65 +296,32 @@ export const createOwnerTemplates = ({
         {
           type: "header",
           parameters: [
-            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+            textParam("bid_id", sanitized.bidId),
           ],
         },
         {
           type: "body",
           parameters: [
-            { type: "text", parameter_name: "make", text: sanitizedMake },
-            { type: "text", parameter_name: "model", text: sanitizedModel },
-            { type: "text", parameter_name: "year", text: sanitizedYear },
-            { type: "text", parameter_name: "fuel_type", text: sanitizedFuel },
-            { type: "text", parameter_name: "chassis", text: sanitizedChassis },
-            { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
-            { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
-            { type: "text", parameter_name: "bid_details", text: sanitizedBidDetails },
-            {
-              type: "text",
-              parameter_name: "mechanic_contact",
-              text: sanitizedMechanicContact,
-            },
-            { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
-            { type: "text", parameter_name: "bid_date", text: sanitizedBidDate },
-            { type: "text", parameter_name: "bid_time", text: sanitizedBidTime },
-            { type: "text", parameter_name: "bid_note", text: sanitizedBidNote },
+            textParam("make", sanitized.make),
+            textParam("model", sanitized.model),
+            textParam("year", sanitized.year),
+            textParam("fuel_type", sanitized.fuelType),
+            textParam("chassis", sanitized.chassis),
+            textParam("buyer_name", sanitized.buyerName),
+            textParam("buyer_contact", sanitized.buyerContact),
+            textParam("bid_details", sanitized.bidDetails),
+            textParam("mechanic_contact", sanitized.mechanicContact),
+            textParam("bid_offer", sanitized.bidOffer),
+            textParam("bid_date", sanitized.bidDate),
+            textParam("bid_time", sanitized.bidTime),
+            textParam("bid_note", sanitized.bidNote),
           ],
         },
-        {
-          type: "button",
-          sub_type: "quick_reply",
-          index: "0",
-          parameters: [
-            {
-              type: "payload",
-              payload: JSON.stringify({
-                action: "notify_buyer",
-                bid_id: sanitizedBidId,
-              }),
-            },
-          ],
-        },
-        {
-          type: "button",
-          sub_type: "quick_reply",
-          index: "1",
-          parameters: [
-            {
-              type: "payload",
-              payload: JSON.stringify({
-                action: "notify_mechanic",
-                bid_id: sanitizedBidId,
-              }),
-            },
-          ],
-        },
+        quickReplyButton(0, { action: "notify_buyer", bid_id: sanitized.bidId }),
+        quickReplyButton(1, { action: "notify_mechanic", bid_id: sanitized.bidId }),
       ],
     });
-    const sentId = metaResp?.data?.messages?.[0]?.id;
-    if (sentId && messageToBid) {
-      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "owner_notification_mechanic" });
-    }
+    trackSent(messageToBid, metaResp, sanitized.bidId, "owner_notification_mechanic");
     return metaResp;
   };
 
@@ -312,17 +339,44 @@ export const createOwnerTemplates = ({
     if (!templateOwnerRoadsideNotification || !to) {
       return null;
     }
-    const sanitizedBidId = sanitize(bidId);
-    const sanitizedRoadsideOrTow = sanitizeOrDash(roadsideOrTow);
-    const sanitizedLocation = sanitizeOrDash(location);
-    const sanitizedBuyerName = sanitizeOrDash(buyerName);
-    const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
-    const sanitizedDetails = sanitizeOrDash(details);
-    const sanitizedRoadsideContact = sanitizeOrDash(roadsideContact);
-    const sanitizedBidOffer = sanitizeOrDash(bidOffer);
-    if (!sanitizedBidId || !sanitizedRoadsideOrTow || !sanitizedBuyerContact || !sanitizedRoadsideContact) {
-      throw new Error("bidId, roadsideOrTow, buyerContact and roadsideContact are required.");
-    }
+    validateInput(
+      "sendOwnerRoadsideNotification",
+      { bidId, roadsideOrTow, buyerContact, roadsideContact },
+      {
+        bidId: { required: true, types: ["string", "number"] },
+        roadsideOrTow: { required: true, types: ["string"] },
+        buyerContact: { required: true, types: ["string", "number"] },
+        roadsideContact: { required: true, types: ["string", "number"] },
+      },
+    );
+    const sanitized = sanitizeFields(
+      {
+        bidId,
+        roadsideOrTow,
+        location,
+        buyerName,
+        buyerContact,
+        details,
+        roadsideContact,
+        bidOffer,
+      },
+      {
+        bidId: sanitize,
+        roadsideOrTow: sanitizeOrDash,
+        location: sanitizeOrDash,
+        buyerName: sanitizeOrDash,
+        buyerContact: sanitizeOrDash,
+        details: sanitizeOrDash,
+        roadsideContact: sanitizeOrDash,
+        bidOffer: sanitizeOrDash,
+      },
+    );
+    requireFields("sendOwnerRoadsideNotification", {
+      bidId: sanitized.bidId,
+      roadsideOrTow: sanitized.roadsideOrTow,
+      buyerContact: sanitized.buyerContact,
+      roadsideContact: sanitized.roadsideContact,
+    });
     return sendTemplate({
       to,
       template: templateOwnerRoadsideNotification,
@@ -330,23 +384,19 @@ export const createOwnerTemplates = ({
         {
           type: "header",
           parameters: [
-            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+            textParam("bid_id", sanitized.bidId),
           ],
         },
         {
           type: "body",
           parameters: [
-            { type: "text", parameter_name: "location", text: sanitizedLocation },
-            { type: "text", parameter_name: "details", text: sanitizedDetails },
-            { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
-            { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
-            {
-              type: "text",
-              parameter_name: "roadside_or_tow",
-              text: sanitizedRoadsideOrTow,
-            },
-            { type: "text", parameter_name: "roadside_contact", text: sanitizedRoadsideContact },
-            { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
+            textParam("location", sanitized.location),
+            textParam("details", sanitized.details),
+            textParam("buyer_name", sanitized.buyerName),
+            textParam("buyer_contact", sanitized.buyerContact),
+            textParam("roadside_or_tow", sanitized.roadsideOrTow),
+            textParam("roadside_contact", sanitized.roadsideContact),
+            textParam("bid_offer", sanitized.bidOffer),
           ],
         },
       ],

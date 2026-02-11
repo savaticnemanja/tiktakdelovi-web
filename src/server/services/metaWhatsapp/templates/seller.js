@@ -1,3 +1,12 @@
+import {
+  flowButton,
+  textParam,
+  trackSent,
+  requireFields,
+  sanitizeFields,
+  validateInput,
+} from "./_helpers.js";
+
 export const createSellerTemplates = ({
   sendTemplate,
   sanitize,
@@ -8,6 +17,7 @@ export const createSellerTemplates = ({
   templateSellerNotification,
   messageToBid,
 }) => {
+
   const sendInquiryToSeller = async ({
     to,
     bidId,
@@ -18,16 +28,39 @@ export const createSellerTemplates = ({
     fuelType,
     chassis,
   }) => {
-    const sanitizedBidId = sanitize(bidId);
-    const sanitizedBidMessage = sanitizeMasked(bidMessage);
-    const sanitizedMake = sanitizeOrDash(make);
-    const sanitizedModel = sanitizeOrDash(model);
-    const sanitizedYear = sanitizeOrDash(year);
-    const sanitizedFuel = sanitizeOrDash(fuelType);
-    const sanitizedChassis = sanitizeOrDash(chassis);
-    if (!sanitizedBidId || !sanitizedBidMessage) {
-      throw new Error("bidId and bidMessage are required.");
-    }
+    validateInput(
+      "sendInquiryToSeller",
+      { to, bidId, bidMessage },
+      {
+        to: { required: true, types: ["string", "number"] },
+        bidId: { required: true, types: ["string", "number"] },
+        bidMessage: { required: true, types: ["string"] },
+      },
+    );
+    const sanitized = sanitizeFields(
+      {
+        bidId,
+        bidMessage,
+        make,
+        model,
+        year,
+        fuelType,
+        chassis,
+      },
+      {
+        bidId: sanitize,
+        bidMessage: sanitizeMasked,
+        make: sanitizeOrDash,
+        model: sanitizeOrDash,
+        year: sanitizeOrDash,
+        fuelType: sanitizeOrDash,
+        chassis: sanitizeOrDash,
+      },
+    );
+    requireFields("sendInquiryToSeller", {
+      bidId: sanitized.bidId,
+      bidMessage: sanitized.bidMessage,
+    });
     const metaResp = await sendTemplate({
       to,
       template: templateSellerInquiry,
@@ -35,66 +68,25 @@ export const createSellerTemplates = ({
         {
           type: "header",
           parameters: [
-            {
-              type: "text",
-              parameter_name: "bid_id",
-              text: sanitizedBidId,
-            },
+            textParam("bid_id", sanitized.bidId),
           ],
         },
         {
           type: "body",
           parameters: [
-            {
-              type: "text",
-              parameter_name: "make",
-              text: sanitizedMake,
-            },
-            {
-              type: "text",
-              parameter_name: "model",
-              text: sanitizedModel,
-            },
-            {
-              type: "text",
-              parameter_name: "year",
-              text: sanitizedYear,
-            },
-            {
-              type: "text",
-              parameter_name: "fuel_type",
-              text: sanitizedFuel,
-            },
-            {
-              type: "text",
-              parameter_name: "chassis",
-              text: sanitizedChassis,
-            },
-            {
-              type: "text",
-              parameter_name: "bid_message",
-              text: sanitizedBidMessage,
-            },
+            textParam("make", sanitized.make),
+            textParam("model", sanitized.model),
+            textParam("year", sanitized.year),
+            textParam("fuel_type", sanitized.fuelType),
+            textParam("chassis", sanitized.chassis),
+            textParam("bid_message", sanitized.bidMessage),
           ],
         },
-        {
-          type: "button",
-          sub_type: "flow",
-          index: "0",
-          parameters: [
-            {
-              type: "payload",
-              payload: JSON.stringify({ screen: templateSellerInquiryFlowTitle }),
-            },
-          ],
-        },
+        flowButton(templateSellerInquiryFlowTitle),
       ],
     });
 
-    const sentId = metaResp?.data?.messages?.[0]?.id;
-    if (sentId && messageToBid) {
-      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "seller_inquiry" });
-    }
+    trackSent(messageToBid, metaResp, sanitized.bidId, "seller_inquiry");
 
     return metaResp;
   };
@@ -103,10 +95,13 @@ export const createSellerTemplates = ({
     if (!templateSellerNotification || !to) {
       return null;
     }
-    const sanitizedBidId = sanitize(bidId);
-    if (!sanitizedBidId) {
-      throw new Error("bidId is required.");
-    }
+    validateInput(
+      "sendNotifySeller",
+      { bidId },
+      { bidId: { required: true, types: ["string", "number"] } },
+    );
+    const sanitized = sanitizeFields({ bidId }, { bidId: sanitize });
+    requireFields("sendNotifySeller", { bidId: sanitized.bidId });
     return sendTemplate({
       to,
       template: templateSellerNotification,
@@ -114,21 +109,13 @@ export const createSellerTemplates = ({
         {
           type: "header",
           parameters: [
-            {
-              type: "text",
-              parameter_name: "bid_id",
-              text: sanitizedBidId,
-            },
+            textParam("bid_id", sanitized.bidId),
           ],
         },
         {
           type: "body",
           parameters: [
-            {
-              type: "text",
-              parameter_name: "bid_id",
-              text: sanitizedBidId,
-            },
+            textParam("bid_id", sanitized.bidId),
           ],
         },
       ],

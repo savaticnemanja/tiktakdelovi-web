@@ -1,3 +1,12 @@
+import {
+  flowButton,
+  textParam,
+  trackSent,
+  requireFields,
+  sanitizeFields,
+  validateInput,
+} from "./_helpers.js";
+
 export const createTowTemplates = ({
   sendTemplate,
   sanitize,
@@ -18,16 +27,33 @@ export const createTowTemplates = ({
     if (!templateName || !to) {
       return null;
     }
-    const sanitizedBidId = sanitize(bidId);
-    const sanitizedLocationFrom = sanitizeMasked(locationFrom);
-    const sanitizedLocationTo = sanitizeMasked(locationTo) || "";
+    validateInput(
+      "sendTowInquiry",
+      { bidId, locationFrom, details },
+      {
+        bidId: { required: true, types: ["string", "number"] },
+        locationFrom: { required: true, types: ["string"] },
+        details: { required: true, types: ["string"] },
+      },
+    );
+    const sanitized = sanitizeFields(
+      { bidId, locationFrom, locationTo, details },
+      {
+        bidId: sanitize,
+        locationFrom: sanitizeMasked,
+        locationTo: sanitizeMasked,
+        details: sanitizeMasked,
+      },
+    );
+    const sanitizedLocationTo = sanitized.locationTo || "";
     const sanitizedLocation = sanitizedLocationTo
-      ? `${sanitizedLocationFrom} - ${sanitizedLocationTo}`
-      : sanitizedLocationFrom;
-    const sanitizedDetails = sanitizeMasked(details);
-    if (!sanitizedBidId || !sanitizedLocationFrom || !sanitizedDetails) {
-      throw new Error("bidId, locationFrom and details are required.");
-    }
+      ? `${sanitized.locationFrom} - ${sanitizedLocationTo}`
+      : sanitized.locationFrom;
+    requireFields("sendTowInquiry", {
+      bidId: sanitized.bidId,
+      locationFrom: sanitized.locationFrom,
+      details: sanitized.details,
+    });
     const metaResp = await sendTemplate({
       to,
       template: templateName,
@@ -35,50 +61,25 @@ export const createTowTemplates = ({
         {
           type: "header",
           parameters: [
-            {
-              type: "text",
-              parameter_name: "bid_id",
-              text: sanitizedBidId,
-            },
+            textParam("bid_id", sanitized.bidId),
           ],
         },
         {
           type: "body",
           parameters: [
-            {
-              type: "text",
-              parameter_name: "location",
-              text: sanitizedLocation,
-            },
-            {
-              type: "text",
-              parameter_name: "details",
-              text: sanitizedDetails,
-            },
+            textParam("location", sanitizedLocation),
+            textParam("details", sanitized.details),
           ],
         },
         ...(flowTitle
           ? [
-              {
-                type: "button",
-                sub_type: "flow",
-                index: "0",
-                parameters: [
-                  {
-                    type: "payload",
-                    payload: JSON.stringify({ screen: flowTitle }),
-                  },
-                ],
-              },
+              flowButton(flowTitle),
             ]
           : []),
       ],
     });
 
-    const sentId = metaResp?.data?.messages?.[0]?.id;
-    if (sentId && messageToBid) {
-      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "tow_inquiry" });
-    }
+    trackSent(messageToBid, metaResp, sanitized.bidId, "tow_inquiry");
     return metaResp;
   };
 
@@ -92,13 +93,27 @@ export const createTowTemplates = ({
     if (!templateRoadsideNotification || !to) {
       return null;
     }
-    const sanitizedBidId = sanitize(bidId);
-    const sanitizedBuyerName = sanitizeOrDash(buyerName);
-    const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
-    const sanitizedLocation = sanitizeOrDash(location);
-    if (!sanitizedBidId || !sanitizedBuyerContact) {
-      throw new Error("bidId and buyerContact are required.");
-    }
+    validateInput(
+      "sendRoadsideNotification",
+      { bidId, buyerContact },
+      {
+        bidId: { required: true, types: ["string", "number"] },
+        buyerContact: { required: true, types: ["string", "number"] },
+      },
+    );
+    const sanitized = sanitizeFields(
+      { bidId, buyerName, buyerContact, location },
+      {
+        bidId: sanitize,
+        buyerName: sanitizeOrDash,
+        buyerContact: sanitizeOrDash,
+        location: sanitizeOrDash,
+      },
+    );
+    requireFields("sendRoadsideNotification", {
+      bidId: sanitized.bidId,
+      buyerContact: sanitized.buyerContact,
+    });
     return sendTemplate({
       to,
       template: templateRoadsideNotification,
@@ -106,16 +121,16 @@ export const createTowTemplates = ({
         {
           type: "header",
           parameters: [
-            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+            textParam("bid_id", sanitized.bidId),
           ],
         },
         {
           type: "body",
           parameters: [
-            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
-            { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
-            { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
-            { type: "text", parameter_name: "location", text: sanitizedLocation },
+            textParam("bid_id", sanitized.bidId),
+            textParam("buyer_name", sanitized.buyerName),
+            textParam("buyer_contact", sanitized.buyerContact),
+            textParam("location", sanitized.location),
           ],
         },
       ],

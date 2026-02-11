@@ -1,3 +1,12 @@
+import {
+  flowButton,
+  textParam,
+  trackSent,
+  requireFields,
+  sanitizeFields,
+  validateInput,
+} from "./_helpers.js";
+
 export const createMechanicTemplates = ({
   sendTemplate,
   sanitize,
@@ -18,16 +27,31 @@ export const createMechanicTemplates = ({
     fuelType,
     chassis,
   }) => {
-    const sanitizedBidId = sanitize(bidId);
-    const sanitizedBidMessage = sanitizeMasked(bidMessage);
-    const sanitizedMake = sanitizeOrDash(make);
-    const sanitizedModel = sanitizeOrDash(model);
-    const sanitizedYear = sanitizeOrDash(year);
-    const sanitizedFuel = sanitizeOrDash(fuelType);
-    const sanitizedChassis = sanitizeOrDash(chassis);
-    if (!sanitizedBidId || !sanitizedBidMessage) {
-      throw new Error("bidId and bidMessage are required.");
-    }
+    validateInput(
+      "sendInquiryToMechanic",
+      { to, bidId, bidMessage },
+      {
+        to: { required: true, types: ["string", "number"] },
+        bidId: { required: true, types: ["string", "number"] },
+        bidMessage: { required: true, types: ["string"] },
+      },
+    );
+    const sanitized = sanitizeFields(
+      { bidId, bidMessage, make, model, year, fuelType, chassis },
+      {
+        bidId: sanitize,
+        bidMessage: sanitizeMasked,
+        make: sanitizeOrDash,
+        model: sanitizeOrDash,
+        year: sanitizeOrDash,
+        fuelType: sanitizeOrDash,
+        chassis: sanitizeOrDash,
+      },
+    );
+    requireFields("sendInquiryToMechanic", {
+      bidId: sanitized.bidId,
+      bidMessage: sanitized.bidMessage,
+    });
     const metaResp = await sendTemplate({
       to,
       template: templateMechanicInquiry,
@@ -35,66 +59,25 @@ export const createMechanicTemplates = ({
         {
           type: "header",
           parameters: [
-            {
-              type: "text",
-              parameter_name: "bid_id",
-              text: sanitizedBidId,
-            },
+            textParam("bid_id", sanitized.bidId),
           ],
         },
         {
           type: "body",
           parameters: [
-            {
-              type: "text",
-              parameter_name: "make",
-              text: sanitizedMake,
-            },
-            {
-              type: "text",
-              parameter_name: "model",
-              text: sanitizedModel,
-            },
-            {
-              type: "text",
-              parameter_name: "year",
-              text: sanitizedYear,
-            },
-            {
-              type: "text",
-              parameter_name: "fuel_type",
-              text: sanitizedFuel,
-            },
-            {
-              type: "text",
-              parameter_name: "chassis",
-              text: sanitizedChassis,
-            },
-            {
-              type: "text",
-              parameter_name: "bid_message",
-              text: sanitizedBidMessage,
-            },
+            textParam("make", sanitized.make),
+            textParam("model", sanitized.model),
+            textParam("year", sanitized.year),
+            textParam("fuel_type", sanitized.fuelType),
+            textParam("chassis", sanitized.chassis),
+            textParam("bid_message", sanitized.bidMessage),
           ],
         },
-        {
-          type: "button",
-          sub_type: "flow",
-          index: "0",
-          parameters: [
-            {
-              type: "payload",
-              payload: JSON.stringify({ screen: templateMechanicInquiryFlowTitle }),
-            },
-          ],
-        },
+        flowButton(templateMechanicInquiryFlowTitle),
       ],
     });
 
-    const sentId = metaResp?.data?.messages?.[0]?.id;
-    if (sentId && messageToBid) {
-      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "mechanic_inquiry" });
-    }
+    trackSent(messageToBid, metaResp, sanitized.bidId, "mechanic_inquiry");
 
     return metaResp;
   };
@@ -109,13 +92,27 @@ export const createMechanicTemplates = ({
     if (!templateMechanicNotification || !to) {
       return null;
     }
-    const sanitizedBidId = sanitize(bidId);
-    const sanitizedBuyerName = sanitizeOrDash(buyerName);
-    const sanitizedBuyerContact = sanitizeOrDash(buyerContact);
-    const sanitizedBidDetails = sanitizeOrDash(bidDetails);
-    if (!sanitizedBidId || !sanitizedBuyerContact) {
-      throw new Error("bidId and buyerContact are required.");
-    }
+    validateInput(
+      "sendMechanicNotification",
+      { bidId, buyerContact },
+      {
+        bidId: { required: true, types: ["string", "number"] },
+        buyerContact: { required: true, types: ["string", "number"] },
+      },
+    );
+    const sanitized = sanitizeFields(
+      { bidId, buyerName, buyerContact, bidDetails },
+      {
+        bidId: sanitize,
+        buyerName: sanitizeOrDash,
+        buyerContact: sanitizeOrDash,
+        bidDetails: sanitizeOrDash,
+      },
+    );
+    requireFields("sendMechanicNotification", {
+      bidId: sanitized.bidId,
+      buyerContact: sanitized.buyerContact,
+    });
     return sendTemplate({
       to,
       template: templateMechanicNotification,
@@ -123,16 +120,16 @@ export const createMechanicTemplates = ({
         {
           type: "header",
           parameters: [
-            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
+            textParam("bid_id", sanitized.bidId),
           ],
         },
         {
           type: "body",
           parameters: [
-            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
-            { type: "text", parameter_name: "buyer_name", text: sanitizedBuyerName },
-            { type: "text", parameter_name: "buyer_contact", text: sanitizedBuyerContact },
-            { type: "text", parameter_name: "bid_details", text: sanitizedBidDetails },
+            textParam("bid_id", sanitized.bidId),
+            textParam("buyer_name", sanitized.buyerName),
+            textParam("buyer_contact", sanitized.buyerContact),
+            textParam("bid_details", sanitized.bidDetails),
           ],
         },
       ],

@@ -7,6 +7,7 @@ import { createOwnerTemplates } from "./templates/owner.js";
 import { createSellerTemplates } from "./templates/seller.js";
 import { createTowTemplates } from "./templates/tow.js";
 import { createMediaHandlers } from "./templates/media.js";
+import { graphBaseUrl } from "./config.js";
 
 export const createMetaClient = (config) => {
   const {
@@ -34,7 +35,7 @@ export const createMetaClient = (config) => {
     if (!template) {
       throw new Error("Meta template name missing.");
     }
-    const url = `https://graph.facebook.com/v24.0/${phoneNumberId}/messages`;
+    const url = `${graphBaseUrl(config.graphApiVersion)}/${phoneNumberId}/messages`;
     const payload = {
       messaging_product: "whatsapp",
       to: keepPlus ? withPlus(to) : normalizePhone(to),
@@ -127,6 +128,7 @@ export const createMetaClient = (config) => {
     sanitize,
     sanitizeMasked,
     withPlus,
+    graphApiVersion: config.graphApiVersion,
   });
 
   return {

@@ -1,4 +1,5 @@
 import axios from "axios";
+import { graphBaseUrl } from "../config.js";
 
 export const createMediaHandlers = ({
   token,
@@ -6,6 +7,7 @@ export const createMediaHandlers = ({
   sanitize,
   sanitizeMasked,
   withPlus,
+  graphApiVersion,
 }) => {
   const sendImageMessage = async ({ to, mediaId, caption, mask = false }) => {
     if (!token || !phoneNumberId) {
@@ -14,7 +16,7 @@ export const createMediaHandlers = ({
     if (!to || !mediaId) {
       throw new Error("to and mediaId are required.");
     }
-    const url = `https://graph.facebook.com/v24.0/${phoneNumberId}/messages`;
+    const url = `${graphBaseUrl(graphApiVersion)}/${phoneNumberId}/messages`;
     const safeCaption = mask ? sanitizeMasked(caption) : sanitize(caption);
     const payload = {
       messaging_product: "whatsapp",
@@ -38,7 +40,7 @@ export const createMediaHandlers = ({
     if (!token || !mediaId) {
       throw new Error("Meta Cloud API not configured or mediaId missing.");
     }
-    const url = `https://graph.facebook.com/v24.0/${mediaId}`;
+    const url = `${graphBaseUrl(graphApiVersion)}/${mediaId}`;
     const resp = await axios.get(url, {
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -50,7 +52,7 @@ export const createMediaHandlers = ({
       throw new Error("Meta Cloud API not configured or mediaId missing.");
     }
     const mediaInfo = await axios.get(
-      `https://graph.facebook.com/v24.0/${mediaId}`,
+      `${graphBaseUrl(graphApiVersion)}/${mediaId}`,
       { headers: { Authorization: `Bearer ${token}` } },
     );
     const mediaUrl = mediaInfo?.data?.url;

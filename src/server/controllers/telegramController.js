@@ -1,8 +1,3 @@
-import { normalizePhone } from "../utils/phone.js";
-import {
-  formatBuyerOfferMessage,
-  formatBuyerReviewMessage,
-} from "../services/telegramMessages.js";
 
 export const createTelegramController = ({
   bidStore,
