@@ -756,11 +756,10 @@ export const createTelegramController = ({
         await sendAlreadyFinalDecision(chatId, bid);
         return true;
       }
-      const flow = { mode: "roadside", step: "name", data: {} };
       bidStore.clearTelegramFlowsForChat(chatId, bid.bidId);
-      setFlow(bid.bidId, flow);
-      await telegramClient.answerCallbackQuery({ callbackQueryId, text: "Krećemo." });
-      await sendFlowPrompt(chatId, bid, flow);
+      clearFlow(bid.bidId);
+      await telegramClient.answerCallbackQuery({ callbackQueryId, text: "Ponuda prihvaćena." });
+      await finalizeRoadside(bid, {}, chatId);
       return true;
     }
 
@@ -1089,11 +1088,6 @@ export const createTelegramController = ({
           postalCode: fields.postalCode || bid.buyerPostalCode || "",
           note: fields.note || "",
         };
-
-        if (!data.name || !data.contact) {
-          await telegramClient.sendMessage({ chatId, text: buildHelpText(bid) });
-          return res.sendStatus(200);
-        }
 
         await finalizeRoadside(bid, data, chatId);
         return res.sendStatus(200);
