@@ -5,8 +5,6 @@ import { FaTelegramPlane, FaWhatsapp } from "react-icons/fa";
 
 const RoadsideForm = ({ form }) => {
   const {
-    customerName,
-    setCustomerName,
     customerNumber,
     setCustomerNumber,
     city,
@@ -31,15 +29,6 @@ const RoadsideForm = ({ form }) => {
   return (
     <form className="form-card stagger" data-reveal="stagger" onSubmit={send}>
       <div className="field-grid two">
-        <label>
-          Ime i prezime
-          <input
-            value={customerName}
-            onChange={(e) => setCustomerName(e.target.value)}
-            placeholder="Marko Marković"
-            required
-          />
-        </label>
         <label>
           Grad
           <select value={city} onChange={(e) => setCity(e.target.value)} required>

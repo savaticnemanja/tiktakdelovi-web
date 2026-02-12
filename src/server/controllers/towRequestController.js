@@ -13,7 +13,6 @@ export const createTowRequestController = ({
   return async (req, res) => {
     try {
       const {
-        name,
         customerNumber,
         serviceType,
         locationFrom,
@@ -47,7 +46,6 @@ export const createTowRequestController = ({
       const savedBid = bidStore.saveBidRequest({
         bidMessage: details,
         customerNumber,
-        name,
         notificationPreference,
         requestType: "roadside",
         locationFrom,

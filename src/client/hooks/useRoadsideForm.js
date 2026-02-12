@@ -3,7 +3,6 @@ import { parseJson } from "../utils/api";
 import { ensureFormValid, normalizeSerbianPhoneNumber } from "../utils/form";
 
 export const useRoadsideForm = ({ apiBase }) => {
-  const [customerName, setCustomerName] = useState("");
   const [customerNumber, setCustomerNumber] = useState("");
   const [city, setCity] = useState("");
   const [location, setLocation] = useState("");
@@ -27,7 +26,6 @@ export const useRoadsideForm = ({ apiBase }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: customerName,
           customerNumber: normalizedCustomer,
           city,
           serviceType,
@@ -57,8 +55,6 @@ export const useRoadsideForm = ({ apiBase }) => {
   };
 
   return {
-    customerName,
-    setCustomerName,
     customerNumber,
     setCustomerNumber,
     city,
