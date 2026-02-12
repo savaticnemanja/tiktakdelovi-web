@@ -157,7 +157,9 @@ const RequestForm = ({ form, formKey, messagePlaceholder }) => {
       <label className="checkbox-field">
         <input type="checkbox" required />
         <span>
-          Saglasan/na sam da budem kontaktiran/a putem WhatsApp-a radi dostave ponuda.
+          Saglasan/na sam da budem kontaktiran/a putem{" "}
+          {notificationPreference === "telegram" ? "Telegram-a" : "WhatsApp-a"} radi
+          dostave ponuda.
         </span>
       </label>
 

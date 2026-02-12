@@ -754,6 +754,21 @@ button {
   font-size: 14px;
 }
 
+.footer-bottom {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  margin-top: 32px;
+  padding: 20px 0 24px;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+}
+
+.footer-bottom span {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+
 .footer-credit {
   color: var(--accent);
   font-weight: 600;
@@ -766,6 +781,30 @@ button {
 
 .footer-form p {
   margin: 0 0 16px;
+  color: rgba(242, 238, 233, 0.7);
+}
+
+.footer .form-card {
+  background: rgba(20, 26, 34, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 18px 30px rgba(0, 0, 0, 0.35);
+}
+
+.footer .form-card input,
+.footer .form-card textarea,
+.footer .form-card select {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #0f141b;
+  color: #f5f7fb;
+}
+
+.footer .form-card .phone-field {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #0f141b;
+}
+
+.footer .form-card .phone-prefix {
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
   color: rgba(242, 238, 233, 0.7);
 }
 

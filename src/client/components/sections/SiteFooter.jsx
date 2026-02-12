@@ -1,20 +1,40 @@
 import React, { useState } from "react";
+import { CITY_OPTIONS } from "../../../shared/cities.js";
+import { normalizeSerbianPhoneNumber } from "../../utils/form";
 
 const SiteFooter = () => {
-  const sellerEmail = "partneri@tiktakdelovi.rs";
   const [sellerName, setSellerName] = useState("");
   const [sellerNumber, setSellerNumber] = useState("");
+  const [sellerType, setSellerType] = useState("prodavac");
+  const [sellerCity, setSellerCity] = useState("");
   const [sellerStatus, setSellerStatus] = useState(null);
+  const [sellerSending, setSellerSending] = useState(false);
 
-  const registerSeller = (e) => {
+  const registerSeller = async (e) => {
     e.preventDefault();
-    const subject = "Prijava prodavnice - TikTak Delovi";
-    const body = `Ime: ${sellerName}\nTelefon: ${sellerNumber}`;
-    const mailto = `mailto:${sellerEmail}?subject=${encodeURIComponent(
-      subject
-    )}&body=${encodeURIComponent(body)}`;
-    window.location.href = mailto;
-    setSellerStatus({ ok: true, text: "Otvoren je email klijent za prijavu." });
+    if (sellerSending) return;
+    setSellerSending(true);
+    setSellerStatus(null);
+    try {
+      const normalizedNumber = normalizeSerbianPhoneNumber(sellerNumber);
+      const res = await fetch("/api/partnership-inquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          partnerName: sellerName,
+          partnerContact: normalizedNumber,
+          partnerType: sellerType,
+          partnerCity: sellerCity,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Nepoznata greška");
+      setSellerStatus({ ok: true, text: "Prijava je poslata." });
+    } catch (err) {
+      setSellerStatus({ ok: false, text: err.message });
+    } finally {
+      setSellerSending(false);
+    }
   };
 
   return (
@@ -35,10 +55,9 @@ const SiteFooter = () => {
           </div>
 
           <div className="footer-form">
-            <h4>Registrujte se kao prodavac</h4>
+            <h4>Registrujte se kao prodavac / serviser / pomoć na putu</h4>
             <p>
-              Unesite osnovne podatke i kliknite “Pošalji prijavu”. Otvoriće se
-              vaš email klijent sa pripremljenom porukom.
+              Unesite osnovne podatke i kliknite “Pošalji prijavu”.
             </p>
             <form
               className="form-card stagger seller-form"
@@ -56,22 +75,57 @@ const SiteFooter = () => {
                   />
                 </label>
                 <label>
-                  Telefon
-                  <input
-                    value={sellerNumber}
-                    onChange={(e) => setSellerNumber(e.target.value)}
-                    placeholder="+381..."
+                  Vrsta partnera
+                  <select
+                    value={sellerType}
+                    onChange={(e) => setSellerType(e.target.value)}
                     required
-                  />
+                  >
+                    <option value="prodavac">Prodavac</option>
+                    <option value="serviser">Serviser</option>
+                    <option value="pomoc_na_putu">Pomoć na putu</option>
+                  </select>
+                </label>
+                <label>
+                  Grad
+                  <select
+                    value={sellerCity}
+                    onChange={(e) => setSellerCity(e.target.value)}
+                    required
+                  >
+                    <option value="">Izaberite grad</option>
+                    {CITY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Telefon
+                  <div className="phone-field">
+                    <span className="phone-prefix">+381</span>
+                    <input
+                      value={sellerNumber}
+                      onChange={(e) => setSellerNumber(e.target.value)}
+                      placeholder="64 123 456"
+                      inputMode="tel"
+                      required
+                    />
+                  </div>
                 </label>
                 <div className="seller-submit">
-                  <button type="submit" className="btn light">
-                    Pošalji prijavu
+                  <button type="submit" className="btn light" disabled={sellerSending}>
+                    {sellerSending ? "Slanje..." : "Pošalji prijavu"}
                   </button>
                 </div>
               </div>
               {sellerStatus && (
-                <div className="status ok" role="status" aria-live="polite">
+                <div
+                  className={`status ${sellerStatus.ok ? "ok" : "err"}`}
+                  role="status"
+                  aria-live="polite"
+                >
                   {sellerStatus.text}
                 </div>
               )}

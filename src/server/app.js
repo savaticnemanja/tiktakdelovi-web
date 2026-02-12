@@ -9,6 +9,7 @@ import { createMetaClient } from "./services/metaWhatsapp.js";
 import { createRequestController } from "./controllers/requestController.js";
 import { createMechanicRequestController } from "./controllers/mechanicRequestController.js";
 import { createTowRequestController } from "./controllers/towRequestController.js";
+import { createPartnershipController } from "./controllers/partnershipController.js";
 import { createWebhookController } from "./controllers/webhookController.js";
 import { createHealthController } from "./controllers/healthController.js";
 import { createTelegramController } from "./controllers/telegramController.js";
@@ -62,6 +63,7 @@ export const createApp = () => {
     templateRoadsideNotification: ENV.META_TEMPLATE_ROADSIDE_NOTIFICATION,
     templateBuyerRoadsideNotification: ENV.META_TEMPLATE_BUYER_ROADSIDE_NOTIFICATION,
     templateBuyerMechanicNotification: ENV.META_TEMPLATE_BUYER_MECHANIC_NOTIFICATION,
+    templatePartnershipOwnerInquiry: ENV.META_TEMPLATE_PARTNERSHIP_OWNER_INQUIRY,
     templateTowInquiry: ENV.META_TEMPLATE_TOW_INQUIRY,
     templateRoadsideInquiry: ENV.META_TEMPLATE_ROADSIDE_INQUIRY,
     templateTowInquiryFlowTitle: ENV.META_TEMPLATE_TOW_INQUIRY_FLOW_TITLE,
@@ -98,6 +100,10 @@ export const createApp = () => {
     templateRoadsideInquiryFlowTitle: ENV.META_TEMPLATE_ROADSIDE_INQUIRY_FLOW_TITLE,
   });
   const healthController = createHealthController();
+  const partnershipController = createPartnershipController({
+    metaClient,
+    ownerNumber: ENV.OWNER_NUMBER,
+  });
 
   const webhookController = createWebhookController({
     bidStore,
@@ -121,6 +127,7 @@ export const createApp = () => {
     requestController,
     mechanicRequestController,
     towRequestController,
+    partnershipController,
     healthController,
   }));
   app.use("/webhook", webhookLogger, createWebhookRouter({ webhookController }));

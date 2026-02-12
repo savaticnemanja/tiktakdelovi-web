@@ -113,6 +113,7 @@ export const createMetaClient = (config) => {
     templateCourierNotification: config.templateCourierNotification,
     templateOwnerNotificationMechanic: config.templateOwnerNotificationMechanic,
     templateOwnerRoadsideNotification: config.templateOwnerRoadsideNotification,
+    templatePartnershipOwnerInquiry: config.templatePartnershipOwnerInquiry,
     messageToBid: config.messageToBid,
   });
 

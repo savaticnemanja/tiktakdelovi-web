@@ -99,6 +99,15 @@ const RoadsideForm = ({ form }) => {
         </div>
       </label>
 
+      <label className="checkbox-field">
+        <input type="checkbox" required />
+        <span>
+          Saglasan/na sam da budem kontaktiran/a putem{" "}
+          {notificationPreference === "telegram" ? "Telegram-a" : "WhatsApp-a"} radi
+          dostave ponuda.
+        </span>
+      </label>
+
       <div className="radio-field">
         <span className="radio-label">Preferirani kanal obaveštenja</span>
         <div className="radio-options">
@@ -152,6 +161,14 @@ const RoadsideForm = ({ form }) => {
         <div className={`status ${status.ok ? "ok" : "err"}`} role="status" aria-live="polite">
           {status.ok ? "OK" : "GREŠKA"} {status.text}
         </div>
+      )}
+      {status?.ok && notificationPreference === "telegram" && status.bidId && (
+        <a
+          className="btn light telegram-cta"
+          href={`https://t.me/tiktakdelovi_bot?start=${status.bidId}`}
+        >
+          Poveži Telegram za zahtev #{status.bidId}
+        </a>
       )}
     </form>
   );

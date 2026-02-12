@@ -15,6 +15,7 @@ export const createOwnerTemplates = ({
   templateCourierNotification,
   templateOwnerNotificationMechanic,
   templateOwnerRoadsideNotification,
+  templatePartnershipOwnerInquiry,
   messageToBid,
 }) => {
   const sendOfferToOwner = async ({
@@ -407,5 +408,56 @@ export const createOwnerTemplates = ({
     sendOfferToCourier,
     sendOfferToOwnerMechanic,
     sendOwnerRoadsideNotification,
+    sendPartnershipOwnerInquiry: async ({
+      to,
+      partnerName,
+      partnerContact,
+      partnerType,
+      partnerCity,
+    }) => {
+      if (!templatePartnershipOwnerInquiry || !to) {
+        return null;
+      }
+      validateInput(
+        "sendPartnershipOwnerInquiry",
+        { partnerName, partnerContact, partnerType, partnerCity },
+        {
+          partnerName: { required: true, types: ["string"] },
+          partnerContact: { required: true, types: ["string", "number"] },
+          partnerType: { required: true, types: ["string"] },
+          partnerCity: { required: true, types: ["string"] },
+        },
+      );
+      const sanitized = sanitizeFields(
+        { partnerName, partnerContact, partnerType, partnerCity },
+        {
+          partnerName: sanitizeOrDash,
+          partnerContact: sanitizeOrDash,
+          partnerType: sanitizeOrDash,
+          partnerCity: sanitizeOrDash,
+        },
+      );
+      requireFields("sendPartnershipOwnerInquiry", {
+        partnerName: sanitized.partnerName,
+        partnerContact: sanitized.partnerContact,
+        partnerType: sanitized.partnerType,
+        partnerCity: sanitized.partnerCity,
+      });
+      return sendTemplate({
+        to,
+        template: templatePartnershipOwnerInquiry,
+        components: [
+          {
+            type: "body",
+            parameters: [
+              textParam("partner_name", sanitized.partnerName),
+              textParam("partner_contact", sanitized.partnerContact),
+              textParam("partner_type", sanitized.partnerType),
+              textParam("partner_city", sanitized.partnerCity),
+            ],
+          },
+        ],
+      });
+    },
   };
 };

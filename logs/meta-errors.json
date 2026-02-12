@@ -1,0 +1,58 @@
+[
+  {
+    "at": "2026-02-12T22:38:54.772Z",
+    "url": "https://graph.facebook.com/v24.0/885235788017116/messages",
+    "template": "partnership_owner_inquiry",
+    "to": "+381652290662",
+    "payload": {
+      "messaging_product": "whatsapp",
+      "to": "381652290662",
+      "type": "template",
+      "template": {
+        "name": "partnership_owner_inquiry",
+        "language": {
+          "code": "sr"
+        },
+        "components": [
+          {
+            "type": "body",
+            "parameters": [
+              {
+                "type": "text",
+                "parameter_name": "partner_name",
+                "text": "nemanja"
+              },
+              {
+                "type": "text",
+                "parameter_name": "partner_contact",
+                "text": "+381+381652290662"
+              },
+              {
+                "type": "text",
+                "parameter_name": "partner_type",
+                "text": "serviser"
+              },
+              {
+                "type": "text",
+                "parameter_name": "partner_city",
+                "text": "valjevo"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "error": {
+      "error": {
+        "message": "(#132001) Template name does not exist in the translation",
+        "type": "OAuthException",
+        "code": 132001,
+        "error_data": {
+          "messaging_product": "whatsapp",
+          "details": "template name (partnership_owner_inquiry) does not exist in sr"
+        },
+        "fbtrace_id": "ABLEjvl4ugrcuX0zQnmmVo3"
+      }
+    }
+  }
+]
