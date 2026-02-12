@@ -394,7 +394,6 @@ export const createOwnerTemplates = ({
             textParam("details", sanitized.details),
             textParam("buyer_name", sanitized.buyerName),
             textParam("buyer_contact", sanitized.buyerContact),
-            textParam("roadside_or_tow", sanitized.roadsideOrTow),
             textParam("roadside_contact", sanitized.roadsideContact),
             textParam("bid_offer", sanitized.bidOffer),
           ],
