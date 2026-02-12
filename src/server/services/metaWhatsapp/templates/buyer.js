@@ -200,7 +200,24 @@ export const createBuyerTemplates = ({
       to,
       template: templateBuyerRoadsideOffer,
       keepPlus: true,
-      components: baseComponents,
+      components: [
+        ...baseComponents,
+        ...(templateBuyerRoadsideOfferFlowTitle
+          ? [
+              {
+                type: "button",
+                sub_type: "flow",
+                index: "0",
+                parameters: [
+                  {
+                    type: "payload",
+                    payload: JSON.stringify({ screen: templateBuyerRoadsideOfferFlowTitle }),
+                  },
+                ],
+              },
+            ]
+          : []),
+      ],
     });
 
     const sentId = metaResp?.data?.messages?.[0]?.id;
