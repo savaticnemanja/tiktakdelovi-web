@@ -51,6 +51,8 @@ export const createApp = () => {
     templateBuyerOfferFlowTitle: ENV.META_TEMPLATE_BUYER_OFFER_FLOW_TITLE,
     templateBuyerRoadsideOfferFlowTitle:
       ENV.META_TEMPLATE_BUYER_ROADSIDE_OFFER_FLOW_TITLE,
+    templateBuyerMechanicOfferFlowTitle:
+      ENV.META_TEMPLATE_BUYER_MECHANIC_OFFER_FLOW_TITLE,
     templateOwnerNotification: ENV.META_TEMPLATE_OWNER_NOTIFICATION,
     templateOwnerRoadsideNotification: ENV.META_TEMPLATE_OWNER_ROADSIDE_NOTIFICATION,
     templateCourierNotification: ENV.META_TEMPLATE_COURIER_NOTIFICATION,

@@ -11,6 +11,7 @@ export const createBuyerTemplates = ({
   templateBuyerRoadsideOffer,
   templateBuyerRoadsideOfferFlowTitle,
   templateBuyerMechanicOffer,
+  templateBuyerMechanicOfferFlowTitle,
   templateBuyerRoadsideNotification,
   templateBuyerMechanicNotification,
   messageToBid,
@@ -133,7 +134,9 @@ export const createBuyerTemplates = ({
           parameters: [
             {
               type: "payload",
-              payload: JSON.stringify({ screen: templateBuyerOfferFlowTitle }),
+              payload: JSON.stringify({
+                screen: templateBuyerMechanicOfferFlowTitle || templateBuyerOfferFlowTitle,
+              }),
             },
           ],
         },
