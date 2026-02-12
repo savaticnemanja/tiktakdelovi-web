@@ -54,11 +54,11 @@ export const createWebhookHandlers = ({
       buyerName: bid.buyerName || bid.name || "-",
       buyerContact: bid.buyerContact || bid.customerNumber,
       location,
+      details: bid.bidMessage || "-",
     });
     await metaClient.sendBuyerRoadsideNotification({
       to: bid.customerNumber,
       bidId: bid.bidId,
-      roadsideOrTowData: labels.roadsideOrTowData,
       roadsideContact: bid.sellerContact,
       bidOffer: bid.bidOffer,
     });

@@ -89,30 +89,38 @@ export const createTowTemplates = ({
     buyerName,
     buyerContact,
     location,
+    details,
   }) => {
     if (!templateRoadsideNotification || !to) {
       return null;
     }
     validateInput(
       "sendRoadsideNotification",
-      { bidId, buyerContact },
+      { bidId, buyerName, buyerContact, location, details },
       {
         bidId: { required: true, types: ["string", "number"] },
+        buyerName: { required: true, types: ["string"] },
         buyerContact: { required: true, types: ["string", "number"] },
+        location: { required: true, types: ["string"] },
+        details: { required: true, types: ["string"] },
       },
     );
     const sanitized = sanitizeFields(
-      { bidId, buyerName, buyerContact, location },
+      { bidId, buyerName, buyerContact, location, details },
       {
         bidId: sanitize,
         buyerName: sanitizeOrDash,
         buyerContact: sanitizeOrDash,
         location: sanitizeOrDash,
+        details: sanitizeOrDash,
       },
     );
     requireFields("sendRoadsideNotification", {
       bidId: sanitized.bidId,
+      buyerName: sanitized.buyerName,
       buyerContact: sanitized.buyerContact,
+      location: sanitized.location,
+      details: sanitized.details,
     });
     return sendTemplate({
       to,
@@ -127,10 +135,10 @@ export const createTowTemplates = ({
         {
           type: "body",
           parameters: [
-            textParam("bid_id", sanitized.bidId),
             textParam("buyer_name", sanitized.buyerName),
             textParam("buyer_contact", sanitized.buyerContact),
             textParam("location", sanitized.location),
+            textParam("details", sanitized.details),
           ],
         },
       ],

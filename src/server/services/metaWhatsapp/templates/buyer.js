@@ -306,7 +306,6 @@ export const createBuyerTemplates = ({
   const sendBuyerRoadsideNotification = async ({
     to,
     bidId,
-    roadsideOrTowData,
     roadsideContact,
     bidOffer,
   }) => {
@@ -314,11 +313,10 @@ export const createBuyerTemplates = ({
       return null;
     }
     const sanitizedBidId = sanitize(bidId);
-    const sanitizedRoadsideOrTowData = sanitizeOrDash(roadsideOrTowData);
     const sanitizedRoadsideContact = sanitizeOrDash(roadsideContact);
     const sanitizedBidOffer = sanitizeOrDash(bidOffer);
-    if (!sanitizedBidId || !sanitizedRoadsideContact) {
-      throw new Error("bidId and roadsideContact are required.");
+    if (!sanitizedBidId || !sanitizedRoadsideContact || !sanitizedBidOffer) {
+      throw new Error("bidId, roadsideContact and bidOffer are required.");
     }
     return sendTemplate({
       to,
@@ -333,12 +331,6 @@ export const createBuyerTemplates = ({
         {
           type: "body",
           parameters: [
-            {
-              type: "text",
-              parameter_name: "roadside_or_tow_data",
-              text: sanitizedRoadsideOrTowData,
-            },
-            { type: "text", parameter_name: "bid_id", text: sanitizedBidId },
             {
               type: "text",
               parameter_name: "roadside_contact",
