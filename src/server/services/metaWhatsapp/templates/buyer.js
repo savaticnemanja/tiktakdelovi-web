@@ -47,11 +47,6 @@ export const createBuyerTemplates = ({
           parameters: [
             {
               type: "text",
-              parameter_name: "bid_id",
-              text: sanitizedBidId,
-            },
-            {
-              type: "text",
               parameter_name: "bid_details",
               text: sanitizedBidDetails,
             },
