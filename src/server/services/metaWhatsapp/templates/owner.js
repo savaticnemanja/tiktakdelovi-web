@@ -117,7 +117,7 @@ export const createOwnerTemplates = ({
         quickReplyButton(1, { action: "notify_seller", bid_id: sanitized.bidId }),
       ],
     });
-    trackSent(messageToBid, metaResp, sanitized.bidId, "owner_notification");
+    trackSent(messageToBid, metaResp, sanitized.bidId, "parts_owner_notification");
     return metaResp;
   };
 
@@ -321,7 +321,7 @@ export const createOwnerTemplates = ({
         quickReplyButton(1, { action: "notify_mechanic", bid_id: sanitized.bidId }),
       ],
     });
-    trackSent(messageToBid, metaResp, sanitized.bidId, "owner_notification_mechanic");
+    trackSent(messageToBid, metaResp, sanitized.bidId, "service_owner_notification");
     return metaResp;
   };
 

@@ -41,9 +41,9 @@ test("seller inquiry template components", async () => {
     sanitize: identity,
     sanitizeMasked,
     sanitizeOrDash,
-    templateSellerInquiry: "seller_inquiry",
+    templateSellerInquiry: "parts_provider_inquiry",
     templateSellerInquiryFlowTitle: "seller_flow",
-    templateSellerNotification: "seller_notification",
+    templateSellerNotification: "parts_provider_notification",
     messageToBid,
   });
 
@@ -60,7 +60,7 @@ test("seller inquiry template components", async () => {
 
   assert.equal(calls.length, 1);
   const payload = calls[0];
-  assert.equal(payload.template, "seller_inquiry");
+  assert.equal(payload.template, "parts_provider_inquiry");
   assertHeaderBody(
     payload,
     ["bid_id"],
@@ -68,7 +68,7 @@ test("seller inquiry template components", async () => {
   );
   assert.equal(payload.components[2].type, "button");
   assert.equal(payload.components[2].sub_type, "flow");
-  assert.equal(messageToBid.get("msg-1").kind, "seller_inquiry");
+  assert.equal(messageToBid.get("msg-1").kind, "parts_provider_inquiry");
 });
 
 test("seller notification template components", async () => {
@@ -78,16 +78,16 @@ test("seller notification template components", async () => {
     sanitize: identity,
     sanitizeMasked,
     sanitizeOrDash,
-    templateSellerInquiry: "seller_inquiry",
+    templateSellerInquiry: "parts_provider_inquiry",
     templateSellerInquiryFlowTitle: "seller_flow",
-    templateSellerNotification: "seller_notification",
+    templateSellerNotification: "parts_provider_notification",
   });
 
   await sendNotifySeller({ to: "+123", bidId: "BID-2" });
 
   assert.equal(calls.length, 1);
   const payload = calls[0];
-  assert.equal(payload.template, "seller_notification");
+  assert.equal(payload.template, "parts_provider_notification");
   assertHeaderBody(payload, ["bid_id"], ["bid_id"]);
 });
 
@@ -98,9 +98,9 @@ test("mechanic inquiry template components", async () => {
     sanitize: identity,
     sanitizeMasked,
     sanitizeOrDash,
-    templateMechanicInquiry: "mech_inquiry",
+    templateMechanicInquiry: "service_mechanic_inquiry",
     templateMechanicInquiryFlowTitle: "mech_flow",
-    templateMechanicNotification: "mech_notification",
+    templateMechanicNotification: "service_mechanic_notification",
     messageToBid,
   });
 
@@ -117,14 +117,14 @@ test("mechanic inquiry template components", async () => {
 
   assert.equal(calls.length, 1);
   const payload = calls[0];
-  assert.equal(payload.template, "mech_inquiry");
+  assert.equal(payload.template, "service_mechanic_inquiry");
   assertHeaderBody(
     payload,
     ["bid_id"],
     ["make", "model", "year", "fuel_type", "chassis", "bid_message"],
   );
   assert.equal(payload.components[2].sub_type, "flow");
-  assert.equal(messageToBid.get("msg-1").kind, "mechanic_inquiry");
+  assert.equal(messageToBid.get("msg-1").kind, "service_mechanic_inquiry");
 });
 
 test("mechanic notification template components", async () => {
@@ -134,9 +134,9 @@ test("mechanic notification template components", async () => {
     sanitize: identity,
     sanitizeMasked,
     sanitizeOrDash,
-    templateMechanicInquiry: "mech_inquiry",
+    templateMechanicInquiry: "service_mechanic_inquiry",
     templateMechanicInquiryFlowTitle: "mech_flow",
-    templateMechanicNotification: "mech_notification",
+    templateMechanicNotification: "service_mechanic_notification",
   });
 
   await sendMechanicNotification({
@@ -149,7 +149,7 @@ test("mechanic notification template components", async () => {
 
   assert.equal(calls.length, 1);
   const payload = calls[0];
-  assert.equal(payload.template, "mech_notification");
+  assert.equal(payload.template, "service_mechanic_notification");
   assertHeaderBody(
     payload,
     ["bid_id"],
@@ -164,7 +164,7 @@ test("tow inquiry template components", async () => {
     sanitize: identity,
     sanitizeMasked,
     sanitizeOrDash,
-    templateRoadsideNotification: "roadside_notification",
+    templateRoadsideNotification: "towing_operator_notification",
     messageToBid,
   });
 
@@ -174,16 +174,16 @@ test("tow inquiry template components", async () => {
     locationFrom: "A",
     locationTo: "B",
     details: "Flat tire",
-    templateName: "tow_inquiry",
+    templateName: "towing_operator_inquiry",
     flowTitle: "tow_flow",
   });
 
   assert.equal(calls.length, 1);
   const payload = calls[0];
-  assert.equal(payload.template, "tow_inquiry");
+  assert.equal(payload.template, "towing_operator_inquiry");
   assertHeaderBody(payload, ["bid_id"], ["location", "details"]);
   assert.equal(payload.components[2].sub_type, "flow");
-  assert.equal(messageToBid.get("msg-1").kind, "tow_inquiry");
+  assert.equal(messageToBid.get("msg-1").kind, "towing_operator_inquiry");
 });
 
 test("roadside notification template components", async () => {
@@ -193,7 +193,7 @@ test("roadside notification template components", async () => {
     sanitize: identity,
     sanitizeMasked,
     sanitizeOrDash,
-    templateRoadsideNotification: "roadside_notification",
+    templateRoadsideNotification: "towing_operator_notification",
   });
 
   await sendRoadsideNotification({
@@ -206,7 +206,7 @@ test("roadside notification template components", async () => {
 
   assert.equal(calls.length, 1);
   const payload = calls[0];
-  assert.equal(payload.template, "roadside_notification");
+  assert.equal(payload.template, "towing_operator_notification");
   assertHeaderBody(
     payload,
     ["bid_id"],
@@ -221,10 +221,10 @@ test("owner notification template components", async () => {
     sanitize: identity,
     sanitizeMasked,
     sanitizeOrDash,
-    templateOwnerNotification: "owner_notification",
-    templateCourierNotification: "courier_notification",
-    templateOwnerNotificationMechanic: "owner_mech_notification",
-    templateOwnerRoadsideNotification: "owner_roadside_notification",
+    templateOwnerNotification: "parts_owner_notification",
+    templateCourierNotification: "parts_courier_notification",
+    templateOwnerNotificationMechanic: "service_owner_notification",
+    templateOwnerRoadsideNotification: "towing_owner_notification",
     messageToBid,
   });
 
@@ -248,7 +248,7 @@ test("owner notification template components", async () => {
 
   assert.equal(calls.length, 1);
   const payload = calls[0];
-  assert.equal(payload.template, "owner_notification");
+  assert.equal(payload.template, "parts_owner_notification");
   assertHeaderBody(
     payload,
     ["bid_id"],
@@ -270,7 +270,7 @@ test("owner notification template components", async () => {
   );
   assert.equal(payload.components[2].sub_type, "quick_reply");
   assert.equal(payload.components[3].sub_type, "quick_reply");
-  assert.equal(messageToBid.get("msg-1").kind, "owner_notification");
+  assert.equal(messageToBid.get("msg-1").kind, "parts_owner_notification");
 });
 
 test("owner notification mechanic template components", async () => {
@@ -280,10 +280,10 @@ test("owner notification mechanic template components", async () => {
     sanitize: identity,
     sanitizeMasked,
     sanitizeOrDash,
-    templateOwnerNotification: "owner_notification",
-    templateCourierNotification: "courier_notification",
-    templateOwnerNotificationMechanic: "owner_mech_notification",
-    templateOwnerRoadsideNotification: "owner_roadside_notification",
+    templateOwnerNotification: "parts_owner_notification",
+    templateCourierNotification: "parts_courier_notification",
+    templateOwnerNotificationMechanic: "service_owner_notification",
+    templateOwnerRoadsideNotification: "towing_owner_notification",
     messageToBid,
   });
 
@@ -307,7 +307,7 @@ test("owner notification mechanic template components", async () => {
 
   assert.equal(calls.length, 1);
   const payload = calls[0];
-  assert.equal(payload.template, "owner_mech_notification");
+  assert.equal(payload.template, "service_owner_notification");
   assertHeaderBody(
     payload,
     ["bid_id"],
@@ -329,7 +329,7 @@ test("owner notification mechanic template components", async () => {
   );
   assert.equal(payload.components[2].sub_type, "quick_reply");
   assert.equal(payload.components[3].sub_type, "quick_reply");
-  assert.equal(messageToBid.get("msg-1").kind, "owner_notification_mechanic");
+  assert.equal(messageToBid.get("msg-1").kind, "service_owner_notification");
 });
 
 test("owner roadside notification template components", async () => {
@@ -339,10 +339,10 @@ test("owner roadside notification template components", async () => {
     sanitize: identity,
     sanitizeMasked,
     sanitizeOrDash,
-    templateOwnerNotification: "owner_notification",
-    templateCourierNotification: "courier_notification",
-    templateOwnerNotificationMechanic: "owner_mech_notification",
-    templateOwnerRoadsideNotification: "owner_roadside_notification",
+    templateOwnerNotification: "parts_owner_notification",
+    templateCourierNotification: "parts_courier_notification",
+    templateOwnerNotificationMechanic: "service_owner_notification",
+    templateOwnerRoadsideNotification: "towing_owner_notification",
   });
 
   await sendOwnerRoadsideNotification({
@@ -359,7 +359,7 @@ test("owner roadside notification template components", async () => {
 
   assert.equal(calls.length, 1);
   const payload = calls[0];
-  assert.equal(payload.template, "owner_roadside_notification");
+  assert.equal(payload.template, "towing_owner_notification");
   assertHeaderBody(
     payload,
     ["bid_id"],

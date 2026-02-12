@@ -43,7 +43,7 @@ export const getMapEntry = (messageToBid, messageId) => {
     return null;
   }
   if (typeof entry === "string") {
-    return { bidId: entry, kind: "seller_inquiry" };
+    return { bidId: entry, kind: "parts_provider_inquiry" };
   }
   return entry;
 };

@@ -77,7 +77,7 @@ export const createMechanicTemplates = ({
       ],
     });
 
-    trackSent(messageToBid, metaResp, sanitized.bidId, "mechanic_inquiry");
+    trackSent(messageToBid, metaResp, sanitized.bidId, "service_mechanic_inquiry");
 
     return metaResp;
   };

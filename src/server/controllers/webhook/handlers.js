@@ -143,7 +143,7 @@ export const createWebhookHandlers = ({
     const normalizedPayload = normalizeButtonPayload(buttonPayload);
     const normalizedText = normalizeButtonPayload(message?.button?.text || "");
 
-    if (mapEntry?.kind === "buyer_roadside_offer" && mapEntry?.bidId) {
+    if (mapEntry?.kind === "towing_customer_offer" && mapEntry?.bidId) {
       const bid = bidStore.getBidRequest(mapEntry.bidId);
       if (!bid) {
         return true;
@@ -206,8 +206,8 @@ export const createWebhookHandlers = ({
       actionFromPayload === "notify_mechanic" ||
       normalizedPayload.includes("kupca") ||
       normalizedPayload.includes("mehanicar")
-        ? "owner_notification_mechanic"
-        : "owner_notification";
+        ? "service_owner_notification"
+        : "parts_owner_notification";
     const mapEntryWithFallback =
       mapEntry || (bidIdFromPayload ? { bidId: bidIdFromPayload, kind: inferredKind } : null);
     if (!mapEntryWithFallback) {
@@ -229,7 +229,7 @@ export const createWebhookHandlers = ({
     const wantsMechanic =
       actionFromPayload === "notify_mechanic" || normalizedPayload.includes("mehanicar");
 
-    if (wantsCourier && mapEntryWithFallback.kind === "owner_notification") {
+    if (wantsCourier && mapEntryWithFallback.kind === "parts_owner_notification") {
       if (courierNumber && bid.sellerContact && bid.bidOffer) {
         try {
           await metaClient.sendOfferToCourier({
@@ -259,7 +259,7 @@ export const createWebhookHandlers = ({
       return true;
     }
 
-    if (wantsSeller && mapEntryWithFallback.kind === "owner_notification") {
+    if (wantsSeller && mapEntryWithFallback.kind === "parts_owner_notification") {
       if (bid.sellerContact) {
         try {
           await metaClient.sendNotifySeller({
@@ -276,7 +276,7 @@ export const createWebhookHandlers = ({
       return true;
     }
 
-    if (wantsBuyer && mapEntryWithFallback.kind === "owner_notification_mechanic") {
+    if (wantsBuyer && mapEntryWithFallback.kind === "service_owner_notification") {
       if (bid.customerNumber && bid.sellerContact && bid.bidOffer) {
         try {
           if (
@@ -324,7 +324,7 @@ export const createWebhookHandlers = ({
       return true;
     }
 
-    if (wantsMechanic && mapEntryWithFallback.kind === "owner_notification_mechanic") {
+    if (wantsMechanic && mapEntryWithFallback.kind === "service_owner_notification") {
       if (bid.sellerContact && bid.buyerContact) {
         try {
           await metaClient.sendMechanicNotification({
@@ -388,7 +388,7 @@ export const createWebhookHandlers = ({
       "vreme",
     ]);
 
-    if (mapEntry?.kind === "buyer_review" && bid) {
+    if (mapEntry?.kind === "parts_customer_review" && bid) {
       const buyerAdditionalInfoPicked = pickValue(responseData, [
         "buyer_additional_info",
         "additional_info",
@@ -443,7 +443,7 @@ export const createWebhookHandlers = ({
       return true;
     }
 
-    if (mapEntry?.kind === "buyer_offer" && bid) {
+    if (mapEntry?.kind === "parts_customer_offer" && bid) {
       const decision = bidStore.setBuyerDecision(bid.bidId, {
         status: "accepted",
         source: "whatsapp_buyer_offer",
@@ -525,7 +525,7 @@ export const createWebhookHandlers = ({
       return true;
     }
 
-    if (mapEntry?.kind === "buyer_mechanic_offer" && bid) {
+    if (mapEntry?.kind === "service_customer_offer" && bid) {
       const buyerName = pickValue(responseData, [
         "buyer_name",
         "name",
@@ -587,7 +587,7 @@ export const createWebhookHandlers = ({
       return true;
     }
 
-    if (mapEntry?.kind === "buyer_roadside_offer" && bid) {
+    if (mapEntry?.kind === "towing_customer_offer" && bid) {
       const acceptRaw = pickValue(responseData, [
         "accept",
         "screen_0_Prihvatate_0",
@@ -661,7 +661,7 @@ export const createWebhookHandlers = ({
       return true;
     }
 
-    if (mapEntry?.kind === "mechanic_inquiry") {
+    if (mapEntry?.kind === "service_mechanic_inquiry") {
       const mechanicContact = normalizePhone(message?.from);
       const bidDate = formatBidDate(dateISO);
       const bidTime = String(time || "").trim();
@@ -724,7 +724,7 @@ export const createWebhookHandlers = ({
       return true;
     }
 
-    if (mapEntry?.kind === "tow_inquiry") {
+    if (mapEntry?.kind === "towing_operator_inquiry") {
       const driverContact = normalizePhone(message?.from);
       const latestBidDetails =
         bid?.bidMessage || bidStore.getBidRequest(mapEntry.bidId)?.bidMessage || "";
@@ -777,7 +777,7 @@ export const createWebhookHandlers = ({
       return true;
     }
 
-    if (mapEntry?.kind === "seller_inquiry") {
+    if (mapEntry?.kind === "parts_provider_inquiry") {
       const sellerContact = normalizePhone(message?.from);
       const needsMoreInfoRaw = pickValue(responseData, [
         "screen_0_Potrebne_dodatne_informacije_2",

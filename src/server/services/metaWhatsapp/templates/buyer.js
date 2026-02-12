@@ -77,7 +77,7 @@ export const createBuyerTemplates = ({
     });
     const sentId = metaResp?.data?.messages?.[0]?.id;
     if (sentId && messageToBid) {
-      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "buyer_review" });
+      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "parts_customer_review" });
     }
     return metaResp;
   };
@@ -151,7 +151,7 @@ export const createBuyerTemplates = ({
     });
     const sentId = metaResp?.data?.messages?.[0]?.id;
     if (sentId && messageToBid) {
-      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "buyer_offer" });
+      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "parts_customer_offer" });
     }
     return metaResp;
   };
@@ -210,7 +210,7 @@ export const createBuyerTemplates = ({
 
     const sentId = metaResp?.data?.messages?.[0]?.id;
     if (sentId && messageToBid) {
-      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "buyer_roadside_offer" });
+      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "towing_customer_offer" });
     }
     return metaResp;
   };
@@ -291,7 +291,7 @@ export const createBuyerTemplates = ({
     });
     const sentId = metaResp?.data?.messages?.[0]?.id;
     if (sentId && messageToBid) {
-      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "buyer_mechanic_offer" });
+      messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "service_customer_offer" });
     }
     return metaResp;
   };

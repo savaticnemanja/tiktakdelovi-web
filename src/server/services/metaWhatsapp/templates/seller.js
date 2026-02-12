@@ -86,7 +86,7 @@ export const createSellerTemplates = ({
       ],
     });
 
-    trackSent(messageToBid, metaResp, sanitized.bidId, "seller_inquiry");
+    trackSent(messageToBid, metaResp, sanitized.bidId, "parts_provider_inquiry");
 
     return metaResp;
   };

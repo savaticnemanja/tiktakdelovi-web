@@ -79,7 +79,7 @@ export const createTowTemplates = ({
       ],
     });
 
-    trackSent(messageToBid, metaResp, sanitized.bidId, "tow_inquiry");
+    trackSent(messageToBid, metaResp, sanitized.bidId, "towing_operator_inquiry");
     return metaResp;
   };
 
