@@ -351,8 +351,8 @@ export const createWebhookHandlers = ({
     }
 
     const repliedToId = message?.context?.id;
-    const mapEntry = getMapEntry(messageToBid, repliedToId);
-    const bid = mapEntry?.bidId ? bidStore.getBidRequest(mapEntry.bidId) : null;
+    let mapEntry = getMapEntry(messageToBid, repliedToId);
+    let bid = mapEntry?.bidId ? bidStore.getBidRequest(mapEntry.bidId) : null;
 
     const responseJsonRaw = message?.interactive?.nfm_reply?.response_json;
     let responseData = null;
@@ -360,6 +360,14 @@ export const createWebhookHandlers = ({
       responseData = responseJsonRaw ? JSON.parse(responseJsonRaw) : null;
     } catch (err) {
       responseData = null;
+    }
+
+    if (!mapEntry && responseData?.Ime_i_Prezime_82e14b && message?.from) {
+      const latest = bidStore.findLatestByCustomerNumber(message.from, "mechanic");
+      if (latest) {
+        mapEntry = { bidId: latest.bidId, kind: "service_customer_offer" };
+        bid = latest;
+      }
     }
     const price = pickValue(responseData, [
       "screen_0_Cena_0",
@@ -529,6 +537,7 @@ export const createWebhookHandlers = ({
       const buyerName = pickValue(responseData, [
         "buyer_name",
         "name",
+        "Ime_i_Prezime_82e14b",
         "screen_0_Ime_i_prezime_1",
         "screen_0_Ime_0",
       ]);
@@ -539,14 +548,8 @@ export const createWebhookHandlers = ({
         "screen_0_Kontakt_telefon_2",
         "screen_0_Kontakt_0",
       ]);
-      const acceptRaw = pickValue(responseData, [
-        "accept",
-        "screen_0_Prihvatam_0",
-        "screen_0_Prihvatam_1",
-      ]);
-      const accepted = parseYesNoFlag(acceptRaw) ?? false;
       const decision = bidStore.setBuyerDecision(bid.bidId, {
-        status: accepted ? "accepted" : "declined",
+        status: "accepted",
         source: "whatsapp_buyer_mechanic_offer",
       });
       if (!decision?.applied) {
@@ -558,7 +561,7 @@ export const createWebhookHandlers = ({
         buyerContact,
       });
 
-      if (accepted && updated?.sellerContact && updated?.bidOffer) {
+      if (updated?.sellerContact && updated?.bidOffer) {
         try {
           await metaClient.sendOfferToOwnerMechanic({
             to: ownerNumber,

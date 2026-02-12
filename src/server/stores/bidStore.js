@@ -226,6 +226,20 @@ export const createBidStore = ({ ttlMs, idStart }) => {
       }
       return latest;
     },
+    findLatestByCustomerNumber: (customerNumber, requestType = "") => {
+      const normalized = normalizePhone(customerNumber);
+      const requestTypeNormalized = String(requestType || "").trim();
+      let latest = null;
+      for (const bid of getAllActiveBids()) {
+        if (!bid?.customerNumber) continue;
+        if (normalizePhone(bid.customerNumber) !== normalized) continue;
+        if (requestTypeNormalized && bid.requestType !== requestTypeNormalized) continue;
+        if (!latest || bid.createdAt > latest.createdAt) {
+          latest = bid;
+        }
+      }
+      return latest;
+    },
     updateBid: (bidId, updates) => {
       const bid = getBidRequest(bidId);
       if (!bid) {
