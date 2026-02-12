@@ -1,5 +1,5 @@
-import { normalizePhone } from "../utils/phone.js";
-import { sanitizeTemplateText } from "../utils/sanitize.js";
+import { normalizePhone } from "../../utils/phone.js";
+import { sanitizeTemplateText } from "../../utils/sanitize.js";
 
 export const createBidStore = ({ ttlMs, idStart }) => {
   const store = new Map();

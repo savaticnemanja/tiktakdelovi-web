@@ -1,8 +1,8 @@
 import { resolveRecipients } from "./helpers/recipients.js";
 
-export const createRequestController = ({
-  sellerNumbers,
-  sellerNumbersByCity,
+export const createServiceRequestController = ({
+  mechanicNumbers,
+  mechanicNumbersByCity,
   bidStore,
   metaClient,
   templateName,
@@ -30,8 +30,8 @@ export const createRequestController = ({
 
       const recipients = resolveRecipients({
         city,
-        numbersByCity: sellerNumbersByCity,
-        fallbackNumbers: sellerNumbers,
+        numbersByCity: mechanicNumbersByCity,
+        fallbackNumbers: mechanicNumbers,
       });
 
       if (!recipients.length) {
@@ -39,8 +39,14 @@ export const createRequestController = ({
           .status(500)
           .json({
             error:
-              "No sellers configured (set CITY_SELLER_NUMBERS like BEOGRAD_SELLER_NUMBERS).",
+              "No mechanics configured (set CITY_MECHANIC_NUMBERS like BEOGRAD_MECHANIC_NUMBERS).",
           });
+      }
+
+      if (!templateName) {
+        return res.status(500).json({
+          error: "Mechanic inquiry template not configured.",
+        });
       }
 
       const savedBid = bidStore.saveBidRequest({
@@ -48,7 +54,7 @@ export const createRequestController = ({
         customerNumber,
         name,
         notificationPreference,
-        requestType: "parts",
+        requestType: "mechanic",
         make,
         model,
         year,
@@ -57,10 +63,10 @@ export const createRequestController = ({
       });
 
       const results = [];
-      for (const seller of recipients) {
+      for (const mechanic of recipients) {
         try {
-          const result = await metaClient.sendInquiryToSeller({
-            to: seller,
+          const result = await metaClient.sendInquiryToMechanic({
+            to: mechanic,
             bidId: savedBid.bidId,
             bidMessage: savedBid.bidMessage,
             make: savedBid.make,
@@ -69,18 +75,18 @@ export const createRequestController = ({
             fuelType: savedBid.fuelType,
             chassis: savedBid.chassis,
           });
-          results.push({ seller, ok: true, result });
+          results.push({ mechanic, ok: true, result });
         } catch (err) {
           const metaMessage = err?.response?.data?.error?.message || err.message;
           const metaDetails = err?.response?.data?.error?.error_data?.details;
           const metaType = err?.response?.data?.error?.type;
-          console.error(`Send to seller ${seller} failed:`, {
+          console.error(`Send to mechanic ${mechanic} failed:`, {
             message: metaMessage,
             type: metaType,
             details: metaDetails,
           });
           results.push({
-            seller,
+            mechanic,
             ok: false,
             error: metaMessage,
             type: metaType,
@@ -97,7 +103,7 @@ export const createRequestController = ({
       });
     } catch (err) {
       console.error(
-        "Request broadcast error:",
+        "Mechanic request broadcast error:",
         err?.response?.data || err.message || err,
       );
       const messageErr =

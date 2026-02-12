@@ -3,21 +3,21 @@ import express from "express";
 import cors from "cors";
 
 import { ENV } from "./config/env.js";
-import { createBidStore } from "./stores/bidStore.js";
-import { createMessageBidMap } from "./stores/messageBidMap.js";
-import { createMetaClient } from "./services/metaWhatsapp.js";
-import { createRequestController } from "./controllers/requestController.js";
-import { createMechanicRequestController } from "./controllers/mechanicRequestController.js";
-import { createTowRequestController } from "./controllers/towRequestController.js";
-import { createPartnershipController } from "./controllers/partnershipController.js";
-import { createWebhookController } from "./controllers/webhookController.js";
-import { createHealthController } from "./controllers/healthController.js";
-import { createTelegramController } from "./controllers/telegramController.js";
+import { createBidStore } from "./modules/bids/bidStore.js";
+import { createMessageBidMap } from "./modules/bids/messageBidMap.js";
+import { createMetaClient } from "./modules/whatsapp/client.js";
+import { createPartsRequestController } from "./modules/requests/partsRequestController.js";
+import { createServiceRequestController } from "./modules/requests/serviceRequestController.js";
+import { createTowingRequestController } from "./modules/requests/towingRequestController.js";
+import { createPartnershipController } from "./modules/requests/partnershipController.js";
+import { createWebhookController } from "./modules/webhook/webhookController.js";
+import { createHealthController } from "./modules/health/healthController.js";
+import { createTelegramController } from "./modules/telegram/telegramController.js";
 import { createApiRouter } from "./routes/api.js";
 import { createWebhookRouter } from "./routes/webhook.js";
-import { createRequestLogger } from "./services/requestLogger.js";
-import { createMetaLogger } from "./services/metaLogger.js";
-import { createTelegramClient } from "./services/telegramClient.js";
+import { createRequestLogger } from "./modules/requestLogger.js";
+import { createMetaLogger } from "./modules/metaLogger.js";
+import { createTelegramClient } from "./modules/telegram/telegramClient.js";
 
 export const createApp = () => {
   const app = express();
@@ -75,21 +75,21 @@ export const createApp = () => {
     token: ENV.TELEGRAM_BOT_TOKEN,
   });
 
-  const requestController = createRequestController({
+  const requestController = createPartsRequestController({
     sellerNumbers: ENV.SELLER_NUMBERS,
     sellerNumbersByCity: ENV.SELLER_NUMBERS_BY_CITY,
     bidStore,
     metaClient,
     templateName: ENV.META_TEMPLATE_SELLER_INQUIRY,
   });
-  const mechanicRequestController = createMechanicRequestController({
+  const mechanicRequestController = createServiceRequestController({
     mechanicNumbers: ENV.MECHANIC_NUMBERS,
     mechanicNumbersByCity: ENV.MECHANIC_NUMBERS_BY_CITY,
     bidStore,
     metaClient,
     templateName: ENV.META_TEMPLATE_MECHANIC_INQUIRY,
   });
-  const towRequestController = createTowRequestController({
+  const towRequestController = createTowingRequestController({
     towDriverNumbers: ENV.TOW_DRIVER_NUMBERS,
     towDriverNumbersByCity: ENV.TOW_DRIVER_NUMBERS_BY_CITY,
     bidStore,

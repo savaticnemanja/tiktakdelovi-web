@@ -1,5 +1,5 @@
-import { normalizePhone } from "../utils/phone.js";
-import { buildLocation, getRoadsideLabels } from "./webhook/utils.js";
+import { normalizePhone } from "../../utils/phone.js";
+import { buildLocation, getRoadsideLabels } from "../webhook/utils.js";
 
 export const createTelegramController = ({
   bidStore,

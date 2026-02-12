@@ -1,6 +1,6 @@
 import { resolveRecipients } from "./helpers/recipients.js";
 
-export const createTowRequestController = ({
+export const createTowingRequestController = ({
   towDriverNumbers,
   towDriverNumbersByCity,
   bidStore,

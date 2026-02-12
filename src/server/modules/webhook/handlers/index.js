@@ -1,6 +1,6 @@
-import { parseOfferMessage } from "../../utils/parseOffer.js";
-import { normalizePhone } from "../../utils/phone.js";
-import { applyMarkup } from "../../utils/price.js";
+import { parseOfferMessage } from "../../../utils/parseOffer.js";
+import { normalizePhone } from "../../../utils/phone.js";
+import { applyMarkup } from "../../../utils/price.js";
 import {
   formatBuyerOfferMessage,
   formatBuyerMechanicNotificationMessage,
@@ -8,7 +8,7 @@ import {
   formatBuyerRoadsideOfferMessage,
   formatBuyerReviewMessage,
   formatBuyerImageCaption,
-} from "../../services/telegramMessages.js";
+} from "../../telegram/telegramMessages.js";
 import {
   pickValue,
   formatBidDate,
@@ -18,7 +18,7 @@ import {
   getMapEntry,
   parseYesNoFlag,
   parseYesNoString,
-} from "./utils.js";
+} from "../utils.js";
 
 export const createWebhookHandlers = ({
   bidStore,

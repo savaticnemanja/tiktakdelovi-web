@@ -1,4 +1,4 @@
-import { createWebhookHandlers } from "./webhook/handlers.js";
+import { createWebhookHandlers } from "./handlers/index.js";
 
 export const createWebhookController = ({
   bidStore,

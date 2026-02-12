@@ -1,4 +1,4 @@
-import { sanitizeTelegramText, maskPhoneNumbers } from "../utils/sanitize.js";
+import { sanitizeTelegramText, maskPhoneNumbers } from "../../utils/sanitize.js";
 
 export const createTelegramClient = ({ token }) => {
   if (!token) {
