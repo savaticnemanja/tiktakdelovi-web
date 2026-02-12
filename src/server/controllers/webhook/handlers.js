@@ -508,7 +508,7 @@ export const createWebhookHandlers = ({
         buyerAddress,
         buyerCity,
         buyerPostalCode,
-        buyerContact,
+        buyerContact: buyerContact || bid.customerNumber || "",
       });
       if (updated?.sellerContact && updated?.bidOffer) {
         try {

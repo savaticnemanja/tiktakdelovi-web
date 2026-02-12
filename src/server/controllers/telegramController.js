@@ -321,7 +321,7 @@ export const createTelegramController = ({
       buyerAddress: updatedBid.buyerAddress,
       buyerCity: updatedBid.buyerCity,
       buyerPostalCode: updatedBid.buyerPostalCode,
-      buyerContact: updatedBid.buyerContact,
+      buyerContact: updatedBid.buyerContact || updatedBid.customerNumber,
       bidMessage: updatedBid.bidMessage,
       sellerNumber: updatedBid.sellerContact,
       bidOffer: updatedBid.bidOffer,
@@ -401,7 +401,9 @@ export const createTelegramController = ({
       buyerAddress: flowData.address || decisionBid.buyerAddress || "",
       buyerCity: flowData.city || decisionBid.buyerCity || "",
       buyerPostalCode: flowData.postalCode || decisionBid.buyerPostalCode || "",
-      buyerContact: normalizePhone(flowData.contact || decisionBid.buyerContact || ""),
+      buyerContact: normalizePhone(
+        flowData.contact || decisionBid.buyerContact || decisionBid.customerNumber || "",
+      ),
     });
 
     try {
@@ -535,13 +537,14 @@ export const createTelegramController = ({
     if (flow.mode === "parts") {
       if (flow.step === "name") {
         nextData.name = value;
-        const nextFlow = { ...flow, step: "contact", data: nextData };
+        nextData.contact = nextData.contact || bid.customerNumber || "";
+        const nextFlow = { ...flow, step: "address", data: nextData };
         setFlow(bid.bidId, nextFlow);
         await sendFlowPrompt(chatId, bid, nextFlow);
         return true;
       }
       if (flow.step === "contact") {
-        nextData.contact = value;
+        nextData.contact = value || bid.customerNumber || "";
         const nextFlow = { ...flow, step: "address", data: nextData };
         setFlow(bid.bidId, nextFlow);
         await sendFlowPrompt(chatId, bid, nextFlow);
@@ -1011,12 +1014,12 @@ export const createTelegramController = ({
         if (requestType === "parts") {
           const data = {
             name: fields.name || bid.buyerName || bid.name || "",
-            contact: fields.contact || bid.buyerContact || "",
+            contact: fields.contact || bid.buyerContact || bid.customerNumber || "",
             address: fields.address || bid.buyerAddress || "",
             city: fields.city || bid.buyerCity || "",
             postalCode: fields.postalCode || bid.buyerPostalCode || "",
           };
-          if (!data.name || !data.contact) {
+          if (!data.name) {
             await telegramClient.sendMessage({ chatId, text: buildHelpText(bid) });
             return res.sendStatus(200);
           }
