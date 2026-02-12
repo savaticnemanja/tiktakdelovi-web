@@ -111,13 +111,7 @@ export const createSellerTemplates = ({
           parameters: [
             textParam("bid_id", sanitized.bidId),
           ],
-        },
-        {
-          type: "body",
-          parameters: [
-            textParam("bid_id", sanitized.bidId),
-          ],
-        },
+        }
       ],
     });
   };

@@ -9,7 +9,6 @@
     "dev:client": "vite",
     "build": "vite build",
     "start": "node src/server/index.js",
-    "test": "node --test",
     "lint": "echo \"No lint configured\""
   },
   "dependencies": {
