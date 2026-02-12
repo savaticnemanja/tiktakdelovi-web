@@ -31,6 +31,38 @@ export const createWebhookHandlers = ({
   sellerMarkupPercent,
 }) => {
   const appendSeparator = " / ";
+  const notifyRoadsideAcceptance = async (bid) => {
+    if (!bid?.sellerContact || !bid?.bidOffer) {
+      return;
+    }
+    const labels = getRoadsideLabels(bid.serviceType);
+    const location = buildLocation(bid);
+    await metaClient.sendOwnerRoadsideNotification({
+      to: ownerNumber,
+      bidId: bid.bidId,
+      roadsideOrTow: labels.roadsideOrTow,
+      location,
+      buyerName: bid.buyerName || bid.name || "-",
+      buyerContact: bid.buyerContact || bid.customerNumber,
+      details: bid.bidMessage || "-",
+      roadsideContact: bid.sellerContact,
+      bidOffer: bid.bidOffer,
+    });
+    await metaClient.sendRoadsideNotification({
+      to: bid.sellerContact,
+      bidId: bid.bidId,
+      buyerName: bid.buyerName || bid.name || "-",
+      buyerContact: bid.buyerContact || bid.customerNumber,
+      location,
+    });
+    await metaClient.sendBuyerRoadsideNotification({
+      to: bid.customerNumber,
+      bidId: bid.bidId,
+      roadsideOrTowData: labels.roadsideOrTowData,
+      roadsideContact: bid.sellerContact,
+      bidOffer: bid.bidOffer,
+    });
+  };
 
   const handleImageMessage = async (message) => {
     const from = message?.from;
@@ -95,11 +127,6 @@ export const createWebhookHandlers = ({
       return false;
     }
     const sender = normalizePhone(from);
-    const ownerSender = normalizePhone(ownerNumber);
-    if (!ownerSender || sender !== ownerSender) {
-      return true;
-    }
-
     const repliedToId = message?.context?.id;
     const mapEntry = getMapEntry(messageToBid, repliedToId);
     const buttonPayload = message.button.payload || message.button.text || "";
@@ -114,6 +141,66 @@ export const createWebhookHandlers = ({
       bidIdFromPayload = "";
     }
     const normalizedPayload = normalizeButtonPayload(buttonPayload);
+    const normalizedText = normalizeButtonPayload(message?.button?.text || "");
+
+    if (mapEntry?.kind === "buyer_roadside_offer" && mapEntry?.bidId) {
+      const bid = bidStore.getBidRequest(mapEntry.bidId);
+      if (!bid) {
+        return true;
+      }
+      const expectedBuyer = normalizePhone(bid.customerNumber);
+      if (!expectedBuyer || sender !== expectedBuyer) {
+        return true;
+      }
+      const declinesRoadside =
+        actionFromPayload === "decline_roadside_offer" ||
+        actionFromPayload === "decline_offer" ||
+        normalizedPayload.includes("odbij") ||
+        normalizedText.includes("odbij") ||
+        normalizedPayload.includes("ne prihvat") ||
+        normalizedText.includes("ne prihvat") ||
+        normalizedPayload.includes("neprihvat") ||
+        normalizedText.includes("neprihvat");
+      const acceptsRoadside =
+        !declinesRoadside &&
+        (
+          actionFromPayload === "accept_roadside_offer" ||
+          actionFromPayload === "accept_offer" ||
+          normalizedPayload.includes("prihvat") ||
+          normalizedText.includes("prihvat") ||
+          normalizedPayload.includes("accept") ||
+          normalizedText.includes("accept")
+        );
+      if (!acceptsRoadside) {
+        return true;
+      }
+
+      const decision = bidStore.setBuyerDecision(bid.bidId, {
+        status: "accepted",
+        source: "whatsapp_buyer_roadside_quick_reply",
+      });
+      if (!decision?.applied) {
+        return true;
+      }
+      const updated = bidStore.updateBid(bid.bidId, {
+        buyerContact: bid.buyerContact || bid.customerNumber,
+      });
+      try {
+        await notifyRoadsideAcceptance(updated || bid);
+      } catch (err) {
+        console.error(
+          "Roadside acceptance notifications failed:",
+          err?.response?.data || err.message || String(err),
+        );
+      }
+      return true;
+    }
+
+    const ownerSender = normalizePhone(ownerNumber);
+    if (!ownerSender || sender !== ownerSender) {
+      return true;
+    }
+
     const inferredKind =
       actionFromPayload === "notify_buyer" ||
       actionFromPayload === "notify_mechanic" ||
@@ -561,35 +648,9 @@ export const createWebhookHandlers = ({
         buyerContact,
         buyerNote: note ? String(note) : "",
       });
-      if (accepted && updated?.sellerContact && updated?.bidOffer) {
+      if (accepted) {
         try {
-          const labels = getRoadsideLabels(updated.serviceType);
-          const location = buildLocation(updated);
-          await metaClient.sendOwnerRoadsideNotification({
-            to: ownerNumber,
-            bidId: updated.bidId,
-            roadsideOrTow: labels.roadsideOrTow,
-            location,
-            buyerName: updated.buyerName || updated.name || "-",
-            buyerContact: updated.buyerContact || updated.customerNumber,
-            details: updated.bidMessage || "-",
-            roadsideContact: updated.sellerContact,
-            bidOffer: updated.bidOffer,
-          });
-          await metaClient.sendRoadsideNotification({
-            to: updated.sellerContact,
-            bidId: updated.bidId,
-            buyerName: updated.buyerName || updated.name || "-",
-            buyerContact: updated.buyerContact || updated.customerNumber,
-            location,
-          });
-          await metaClient.sendBuyerRoadsideNotification({
-            to: updated.customerNumber,
-            bidId: updated.bidId,
-            roadsideOrTowData: labels.roadsideOrTowData,
-            roadsideContact: updated.sellerContact,
-            bidOffer: updated.bidOffer,
-          });
+          await notifyRoadsideAcceptance(updated);
         } catch (err) {
           console.error(
             "Roadside acceptance notifications failed:",
