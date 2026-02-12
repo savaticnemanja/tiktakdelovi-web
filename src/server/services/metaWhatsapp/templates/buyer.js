@@ -369,6 +369,9 @@ export const createBuyerTemplates = ({
     const sanitizedBidDate = sanitizeOrDash(bidDate);
     const sanitizedBidTime = sanitizeOrDash(bidTime);
     const sanitizedBidNote = sanitizeOrDash(bidNote);
+    const combinedBidDate = [sanitizedBidDate, sanitizedBidTime]
+      .filter(Boolean)
+      .join(" ");
     if (!sanitizedBidId || !sanitizedBidOffer || !sanitizedMechanicContact) {
       throw new Error("bidId, bidOffer and mechanicContact are required.");
     }
@@ -391,7 +394,7 @@ export const createBuyerTemplates = ({
               text: sanitizedMechanicContact,
             },
             { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
-            { type: "text", parameter_name: "bid_date", text: sanitizedBidDate },
+            { type: "text", parameter_name: "bid_date", text: combinedBidDate },
             { type: "text", parameter_name: "bid_note", text: sanitizedBidNote },
           ],
         },

@@ -676,20 +676,23 @@ export const createWebhookHandlers = ({
       const mechanicContact = normalizePhone(message?.from);
       const bidDate = formatBidDate(dateISO);
       const bidTime = String(time || "").trim();
+      const markedPrice = price ? applyMarkup(price, sellerMarkupPercent) : null;
+      const priceForBuyer = markedPrice || (price ? String(price) : "");
 
       const latestBidDetails =
         bid?.bidMessage || bidStore.getBidRequest(mapEntry.bidId)?.bidMessage || "";
 
       const updated = bidStore.updateBid(mapEntry.bidId, {
         sellerContact: mechanicContact,
-        bidOffer: price ? String(price) : "",
+        bidOffer: priceForBuyer,
+        bidOfferRaw: price ? String(price) : "",
         bidNote: note ? String(note) : "",
         bidDate,
         bidTime,
         bidMessage: latestBidDetails || bid?.bidMessage,
       });
 
-      if (updated && updated.customerNumber && price) {
+      if (updated && updated.customerNumber && priceForBuyer) {
         try {
           if (
             updated.notificationPreference === "telegram" &&
@@ -701,7 +704,7 @@ export const createWebhookHandlers = ({
               text: formatBuyerMechanicOfferMessage({
                 bidId: updated.bidId,
                 bidDetails: updated.bidMessage,
-                bidOffer: String(price),
+                bidOffer: String(priceForBuyer),
                 bidDate: [bidDate, bidTime].filter(Boolean).join(" ") || "-",
                 bidNote: String(note || "-"),
               }),
@@ -720,7 +723,7 @@ export const createWebhookHandlers = ({
               to: updated.customerNumber,
               bidId: updated.bidId,
               bidDetails: updated.bidMessage,
-              bidOffer: String(price),
+              bidOffer: String(priceForBuyer),
               bidDate: [bidDate, bidTime].filter(Boolean).join(" ") || "-",
               bidNote: String(note || "-"),
             });
