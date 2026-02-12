@@ -767,6 +767,7 @@ export const createWebhookHandlers = ({
             await metaClient.sendRoadsideOfferToBuyer({
               to: updated.customerNumber,
               bidId: updated.bidId,
+              location: buildLocation(updated),
               bidDetails: updated.bidMessage,
               bidOffer: String(priceForBuyer),
             });

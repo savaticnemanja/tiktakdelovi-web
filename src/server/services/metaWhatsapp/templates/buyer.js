@@ -154,12 +154,14 @@ export const createBuyerTemplates = ({
     bidId,
     bidDetails,
     bidOffer,
+    location,
   }) => {
     const sanitizedBidId = sanitize(bidId);
     const sanitizedBidDetails = sanitizeMasked(bidDetails);
     const sanitizedBidOffer = sanitize(bidOffer);
-    if (!sanitizedBidId || !sanitizedBidDetails || !sanitizedBidOffer) {
-      throw new Error("bidId, bidDetails and bidOffer are required.");
+    const sanitizedLocation = sanitizeMasked(location);
+    if (!sanitizedBidId || !sanitizedBidDetails || !sanitizedBidOffer || !sanitizedLocation) {
+      throw new Error("bidId, bidDetails, bidOffer and location are required.");
     }
     const baseComponents = [
       {
@@ -172,19 +174,24 @@ export const createBuyerTemplates = ({
           },
         ],
       },
-      {
-        type: "body",
-        parameters: [
-          {
-            type: "text",
-            parameter_name: "bid_id",
-            text: sanitizedBidId,
-          },
-          {
-            type: "text",
-            parameter_name: "bid_details",
-            text: sanitizedBidDetails,
-          },
+        {
+          type: "body",
+          parameters: [
+            {
+              type: "text",
+              parameter_name: "bid_id",
+              text: sanitizedBidId,
+            },
+            {
+              type: "text",
+              parameter_name: "location",
+              text: sanitizedLocation,
+            },
+            {
+              type: "text",
+              parameter_name: "bid_details",
+              text: sanitizedBidDetails,
+            },
           {
             type: "text",
             parameter_name: "bid_offer",
