@@ -363,10 +363,16 @@ export const createWebhookHandlers = ({
     }
 
     if (!mapEntry && responseData?.Ime_i_Prezime_82e14b && message?.from) {
-      const latest = bidStore.findLatestByCustomerNumber(message.from, "mechanic");
-      if (latest) {
-        mapEntry = { bidId: latest.bidId, kind: "service_customer_offer" };
-        bid = latest;
+      const latestMechanic = bidStore.findLatestByCustomerNumber(message.from, "mechanic");
+      if (latestMechanic) {
+        mapEntry = { bidId: latestMechanic.bidId, kind: "service_customer_offer" };
+        bid = latestMechanic;
+      } else {
+        const latestRoadside = bidStore.findLatestByCustomerNumber(message.from, "roadside");
+        if (latestRoadside) {
+          mapEntry = { bidId: latestRoadside.bidId, kind: "towing_customer_offer" };
+          bid = latestRoadside;
+        }
       }
     }
     const price = pickValue(responseData, [
@@ -598,7 +604,7 @@ export const createWebhookHandlers = ({
         "screen_0_Prihvatam_0",
         "screen_0_Prihvatam_1",
       ]);
-      const accepted = parseYesNoFlag(acceptRaw) ?? false;
+      const accepted = acceptRaw ? parseYesNoFlag(acceptRaw) ?? false : true;
       const decision = bidStore.setBuyerDecision(bid.bidId, {
         status: accepted ? "accepted" : "declined",
         source: "whatsapp_buyer_roadside_offer",
@@ -610,6 +616,7 @@ export const createWebhookHandlers = ({
       const buyerName = pickValue(responseData, [
         "buyer_name",
         "name",
+        "Ime_i_Prezime_82e14b",
         "screen_0_Ime_i_prezime_0",
         "screen_0_Ime_0",
         "screen_0_Ime_1",
@@ -649,7 +656,7 @@ export const createWebhookHandlers = ({
         buyerAddress,
         buyerCity,
         buyerPostalCode,
-        buyerContact,
+        buyerContact: buyerContact || bid.customerNumber || "",
         buyerNote: note ? String(note) : "",
       });
       if (accepted) {
