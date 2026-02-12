@@ -436,7 +436,9 @@ export const createTelegramController = ({
     const decisionBid = decision.bid;
     const updatedBid = bidStore.updateBid(decisionBid.bidId, {
       buyerName: flowData.name || decisionBid.buyerName || decisionBid.name || "",
-      buyerContact: normalizePhone(flowData.contact || decisionBid.buyerContact || ""),
+      buyerContact: normalizePhone(
+        flowData.contact || decisionBid.buyerContact || decisionBid.customerNumber || "",
+      ),
     });
 
     try {
@@ -574,13 +576,12 @@ export const createTelegramController = ({
     if (flow.mode === "mechanic") {
       if (flow.step === "name") {
         nextData.name = value;
-        const nextFlow = { ...flow, step: "contact", data: nextData };
-        setFlow(bid.bidId, nextFlow);
-        await sendFlowPrompt(chatId, bid, nextFlow);
+        nextData.contact = nextData.contact || bid.customerNumber || "";
+        await finalizeMechanic(bid, nextData, chatId);
         return true;
       }
       if (flow.step === "contact") {
-        nextData.contact = value;
+        nextData.contact = value || bid.customerNumber || "";
         await finalizeMechanic(bid, nextData, chatId);
         return true;
       }
@@ -1051,9 +1052,9 @@ export const createTelegramController = ({
           }
           const data = {
             name: fields.name || bid.buyerName || bid.name || "",
-            contact: fields.contact || bid.buyerContact || "",
+            contact: fields.contact || bid.buyerContact || bid.customerNumber || "",
           };
-          if (!data.name || !data.contact) {
+          if (!data.name) {
             await telegramClient.sendMessage({ chatId, text: buildHelpText(bid) });
             return res.sendStatus(200);
           }
