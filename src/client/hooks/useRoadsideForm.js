@@ -39,14 +39,19 @@ export const useRoadsideForm = ({ apiBase }) => {
       const data = await parseJson(res);
       if (!res.ok) throw new Error(data?.error || "Nepoznata greška");
       const sentCount = Array.isArray(data?.sent) ? data.sent.length : 0;
-      const templateLabel = data?.template ? ` Šablon: ${data.template}.` : "";
       setStatus({
         ok: true,
         text: sentCount
-          ? `Poslato ${sentCount} prodavcu(a).${templateLabel}`
-          : `Poslato.${templateLabel}`,
+          ? "Hvala! Prosledili smo zahtev. Operater će vas uskoro kontaktirati."
+          : "Hvala! Vaš zahtev je uspešno poslat. Javićemo se uskoro.",
         bidId: data?.bidId || null,
       });
+      setCustomerNumber("");
+      setCity("");
+      setLocation("");
+      setIssueDescription("");
+      setServiceType("pomoc_na_putu");
+      setDestination("");
     } catch (err) {
       setStatus({ ok: false, text: err.message });
     } finally {

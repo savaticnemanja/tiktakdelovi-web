@@ -1,6 +1,7 @@
 import React from "react";
 import { CITY_OPTIONS } from "../../../shared/cities.js";
 import { getWhatsAppStoreUrl } from "../../utils/whatsappStore";
+import { getTelegramStoreUrl } from "../../utils/telegramStore";
 import { FaTelegramPlane, FaWhatsapp } from "react-icons/fa";
 
 const RoadsideForm = ({ form }) => {
@@ -25,6 +26,7 @@ const RoadsideForm = ({ form }) => {
   } = form;
 
   const whatsappStoreUrl = getWhatsAppStoreUrl();
+  const telegramStoreUrl = getTelegramStoreUrl();
 
   return (
     <form className="form-card stagger" data-reveal="stagger" onSubmit={send}>
@@ -145,9 +147,18 @@ const RoadsideForm = ({ form }) => {
         {sending ? "Slanje..." : "Pošalji upit"}
       </button>
 
-      {status && (
+      {status?.ok && notificationPreference === "telegram" && status.bidId && (
         <a
-          className="btn ghost whatsapp-install"
+          className="btn telegram-install telegram-cta"
+          href={`https://t.me/tiktakdelovi_bot?start=${status.bidId}`}
+        >
+          <FaTelegramPlane className="telegram-icon" aria-hidden="true" />
+          Kliknite da povežete Telegram na našeg bota.
+        </a>
+      )}
+      {status && notificationPreference === "whatsapp" && (
+        <a
+          className="btn whatsapp-install"
           href={whatsappStoreUrl}
           target="_blank"
           rel="noreferrer"
@@ -156,19 +167,22 @@ const RoadsideForm = ({ form }) => {
           Ako nemate WhatsApp nalog, kreirajte ga
         </a>
       )}
+      {status && notificationPreference === "telegram" && (
+        <a
+          className="btn telegram-install"
+          href={telegramStoreUrl}
+          target="_blank"
+          rel="noreferrer"
+        >
+          <FaTelegramPlane className="telegram-icon" aria-hidden="true" />
+          Ako nemate Telegram nalog, preuzmite aplikaciju
+        </a>
+      )}
 
       {status && (
         <div className={`status ${status.ok ? "ok" : "err"}`} role="status" aria-live="polite">
           {status.ok ? "OK" : "GREŠKA"} {status.text}
         </div>
-      )}
-      {status?.ok && notificationPreference === "telegram" && status.bidId && (
-        <a
-          className="btn light telegram-cta"
-          href={`https://t.me/tiktakdelovi_bot?start=${status.bidId}`}
-        >
-          Poveži Telegram za zahtev #{status.bidId}
-        </a>
       )}
     </form>
   );

@@ -51,14 +51,21 @@ export const useServiceForm = ({
       const data = await parseJson(res);
       if (!res.ok) throw new Error(data?.error || "Nepoznata greška");
       const sentCount = Array.isArray(data?.sent) ? data.sent.length : 0;
-      const templateLabel = data?.template ? ` Šablon: ${data.template}.` : "";
       setStatus({
         ok: true,
         text: sentCount
-          ? `Poslato ${sentCount} ${recipientLabel}.${templateLabel}`
-          : `Poslato.${templateLabel}`,
+          ? `Hvala! Prosledili smo upit ${recipientLabel}. Javićemo se uskoro.`
+          : "Hvala! Vaš upit je uspešno poslat. Javićemo se uskoro.",
         bidId: data?.bidId || null,
       });
+      setCustomerNumber("");
+      setCity("");
+      setBidMessage("");
+      setMake(firstValue(MAKES));
+      setModel("");
+      setYear(firstValue(YEARS));
+      setFuelType(firstValue(FUEL_TYPES));
+      setChassis(firstValue(CHASSIS_TYPES));
     } catch (err) {
       setStatus({ ok: false, text: err.message });
     } finally {
