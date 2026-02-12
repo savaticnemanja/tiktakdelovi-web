@@ -374,10 +374,6 @@ export const createBuyerTemplates = ({
         {
           type: "body",
           parameters: [
-            { type: "text", parameter_name: "make", text: sanitizedMake },
-            { type: "text", parameter_name: "model", text: sanitizedModel },
-            { type: "text", parameter_name: "year", text: sanitizedYear },
-            { type: "text", parameter_name: "fuel_type", text: sanitizedFuel },
             {
               type: "text",
               parameter_name: "mechanic_contact",
@@ -385,7 +381,6 @@ export const createBuyerTemplates = ({
             },
             { type: "text", parameter_name: "bid_offer", text: sanitizedBidOffer },
             { type: "text", parameter_name: "bid_date", text: sanitizedBidDate },
-            { type: "text", parameter_name: "bid_time", text: sanitizedBidTime },
             { type: "text", parameter_name: "bid_note", text: sanitizedBidNote },
           ],
         },

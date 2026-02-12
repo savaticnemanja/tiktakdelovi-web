@@ -556,9 +556,10 @@ export const createWebhookHandlers = ({
         return true;
       }
 
+      const fallbackContact = buyerContact || bid.customerNumber || "";
       const updated = bidStore.updateBid(bid.bidId, {
         buyerName,
-        buyerContact,
+        buyerContact: fallbackContact,
       });
 
       if (updated?.sellerContact && updated?.bidOffer) {
