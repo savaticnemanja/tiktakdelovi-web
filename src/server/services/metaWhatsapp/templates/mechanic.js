@@ -126,7 +126,6 @@ export const createMechanicTemplates = ({
         {
           type: "body",
           parameters: [
-            textParam("bid_id", sanitized.bidId),
             textParam("buyer_name", sanitized.buyerName),
             textParam("buyer_contact", sanitized.buyerContact),
             textParam("bid_details", sanitized.bidDetails),
