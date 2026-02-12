@@ -168,54 +168,46 @@ export const createBuyerTemplates = ({
     if (!sanitizedBidId || !sanitizedBidDetails || !sanitizedBidOffer) {
       throw new Error("bidId, bidDetails and bidOffer are required.");
     }
+    const baseComponents = [
+      {
+        type: "header",
+        parameters: [
+          {
+            type: "text",
+            parameter_name: "bid_id",
+            text: sanitizedBidId,
+          },
+        ],
+      },
+      {
+        type: "body",
+        parameters: [
+          {
+            type: "text",
+            parameter_name: "bid_id",
+            text: sanitizedBidId,
+          },
+          {
+            type: "text",
+            parameter_name: "bid_details",
+            text: sanitizedBidDetails,
+          },
+          {
+            type: "text",
+            parameter_name: "bid_offer",
+            text: sanitizedBidOffer,
+          },
+        ],
+      },
+    ];
+
     const metaResp = await sendTemplate({
       to,
       template: templateBuyerRoadsideOffer,
       keepPlus: true,
-      components: [
-        {
-          type: "header",
-          parameters: [
-            {
-              type: "text",
-              parameter_name: "bid_id",
-              text: sanitizedBidId,
-            },
-          ],
-        },
-        {
-          type: "body",
-          parameters: [
-            {
-              type: "text",
-              parameter_name: "bid_id",
-              text: sanitizedBidId,
-            },
-            {
-              type: "text",
-              parameter_name: "bid_details",
-              text: sanitizedBidDetails,
-            },
-            {
-              type: "text",
-              parameter_name: "bid_offer",
-              text: sanitizedBidOffer,
-            },
-          ],
-        },
-        {
-          type: "button",
-          sub_type: "flow",
-          index: "0",
-          parameters: [
-            {
-              type: "payload",
-              payload: JSON.stringify({ screen: templateBuyerRoadsideOfferFlowTitle }),
-            },
-          ],
-        },
-      ],
+      components: baseComponents,
     });
+
     const sentId = metaResp?.data?.messages?.[0]?.id;
     if (sentId && messageToBid) {
       messageToBid.set(sentId, { bidId: sanitizedBidId, kind: "buyer_roadside_offer" });
