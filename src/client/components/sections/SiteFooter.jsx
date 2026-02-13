@@ -48,17 +48,16 @@ const SiteFooter = () => {
               vremena.
             </p>
             <div className="footer-links">
-              <a href="#how">Kako radi</a>
-              <a href="#buyer-form">Pošalji upit</a>
-              <a href="#top">Na vrh</a>
+              <a href="/#how">Kako radi</a>
+              <a href="/auto-delovi#buyer-form">Pošalji upit</a>
+              <a href="/partneri#seller-form">Prijava partnera</a>
+              <a href="/">Na vrh</a>
             </div>
           </div>
 
           <div className="footer-form">
             <h4>Registrujte se kao prodavac / serviser / pomoć na putu</h4>
-            <p>
-              Unesite osnovne podatke i kliknite “Pošalji prijavu”.
-            </p>
+            <p>Unesite osnovne podatke i kliknite "Pošalji prijavu".</p>
             <form
               className="form-card stagger seller-form"
               data-reveal="stagger"
@@ -134,7 +133,7 @@ const SiteFooter = () => {
         </div>
         <div className="footer-bottom">
           <span>
-            © 2026 TikTak Delovi. Sva prava zadržana. Razvio{" "}
+            &copy; 2026 TikTak Delovi. Sva prava zadržana. Razvio{" "}
             <a className="footer-credit" href="https://nemanjas.dev">
               nemanjas.dev
             </a>
