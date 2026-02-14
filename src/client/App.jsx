@@ -13,7 +13,7 @@ import { useRevealAnimations } from "./hooks/useRevealAnimations";
 export default function App() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
 
-  const partsForm = useServiceForm({ apiBase: API_BASE });
+  const partsForm = useServiceForm({ apiBase: API_BASE, includeCity: false });
   const serviceForm = useServiceForm({
     apiBase: API_BASE,
     apiPath: "/api/mechanic-request",

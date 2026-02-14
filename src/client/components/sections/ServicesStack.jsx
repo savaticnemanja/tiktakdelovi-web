@@ -18,6 +18,7 @@ const ServicesStack = ({ partsForm, serviceForm, roadsideForm }) => (
           form={partsForm}
           formKey="parts"
           messagePlaceholder="Npr. far za Honda Civic 2018, levo, hitno"
+          showCity={false}
         />
       </div>
       <div className="service-media">
@@ -43,6 +44,7 @@ const ServicesStack = ({ partsForm, serviceForm, roadsideForm }) => (
           form={serviceForm}
           formKey="servis"
           messagePlaceholder="Npr. mali servis, zamena ulja i filtera, 120.000km"
+          showCity
         />
       </div>
       <div className="service-media">

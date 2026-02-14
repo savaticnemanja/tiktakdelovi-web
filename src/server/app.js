@@ -77,7 +77,6 @@ export const createApp = () => {
 
   const requestController = createPartsRequestController({
     sellerNumbers: ENV.SELLER_NUMBERS,
-    sellerNumbersByCity: ENV.SELLER_NUMBERS_BY_CITY,
     bidStore,
     metaClient,
     templateName: ENV.META_TEMPLATE_SELLER_INQUIRY,

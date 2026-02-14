@@ -8,6 +8,7 @@ export const useServiceForm = ({
   apiBase,
   apiPath = "/api/request",
   recipientLabel = "prodavcu(a)",
+  includeCity = true,
 }) => {
   const [customerNumber, setCustomerNumber] = useState("");
   const [city, setCity] = useState("");
@@ -32,20 +33,23 @@ export const useServiceForm = ({
     try {
       const normalizedCustomer = normalizeSerbianPhoneNumber(customerNumber);
       const trimmedMessage = String(bidMessage || "").trim();
+      const payload = {
+        customerNumber: normalizedCustomer,
+        bidMessage: trimmedMessage,
+        notificationPreference,
+        make,
+        model,
+        year,
+        fuelType,
+        chassis,
+      };
+      if (includeCity) {
+        payload.city = city;
+      }
       const res = await fetch(`${apiBase}${apiPath}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          customerNumber: normalizedCustomer,
-          bidMessage: trimmedMessage,
-          notificationPreference,
-          make,
-          model,
-          year,
-          fuelType,
-          chassis,
-          city,
-        }),
+        body: JSON.stringify(payload),
       });
 
       const data = await parseJson(res);
@@ -59,7 +63,9 @@ export const useServiceForm = ({
         bidId: data?.bidId || null,
       });
       setCustomerNumber("");
-      setCity("");
+      if (includeCity) {
+        setCity("");
+      }
       setBidMessage("");
       setMake(firstValue(MAKES));
       setModel("");
