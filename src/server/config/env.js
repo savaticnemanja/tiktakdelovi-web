@@ -29,6 +29,17 @@ const buildCityNumbers = (phoneData, field) =>
     return acc;
   }, {});
 
+const buildCityNumbersByMake = (phoneData, field) =>
+  Object.keys(phoneData || {}).reduce((acc, cityKey) => {
+    const entry = phoneData?.[cityKey];
+    const byMake = entry?.[field] || {};
+    acc[cityKey] = Object.keys(byMake).reduce((makeAcc, makeKey) => {
+      makeAcc[makeKey] = parseNumbers(byMake[makeKey]);
+      return makeAcc;
+    }, {});
+    return acc;
+  }, {});
+
 const mergeCityNumbers = (numbersByCity) => {
   const merged = Object.values(numbersByCity).flat();
   return [...new Set(merged.filter(Boolean))];
@@ -37,6 +48,10 @@ const mergeCityNumbers = (numbersByCity) => {
 const phoneData = loadPhoneNumbers();
 
 const SELLER_NUMBERS_BY_CITY = buildCityNumbers(phoneData, "sellers");
+const SELLER_NUMBERS_BY_CITY_BY_MAKE = buildCityNumbersByMake(
+  phoneData,
+  "sellersByMake",
+);
 const TOW_DRIVER_NUMBERS_BY_CITY = buildCityNumbers(phoneData, "towDrivers");
 const MECHANIC_NUMBERS_BY_CITY = buildCityNumbers(phoneData, "mechanics");
 
@@ -97,6 +112,7 @@ export const ENV = {
   TOW_DRIVER_NUMBERS,
   MECHANIC_NUMBERS,
   SELLER_NUMBERS_BY_CITY,
+  SELLER_NUMBERS_BY_CITY_BY_MAKE,
   TOW_DRIVER_NUMBERS_BY_CITY,
   MECHANIC_NUMBERS_BY_CITY,
   META_WHATSAPP_TOKEN,

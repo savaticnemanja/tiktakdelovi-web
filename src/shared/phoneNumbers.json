@@ -2,34 +2,127 @@
   "beograd": {
     "label": "Beograd",
     "sellers": [],
+    "sellersByMake": {},
     "towDrivers": [],
     "mechanics": []
   },
   "novi_sad": {
     "label": "Novi Sad",
     "sellers": ["+381652290662"],
+    "sellersByMake": {},
     "towDrivers": ["+381652290662"],
     "mechanics": ["+381652290662"]
   },
   "nis": {
     "label": "Niš",
     "sellers": [],
+    "sellersByMake": {},
     "towDrivers": [],
     "mechanics": []
   },
-  "kragujevac": { "label": "Kragujevac", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "novi_pazar": { "label": "Novi Pazar", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "subotica": { "label": "Subotica", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "zrenjanin": { "label": "Zrenjanin", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "pancevo": { "label": "Pančevo", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "sremska_mitrovica": { "label": "Sremska Mitrovica", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "cacak": { "label": "Čačak", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "kraljevo": { "label": "Kraljevo", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "smederevo": { "label": "Smederevo", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "leskovac": { "label": "Leskovac", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "valjevo": { "label": "Valjevo", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "krusevac": { "label": "Kruševac", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "vranje": { "label": "Vranje", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "sabac": { "label": "Šabac", "sellers": [], "towDrivers": [], "mechanics": [] },
-  "uzice": { "label": "Užice", "sellers": [], "towDrivers": [], "mechanics": [] }
+  "kragujevac": {
+    "label": "Kragujevac",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "novi_pazar": {
+    "label": "Novi Pazar",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "subotica": {
+    "label": "Subotica",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "zrenjanin": {
+    "label": "Zrenjanin",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "pancevo": {
+    "label": "Pančevo",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "sremska_mitrovica": {
+    "label": "Sremska Mitrovica",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "cacak": {
+    "label": "Čačak",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "kraljevo": {
+    "label": "Kraljevo",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "smederevo": {
+    "label": "Smederevo",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "leskovac": {
+    "label": "Leskovac",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "valjevo": {
+    "label": "Valjevo",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "krusevac": {
+    "label": "Kruševac",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "vranje": {
+    "label": "Vranje",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "sabac": {
+    "label": "Šabac",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  },
+  "uzice": {
+    "label": "Užice",
+    "sellers": [],
+    "sellersByMake": {},
+    "towDrivers": [],
+    "mechanics": []
+  }
 }

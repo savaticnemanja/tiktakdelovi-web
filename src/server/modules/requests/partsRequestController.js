@@ -1,5 +1,9 @@
+import { resolveRecipients } from "./helpers/recipients.js";
+
 export const createPartsRequestController = ({
   sellerNumbers,
+  sellerNumbersByCity,
+  sellerNumbersByCityByMake,
   bidStore,
   metaClient,
   templateName,
@@ -16,6 +20,7 @@ export const createPartsRequestController = ({
         year,
         fuelType,
         chassis,
+        city,
       } = req.body || {};
 
       if (!customerNumber || !bidMessage) {
@@ -24,14 +29,20 @@ export const createPartsRequestController = ({
         });
       }
 
-      const recipients = Array.isArray(sellerNumbers) ? sellerNumbers : [];
+      const recipients = resolveRecipients({
+        city,
+        make,
+        numbersByCity: sellerNumbersByCity,
+        numbersByCityByMake: sellerNumbersByCityByMake,
+        fallbackNumbers: sellerNumbers,
+      });
 
       if (!recipients.length) {
         return res
           .status(500)
           .json({
             error:
-              "No sellers configured (set SELLER_NUMBERS).",
+              "No sellers configured (set CITY_SELLER_NUMBERS like BEOGRAD_SELLER_NUMBERS).",
           });
       }
 
