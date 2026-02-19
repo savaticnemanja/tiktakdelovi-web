@@ -1,6 +1,7 @@
 import { resolveRecipientsByMake } from "./helpers/recipients.js";
 
 export const createPartsRequestController = ({
+  sellerNumbers,
   sellerNumbersByCityByMake,
   bidStore,
   metaClient,
@@ -29,6 +30,7 @@ export const createPartsRequestController = ({
       const recipients = resolveRecipientsByMake({
         make,
         numbersByCityByMake: sellerNumbersByCityByMake,
+        fallbackNumbers: sellerNumbers,
       });
 
       if (!recipients.length) {
@@ -36,7 +38,7 @@ export const createPartsRequestController = ({
           .status(500)
           .json({
             error:
-              "No sellers configured for this make (set sellersByMake in phoneNumbers.json).",
+              "No sellers configured (set sellers or sellersByMake in phoneNumbers.json).",
           });
       }
 

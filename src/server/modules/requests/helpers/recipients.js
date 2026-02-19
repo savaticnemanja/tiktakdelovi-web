@@ -1,6 +1,9 @@
 const normalizeMakeKey = (make) =>
   make ? String(make).trim().toLowerCase() : "";
 
+const normalizeNumberList = (numbers) =>
+  [...new Set((numbers || []).map((entry) => String(entry).trim()).filter(Boolean))];
+
 const resolveMakeNumbers = (numbersByMake, normalizedMake) => {
   if (!numbersByMake || typeof numbersByMake !== "object" || !normalizedMake) {
     return [];
@@ -42,15 +45,24 @@ export const resolveRecipients = ({
   return Array.isArray(fallbackNumbers) ? fallbackNumbers : [];
 };
 
-export const resolveRecipientsByMake = ({ make, numbersByCityByMake }) => {
+export const resolveRecipientsByMake = ({
+  make,
+  numbersByCityByMake,
+  fallbackNumbers,
+}) => {
   const normalizedMake = normalizeMakeKey(make);
   if (!normalizedMake || !numbersByCityByMake) {
-    return [];
+    return normalizeNumberList(fallbackNumbers);
   }
 
   const recipients = Object.values(numbersByCityByMake).flatMap((numbersByMake) =>
     resolveMakeNumbers(numbersByMake, normalizedMake),
   );
 
-  return [...new Set(recipients.map((entry) => String(entry).trim()).filter(Boolean))];
+  const normalizedRecipients = normalizeNumberList(recipients);
+  if (normalizedRecipients.length) {
+    return normalizedRecipients;
+  }
+
+  return normalizeNumberList(fallbackNumbers);
 };
