@@ -1,8 +1,6 @@
-import { resolveRecipients } from "./helpers/recipients.js";
+import { resolveRecipientsByMake } from "./helpers/recipients.js";
 
 export const createPartsRequestController = ({
-  sellerNumbers,
-  sellerNumbersByCity,
   sellerNumbersByCityByMake,
   bidStore,
   metaClient,
@@ -20,21 +18,17 @@ export const createPartsRequestController = ({
         year,
         fuelType,
         chassis,
-        city,
       } = req.body || {};
 
-      if (!customerNumber || !bidMessage) {
+      if (!customerNumber || !bidMessage || !make) {
         return res.status(400).json({
-          error: "customerNumber and bidMessage are required",
+          error: "customerNumber, bidMessage and make are required",
         });
       }
 
-      const recipients = resolveRecipients({
-        city,
+      const recipients = resolveRecipientsByMake({
         make,
-        numbersByCity: sellerNumbersByCity,
         numbersByCityByMake: sellerNumbersByCityByMake,
-        fallbackNumbers: sellerNumbers,
       });
 
       if (!recipients.length) {
@@ -42,7 +36,7 @@ export const createPartsRequestController = ({
           .status(500)
           .json({
             error:
-              "No sellers configured (set CITY_SELLER_NUMBERS like BEOGRAD_SELLER_NUMBERS).",
+              "No sellers configured for this make (set sellersByMake in phoneNumbers.json).",
           });
       }
 
