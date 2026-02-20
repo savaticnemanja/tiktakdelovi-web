@@ -6,6 +6,7 @@ export const createImageHandler = ({
   metaClient,
   telegramClient,
   sellerNumbers,
+  sellerNumbersByCityByMake,
 }) => {
   return async (message) => {
     const from = message?.from;
@@ -13,9 +14,14 @@ export const createImageHandler = ({
       return false;
     }
     const normalizedSender = normalizePhone(from);
-    const allowedSellers = Array.isArray(sellerNumbers)
+    const baseSellers = Array.isArray(sellerNumbers)
       ? sellerNumbers.map((number) => normalizePhone(number))
       : [];
+    const byMakeSellers = Object.values(sellerNumbersByCityByMake || {})
+      .flatMap((byMake) => Object.values(byMake || {}))
+      .flat()
+      .map((number) => normalizePhone(number));
+    const allowedSellers = [...new Set([...baseSellers, ...byMakeSellers])];
     if (!allowedSellers.includes(normalizedSender)) {
       return true;
     }

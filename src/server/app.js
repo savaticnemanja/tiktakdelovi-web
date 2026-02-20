@@ -113,6 +113,7 @@ export const createApp = () => {
     ownerNumber: ENV.OWNER_NUMBER,
     courierNumber: ENV.COURIER_NUMBER,
     sellerNumbers: ENV.SELLER_NUMBERS,
+    sellerNumbersByCityByMake: ENV.SELLER_NUMBERS_BY_CITY_BY_MAKE,
     sellerMarkupPercent: ENV.SELLER_MARKUP_PERCENT,
     verifyToken: ENV.META_WEBHOOK_VERIFICATION_TOKEN,
   });

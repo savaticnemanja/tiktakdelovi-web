@@ -12,6 +12,7 @@ export const createWebhookHandlers = ({
   ownerNumber,
   courierNumber,
   sellerNumbers,
+  sellerNumbersByCityByMake,
   sellerMarkupPercent,
 }) => {
   const { notifyRoadsideAcceptance } = createWebhookResponders({
@@ -24,6 +25,7 @@ export const createWebhookHandlers = ({
     metaClient,
     telegramClient,
     sellerNumbers,
+    sellerNumbersByCityByMake,
   });
 
   const handleButtonMessage = createButtonHandler({

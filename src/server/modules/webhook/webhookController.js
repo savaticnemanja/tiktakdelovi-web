@@ -8,6 +8,7 @@ export const createWebhookController = ({
   ownerNumber,
   courierNumber,
   sellerNumbers,
+  sellerNumbersByCityByMake,
   sellerMarkupPercent,
   verifyToken,
 }) => {
@@ -31,6 +32,7 @@ export const createWebhookController = ({
         ownerNumber,
         courierNumber,
         sellerNumbers,
+        sellerNumbersByCityByMake,
         sellerMarkupPercent,
       });
 
