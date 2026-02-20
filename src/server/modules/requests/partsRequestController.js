@@ -6,6 +6,7 @@ export const createPartsRequestController = ({
   bidStore,
   metaClient,
   templateName,
+  inquiryThrottle,
 }) => {
   return async (req, res) => {
     try {
@@ -24,6 +25,22 @@ export const createPartsRequestController = ({
       if (!customerNumber || !bidMessage || !make) {
         return res.status(400).json({
           error: "customerNumber, bidMessage and make are required",
+        });
+      }
+
+      const throttle = inquiryThrottle?.checkAndHit?.({
+        scope: "parts",
+        customerNumber,
+        ip: req.ip,
+      });
+      if (throttle?.blocked) {
+        const retryAfterSeconds = throttle.retryAfterSeconds;
+        res.set("Retry-After", String(retryAfterSeconds));
+        return res.status(429).json({
+          error: `Please wait ${retryAfterSeconds} seconds before sending another inquiry.`,
+          code: "BUYER_INQUIRY_THROTTLED",
+          retryAfterSeconds,
+          blockedBy: throttle.blockedBy,
         });
       }
 

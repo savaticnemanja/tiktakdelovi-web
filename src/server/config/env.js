@@ -6,6 +6,20 @@ dotenv.config();
 const OWNER_NUMBER = process.env.OWNER_NUMBER || "";
 const COURIER_NUMBER = process.env.COURIER_NUMBER || "";
 
+const parseBoolean = (value, fallback = false) => {
+  const normalized = String(value || "")
+    .trim()
+    .toLowerCase();
+
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true;
+  }
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return false;
+  }
+  return fallback;
+};
+
 const parseNumbers = (value) =>
   (value || [])
     .map((entry) => String(entry).trim())
@@ -105,6 +119,25 @@ const BID_STORE_TTL_MS = Number.isFinite(Number(process.env.BID_STORE_TTL_HOURS)
   ? Number(process.env.BID_STORE_TTL_HOURS) * 60 * 60 * 1000
   : 72 * 60 * 60 * 1000;
 
+const BUYER_INQUIRY_THROTTLE_SECONDS = Number.isFinite(
+  Number(process.env.BUYER_INQUIRY_THROTTLE_SECONDS),
+)
+  ? Math.max(1, Number(process.env.BUYER_INQUIRY_THROTTLE_SECONDS))
+  : 30;
+
+const BUYER_INQUIRY_THROTTLE_MS = BUYER_INQUIRY_THROTTLE_SECONDS * 1000;
+
+const BUYER_INQUIRY_IP_THROTTLE_ENABLED = parseBoolean(
+  process.env.BUYER_INQUIRY_IP_THROTTLE_ENABLED,
+  true,
+);
+
+const EXPRESS_TRUST_PROXY_HOPS = Number.isFinite(
+  Number(process.env.EXPRESS_TRUST_PROXY_HOPS),
+)
+  ? Math.max(0, Number(process.env.EXPRESS_TRUST_PROXY_HOPS))
+  : 1;
+
 export const ENV = {
   OWNER_NUMBER,
   COURIER_NUMBER,
@@ -149,4 +182,8 @@ export const ENV = {
   SELLER_MARKUP_PERCENT,
   BID_ID_START,
   BID_STORE_TTL_MS,
+  BUYER_INQUIRY_THROTTLE_SECONDS,
+  BUYER_INQUIRY_THROTTLE_MS,
+  BUYER_INQUIRY_IP_THROTTLE_ENABLED,
+  EXPRESS_TRUST_PROXY_HOPS,
 };

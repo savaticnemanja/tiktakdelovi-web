@@ -37,7 +37,16 @@ export const useRoadsideForm = ({ apiBase }) => {
       });
 
       const data = await parseJson(res);
-      if (!res.ok) throw new Error(data?.error || "Nepoznata greška");
+      if (!res.ok) {
+        if (res.status === 429 && data?.code === "BUYER_INQUIRY_THROTTLED") {
+          const retryAfterSeconds = Number(data?.retryAfterSeconds);
+          const waitSeconds = Number.isFinite(retryAfterSeconds)
+            ? Math.max(1, Math.ceil(retryAfterSeconds))
+            : 30;
+          throw new Error(`Sacekajte ${waitSeconds} sekundi pre novog zahteva.`);
+        }
+        throw new Error(data?.error || "Nepoznata greska");
+      }
       const sentCount = Array.isArray(data?.sent) ? data.sent.length : 0;
       setStatus({
         ok: true,

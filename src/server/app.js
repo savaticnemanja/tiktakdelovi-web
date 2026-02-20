@@ -18,9 +18,11 @@ import { createWebhookRouter } from "./routes/webhook.js";
 import { createRequestLogger } from "./modules/requestLogger.js";
 import { createMetaLogger } from "./modules/metaLogger.js";
 import { createTelegramClient } from "./modules/telegram/telegramClient.js";
+import { createInquiryThrottle } from "./modules/requests/helpers/inquiryThrottle.js";
 
 export const createApp = () => {
   const app = express();
+  app.set("trust proxy", ENV.EXPRESS_TRUST_PROXY_HOPS);
   app.use(cors());
   app.use(express.json());
 
@@ -34,6 +36,10 @@ export const createApp = () => {
     idStart: ENV.BID_ID_START,
   });
   const messageToBid = createMessageBidMap();
+  const inquiryThrottle = createInquiryThrottle({
+    windowMs: ENV.BUYER_INQUIRY_THROTTLE_MS,
+    ipEnabled: ENV.BUYER_INQUIRY_IP_THROTTLE_ENABLED,
+  });
 
   const metaClient = createMetaClient({
     token: ENV.META_WHATSAPP_TOKEN,
@@ -81,6 +87,7 @@ export const createApp = () => {
     bidStore,
     metaClient,
     templateName: ENV.META_TEMPLATE_SELLER_INQUIRY,
+    inquiryThrottle,
   });
   const mechanicRequestController = createServiceRequestController({
     mechanicNumbers: ENV.MECHANIC_NUMBERS,
@@ -88,6 +95,7 @@ export const createApp = () => {
     bidStore,
     metaClient,
     templateName: ENV.META_TEMPLATE_MECHANIC_INQUIRY,
+    inquiryThrottle,
   });
   const towRequestController = createTowingRequestController({
     towDriverNumbers: ENV.TOW_DRIVER_NUMBERS,
@@ -98,6 +106,7 @@ export const createApp = () => {
     templateRoadsideInquiry: ENV.META_TEMPLATE_ROADSIDE_INQUIRY,
     templateTowInquiryFlowTitle: ENV.META_TEMPLATE_TOW_INQUIRY_FLOW_TITLE,
     templateRoadsideInquiryFlowTitle: ENV.META_TEMPLATE_ROADSIDE_INQUIRY_FLOW_TITLE,
+    inquiryThrottle,
   });
   const healthController = createHealthController();
   const partnershipController = createPartnershipController({

@@ -20,6 +20,9 @@ OWNER_NUMBER=+15551230099
 COURIER_NUMBER=+15551230098
 BID_STORE_TTL_HOURS=72
 BID_ID_START=10001
+BUYER_INQUIRY_THROTTLE_SECONDS=30
+BUYER_INQUIRY_IP_THROTTLE_ENABLED=true
+EXPRESS_TRUST_PROXY_HOPS=1
 
 # City-specific phone numbers live in `src/shared/phoneNumbers.json`.
 # Add cities there to appear in the form dropdowns.
@@ -64,6 +67,11 @@ Compose reads `.env`, builds via Dockerfile, and exposes http://localhost:${HOST
 ## Endpoints
 - `GET /api/health`
 - `POST /api/request` with `{ name, customerNumber, bidMessage, make, model, year, fuelType, chassis, city }`
+- `POST /api/mechanic-request` with `{ name, customerNumber, bidMessage, make, model, year, fuelType, chassis, city }`
 - `POST /api/tow-request` with `{ name, customerNumber, serviceType, locationFrom, locationTo, details, city }`
 - `GET /webhook` Meta verification endpoint (uses `META_WEBHOOK_VERIFICATION_TOKEN`)
 - `POST /webhook` Meta inbound messages; expects seller replies in `BID_ID PRICE` format and sends offer templates to buyer + owner
+
+Buyer inquiry endpoints (`/api/request`, `/api/mechanic-request`, `/api/tow-request`) are throttled by default to one valid request per 30 seconds per endpoint scope, keyed by customer number and IP. When throttled they return `429` with:
+- `Retry-After` response header
+- JSON payload `{ error, code: "BUYER_INQUIRY_THROTTLED", retryAfterSeconds, blockedBy }`
