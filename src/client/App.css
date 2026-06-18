@@ -778,6 +778,7 @@ button {
   background: #0b0f14;
   color: #f2eee9;
   padding: 72px 20px 0;
+  scroll-margin-top: 80px;
 }
 
 .footer-inner {

@@ -9,6 +9,7 @@ import SiteFooter from "./components/sections/SiteFooter";
 import { useServiceForm } from "./hooks/useServiceForm";
 import { useRoadsideForm } from "./hooks/useRoadsideForm";
 import { useRevealAnimations } from "./hooks/useRevealAnimations";
+import { useHashScroll } from "./hooks/useHashScroll";
 
 export default function App() {
   const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
@@ -22,6 +23,7 @@ export default function App() {
   const roadsideForm = useRoadsideForm({ apiBase: API_BASE });
 
   useRevealAnimations();
+  useHashScroll();
 
   return (
     <div className="page">
