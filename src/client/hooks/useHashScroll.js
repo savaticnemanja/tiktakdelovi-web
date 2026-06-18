@@ -3,9 +3,11 @@ import { useEffect } from "react";
 const scrollToHash = (hash, behavior) => {
   const id = decodeURIComponent(String(hash || "").replace(/^#/, ""));
   if (!id) return false;
-  const target = document.getElementById(id);
-  if (!target) return false;
-  target.scrollIntoView({ behavior, block: "start" });
+  // We only use the hash as a signal to jump to the very bottom of the page
+  // (where the seller form lives). Wait until the target exists so we know the
+  // page has rendered, then scroll all the way down.
+  if (!document.getElementById(id)) return false;
+  window.scrollTo({ top: document.documentElement.scrollHeight, behavior });
   return true;
 };
 

@@ -70,49 +70,43 @@ jobs:
 
       - name: Deploy on VPS
         run: |
-          ssh "${{ secrets.DEPLOY_USER }}"@"${{ secrets.DEPLOY_HOST }}" 'bash -s' <<EOSSH
-          set -euo pipefail
+          ssh "${{ secrets.DEPLOY_USER }}"@"${{ secrets.DEPLOY_HOST }}" "
+            set -e
+            cd '${{ secrets.DEPLOY_PATH }}'
 
-          DEPLOY_PATH='${{ secrets.DEPLOY_PATH }}'
-          if [ ! -d "\$DEPLOY_PATH" ]; then
-            echo ">>> ERROR: DEPLOY_PATH '\$DEPLOY_PATH' is not a directory on the server" >&2
-            exit 1
-          fi
-          cd "\$DEPLOY_PATH"
+            HOST_PORT=\$(grep -E '^HOST_PORT=' .env | cut -d '=' -f2)
+            HOST_PORT=\${HOST_PORT:-8081}
 
-          HOST_PORT=\$(grep -E '^HOST_PORT=' .env | cut -d '=' -f2)
-          HOST_PORT=\${HOST_PORT:-8081}
+            export COMPOSE_PROJECT_NAME=autoparts-app
 
-          export COMPOSE_PROJECT_NAME=autoparts-app
+            echo '>>> Killing ANY container using port '$HOST_PORT
+            docker ps --filter 'publish='\$HOST_PORT -q | xargs -r docker stop
+            docker ps --filter 'publish='\$HOST_PORT -q | xargs -r docker rm
 
-          echo ">>> Killing ANY container using port \$HOST_PORT"
-          docker ps --filter "publish=\$HOST_PORT" -q | xargs -r docker stop
-          docker ps --filter "publish=\$HOST_PORT" -q | xargs -r docker rm
+            echo '>>> Extracting new release'
+            rm -rf current_tmp
+            mkdir current_tmp
+            tar -xzf app.tar.gz -C current_tmp
 
-          echo '>>> Extracting new release'
-          rm -rf current_tmp
-          mkdir current_tmp
-          tar -xzf app.tar.gz -C current_tmp
+            echo '>>> Removing previous current_old'
+            rm -rf current_old
 
-          echo '>>> Removing previous current_old'
-          rm -rf current_old
+            echo '>>> Swapping release directories'
+            if [ -d current ]; then
+              mv current current_old
+            fi
+            mv current_tmp current
 
-          echo '>>> Swapping release directories'
-          if [ -d current ]; then
-            mv current current_old
-          fi
-          mv current_tmp current
+            echo '>>> Copying .env into new release'
+            cp .env current/.env
 
-          echo '>>> Copying .env into new release'
-          cp .env current/.env
+            cd current
 
-          cd current
+            echo '>>> Stopping old containers (compose)'
+            docker compose down || true
 
-          echo '>>> Stopping old containers (compose)'
-          docker compose down || true
+            echo '>>> Starting new containers'
+            docker compose up --build -d
 
-          echo '>>> Starting new containers'
-          docker compose up --build -d
-
-          echo '>>> Deploy complete!'
-          EOSSH
+            echo '>>> Deploy complete!'
+          "
