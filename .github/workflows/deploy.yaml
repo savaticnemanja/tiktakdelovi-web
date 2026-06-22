@@ -1,105 +1,25 @@
-name: Deploy to VPS
+name: Build check
 
 on:
   push:
     branches: [main]
-
   pull_request:
-    types: [closed]
     branches: [main]
 
 concurrency:
-  group: autoparts-app-${{ github.ref }}
+  group: build-${{ github.ref }}
   cancel-in-progress: true
 
-permissions:
-  contents: read
-
 jobs:
-  deploy:
-    if: github.event_name == 'push' || github.event.pull_request.merged == true
+  build:
     runs-on: ubuntu-latest
-    env:
-      NODE_VERSION: 20
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: 20
           cache: npm
-          cache-dependency-path: package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build app
-        run: npm run build
-
-      - name: Load SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          known_hosts: unnecessary
-
-      - name: Add server to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H "${{ secrets.DEPLOY_HOST }}" >> ~/.ssh/known_hosts
-
-      - name: Prepare deployment package
-        run: |
-          mkdir deploy
-          rsync -av \
-            --exclude='.git' \
-            --exclude='node_modules' \
-            --exclude='deploy' \
-            --exclude='app.tar.gz' \
-            ./ deploy/
-          tar -czf app.tar.gz -C deploy .
-
-      - name: Upload package to VPS
-        run: |
-          scp app.tar.gz \
-            "${{ secrets.DEPLOY_USER }}"@"${{ secrets.DEPLOY_HOST }}":"${{ secrets.DEPLOY_PATH }}"
-
-      - name: Deploy on VPS
-        run: |
-          ssh "${{ secrets.DEPLOY_USER }}"@"${{ secrets.DEPLOY_HOST }}" "
-            set -e
-            cd '${{ secrets.DEPLOY_PATH }}'
-
-            HOST_PORT=\$(grep -E '^HOST_PORT=' .env | cut -d '=' -f2)
-            HOST_PORT=\${HOST_PORT:-8081}
-
-            export COMPOSE_PROJECT_NAME=autoparts-app
-
-            echo '>>> Extracting new release'
-            rm -rf current_tmp
-            mkdir current_tmp
-            tar -xzf app.tar.gz -C current_tmp
-
-            echo '>>> Removing previous current_old'
-            rm -rf current_old
-
-            echo '>>> Swapping release directories'
-            if [ -d current ]; then
-              mv current current_old
-            fi
-            mv current_tmp current
-
-            echo '>>> Copying .env into new release'
-            cp .env current/.env
-
-            cd current
-
-            echo '>>> Starting new containers'
-            docker compose up --build -d --wait --wait-timeout 120
-
-            echo '>>> Deploy complete!'
-          "
+      - run: npm ci
+      - run: npm run build
