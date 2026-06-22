@@ -79,10 +79,6 @@ jobs:
 
             export COMPOSE_PROJECT_NAME=autoparts-app
 
-            echo '>>> Killing ANY container using port '$HOST_PORT
-            docker ps --filter 'publish='\$HOST_PORT -q | xargs -r docker stop
-            docker ps --filter 'publish='\$HOST_PORT -q | xargs -r docker rm
-
             echo '>>> Extracting new release'
             rm -rf current_tmp
             mkdir current_tmp
@@ -102,11 +98,8 @@ jobs:
 
             cd current
 
-            echo '>>> Stopping old containers (compose)'
-            docker compose down || true
-
             echo '>>> Starting new containers'
-            docker compose up --build -d
+            docker compose up --build -d --wait --wait-timeout 120
 
             echo '>>> Deploy complete!'
           "
