@@ -1,7 +1,6 @@
 services:
   autoparts-app:
-    build: .
-    image: autoparts-app
+    image: ghcr.io/savaticnemanja/tiktakdelovi-web:latest
     container_name: autoparts-app
     env_file:
       - ./.env
