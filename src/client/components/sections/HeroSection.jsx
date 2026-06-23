@@ -11,7 +11,7 @@ const HeroSection = () => (
       <div className="hero-overlay" />
       <div className="hero-content stagger" data-reveal="stagger">
         <p className="eyebrow">Brzo. Precizno. Lokalno.</p>
-        <h1>Najbrži put do pravog auto dela — bez deset poziva i nagađanja.....</h1>
+        <h1>Najbrži put do pravog auto dela — bez deset poziva i nagađanja.</h1>
         <p className="hero-copy">
           Pošaljite jedan upit, a TikTak Delovi ga odmah prosleđuje prodavcima.
           Dobijate ponude, birate najbolju i završavate posao bez gubljenja vremena.
