@@ -1,7 +1,14 @@
+# Local run: `docker compose up --build`. Production on the VPS uses
+# /srv/tiktakdelovi.com/docker-compose.yml, which builds ./src the same way.
+# Naming matches the box: compose project + container + image = tiktakdelovi.
+name: tiktakdelovi
 services:
-  autoparts-app:
-    image: ghcr.io/savaticnemanja/tiktakdelovi-web:latest
-    container_name: autoparts-app
+  app:
+    build:
+      context: .
+      target: production
+    image: tiktakdelovi-app:local
+    container_name: tiktakdelovi-app
     env_file:
       - ./.env
     ports:
