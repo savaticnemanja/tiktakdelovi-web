@@ -156,6 +156,17 @@ export const createApp = () => {
     app.get("/logs/meta", getMetaLogs);
   }
 
+  // The frontend is a single page; these paths are entry points that scroll to
+  // a section. Anything else still gets the page, but with a 404 status so
+  // search engines don't index junk URLs as duplicates of the homepage.
+  const pagePaths = new Set([
+    "/",
+    "/auto-delovi",
+    "/auto-servis",
+    "/pomoc-na-putu",
+    "/partneri",
+  ]);
+
   const distPath = new URL("../../dist", import.meta.url).pathname;
   if (fs.existsSync(distPath)) {
     app.use(express.static(distPath));
@@ -164,7 +175,8 @@ export const createApp = () => {
       if (!fs.existsSync(indexPath)) {
         return res.status(404).send("Frontend not built");
       }
-      return res.sendFile(indexPath);
+      const pagePath = req.path.replace(/\/+$/, "") || "/";
+      return res.status(pagePaths.has(pagePath) ? 200 : 404).sendFile(indexPath);
     });
   } else {
     console.warn(
