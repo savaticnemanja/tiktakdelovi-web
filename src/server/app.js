@@ -147,9 +147,14 @@ export const createApp = () => {
     telegramController.handleWebhook,
   );
 
-  app.get("/logs/api", getApiLogs);
-  app.get("/logs/webhook", getWebhookLogs);
-  app.get("/logs/meta", getMetaLogs);
+  // Request logs carry full headers and bodies (customer names and phone
+  // numbers), so they are only readable in local development (vite proxies
+  // /logs to the dev server). In production they are not routed at all.
+  if (process.env.NODE_ENV !== "production") {
+    app.get("/logs/api", getApiLogs);
+    app.get("/logs/webhook", getWebhookLogs);
+    app.get("/logs/meta", getMetaLogs);
+  }
 
   const distPath = new URL("../../dist", import.meta.url).pathname;
   if (fs.existsSync(distPath)) {
